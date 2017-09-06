@@ -70,11 +70,11 @@ EL::StatusCode HggStarCutflowAndMxAOD::createOutput()
   m_saveDetailed = config()->getBool("SaveDetailedVariables",false);
 
   // Whether to save the truth objects and differential variables
-  m_saveTruthObjects = HG::isMC() && config()->getBool("SaveTruthObjects",false);
-  m_saveTruthVars    = HG::isMC() && config()->getBool("SaveTruthVariables",false);
+  m_saveTruthObjects = isMC() && config()->getBool("SaveTruthObjects",false);
+  m_saveTruthVars    = isMC() && config()->getBool("SaveTruthVariables",false);
 
   //Save fake photon combinations
-  m_enableFakePhotons = HG::isMC() && config()->getBool("SaveFakePhotonCombinations", false);
+  m_enableFakePhotons = isMC() && config()->getBool("SaveFakePhotonCombinations", false);
 
   // Whether we are running with yybb-tool in detailed mode.
   m_detailedHHyybb = config()->getBool("HHyybb.DetailedInfo",false);
@@ -84,7 +84,7 @@ EL::StatusCode HggStarCutflowAndMxAOD::createOutput()
 
   // a. Event variables
   StrV ignore = {};
-  if (HG::isData()) ignore = {".mcChannelNumber", ".mcEventWeights", ".RandomRunNumber", ".truthCentralEventShapeDensity", ".truthForwardEventShapeDensity"};
+  if (isData()) ignore = {".mcChannelNumber", ".mcEventWeights", ".RandomRunNumber", ".truthCentralEventShapeDensity", ".truthForwardEventShapeDensity"};
 
   StrV trigs = config()->getStrV("EventHandler.RequiredTriggers");
   StrV extra = {};
@@ -116,19 +116,19 @@ EL::StatusCode HggStarCutflowAndMxAOD::createOutput()
     config()->setValue("MxAOD.Variables.Jet",yybb_detailedJetVars.Data());
   }
 
-  if (HG::isData()) ignore = {".isEMTight_nofudge", ".isTight_nofudge", ".topoetcone20_DDcorrected", ".topoetcone40_DDcorrected", ".truthOrigin", ".truthType", ".truthConvRadius", ".scaleFactor", ".truthLink", ".parentPdgId", ".pdgId"};
+  if (isData()) ignore = {".isEMTight_nofudge", ".isTight_nofudge", ".topoetcone20_DDcorrected", ".topoetcone40_DDcorrected", ".truthOrigin", ".truthType", ".truthConvRadius", ".scaleFactor", ".truthLink", ".parentPdgId", ".pdgId"};
   declareOutputVariables(m_photonContainerName, "MxAOD.Variables.Photon"  , {}, ignore);
   declareOutputVariables("HGamPhotonsWithFakes","MxAOD.Variables.Photon"  , {}, ignore);
-  if (HG::isData()) ignore = {".SF_"+mv2_tagger+"_FixedCutBEff_60", ".SF_"+mv2_tagger+"_FixedCutBEff_70", ".SF_"+mv2_tagger+"_FixedCutBEff_77", ".SF_"+mv2_tagger+"_FixedCutBEff_85", ".Eff_"+mv2_tagger+"_FixedCutBEff_60", ".Eff_"+mv2_tagger+"_FixedCutBEff_70", ".Eff_"+mv2_tagger+"_FixedCutBEff_77", ".Eff_"+mv2_tagger+"_FixedCutBEff_85", ".InEff_"+mv2_tagger+"_FixedCutBEff_60", ".InEff_"+mv2_tagger+"_FixedCutBEff_70", ".InEff_"+mv2_tagger+"_FixedCutBEff_77", ".InEff_"+mv2_tagger+"_FixedCutBEff_85", ".HadronConeExclTruthLabelID"};
+  if (isData()) ignore = {".SF_"+mv2_tagger+"_FixedCutBEff_60", ".SF_"+mv2_tagger+"_FixedCutBEff_70", ".SF_"+mv2_tagger+"_FixedCutBEff_77", ".SF_"+mv2_tagger+"_FixedCutBEff_85", ".Eff_"+mv2_tagger+"_FixedCutBEff_60", ".Eff_"+mv2_tagger+"_FixedCutBEff_70", ".Eff_"+mv2_tagger+"_FixedCutBEff_77", ".Eff_"+mv2_tagger+"_FixedCutBEff_85", ".InEff_"+mv2_tagger+"_FixedCutBEff_60", ".InEff_"+mv2_tagger+"_FixedCutBEff_70", ".InEff_"+mv2_tagger+"_FixedCutBEff_77", ".InEff_"+mv2_tagger+"_FixedCutBEff_85", ".HadronConeExclTruthLabelID"};
   declareOutputVariables(m_jetContainerName   , "MxAOD.Variables.Jet"     , {}, ignore);
-  if (HG::isData()) ignore = {".scaleFactor", ".truthLink"};
+  if (isData()) ignore = {".scaleFactor", ".truthLink"};
   declareOutputVariables(m_elecContainerName  , "MxAOD.Variables.Electron", {}, ignore);
-  if (HG::isData()) ignore = {".scaleFactor"};
+  if (isData()) ignore = {".scaleFactor"};
   declareOutputVariables(m_muonContainerName  , "MxAOD.Variables.Muon"    , {}, ignore);
   declareOutputVariables("HGamMuonsInJets"    , "MxAOD.Variables.Muon"    , {}, ignore);
 
   // c. Truth objects
-  if (HG::isMC()) {
+  if (isMC()) {
     m_photonTruthContainerName = "HGam"+config()->getStr("TruthHandler.PhotonContainerName");
     m_elecTruthContainerName   = "HGam"+config()->getStr("TruthHandler.ElectronContainerName");
     m_muonTruthContainerName   = "HGam"+config()->getStr("TruthHandler.MuonContainerName");
@@ -150,9 +150,9 @@ EL::StatusCode HggStarCutflowAndMxAOD::execute()
   HgammaAnalysis::execute();
 
   // if it's a new file, update the book-keeper
-  if (m_newFile && HG::isDAOD() ) {
+  if (m_newFile && isDAOD() ) {
     addBookKeeping(getCutFlowHisto(),m_N_xAOD,m_N_DxAOD);
-    if (HG::isMC()) {
+    if (isMC()) {
       addBookKeeping(getCutFlowHisto(false),m_N_xAOD,m_N_DxAOD);
       addBookKeeping(getCutFlowWeightedHisto(),m_sumw_xAOD,m_sumw_DxAOD,m_sumw2_xAOD,m_sumw2_DxAOD);
       addBookKeeping(getCutFlowWeightedHisto(false),m_sumw_xAOD,m_sumw_DxAOD,m_sumw2_xAOD,m_sumw2_DxAOD);
@@ -165,7 +165,7 @@ EL::StatusCode HggStarCutflowAndMxAOD::execute()
 
   // flag current event as a MC Dalitz event
   // (needed for cut-flow histograms)
-  m_isDalitz = HG::isMC() && eventHandler()->isDalitz();
+  m_isDalitz = isMC() && eventHandler()->isDalitz();
 
   // fill the cut-flow histograms up to tight selection
   double wi = weightInitial();
@@ -203,7 +203,7 @@ EL::StatusCode HggStarCutflowAndMxAOD::execute()
     }
   }
 
-  if ( HG::isMC() && (m_saveTruthObjects || m_saveTruthVars))
+  if ( isMC() && (m_saveTruthObjects || m_saveTruthVars))
     doTruth();
 
   // Write nominal EventInfo to output
@@ -220,7 +220,7 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
 {
   //Check if there are two good fakes. Needed so we dont slim the event at trigger.
   m_goodFakeComb = false;
-  if(HG::isMC() && m_enableFakePhotons){
+  if(isMC() && m_enableFakePhotons){
       double weightFakePhotons = 1;
       xAOD::PhotonContainer photonsWithFakes = getFakePhotons(weightFakePhotons);
       m_goodFakeComb = photonsWithFakes.size()>1 ? true : false;
@@ -233,7 +233,7 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
 
   //==== CUT 1 : GRL ====
   static bool requireGRL = config()->getBool("EventHandler.CheckGRL");
-  if ( requireGRL && HG::isData() && !eventHandler()->passGRL(eventInfo()) ) return GRL;
+  if ( requireGRL && isData() && !eventHandler()->passGRL(eventInfo()) ) return GRL;
 
   //==== CUT 2 : Require trigger ====
   static bool requireTrigger = config()->getBool("EventHandler.CheckTriggers");
@@ -270,8 +270,8 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
         photonHandler()->passCleaningCut(gam) &&
         photonHandler()->passPtEtaCuts(gam)   &&
         photonHandler()->passPIDCut(gam,egammaPID::PhotonIDLoose) &&
-        photonHandler()->passAmbCut(gam)       &&
-        photonHandler()->passHVCut(gam))
+        photonHandler()->passAmbCut(gam)/*       &&
+        photonHandler()->passHVCut(gam)*/)
       ++nHV;
   }
 
@@ -448,7 +448,7 @@ void HggStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
   var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
   var::isPassed.setValue(m_goodFakeComb ? true : eventHandler()->pass() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
-  if (HG::isMC()) var::isDalitzEvent.setValue(m_isDalitz);
+  if (isMC()) var::isDalitzEvent.setValue(m_isDalitz);
 
   if (!isSys) {
     int Nloose = m_preSelPhotons.size();
@@ -502,7 +502,7 @@ void HggStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
   }
 
   // Add MC only variables
-  if (HG::isMC()) {
+  if (isMC()) {
     if (config()->isDefined(TString::Format("CrossSection.%d", eventInfo()->mcChannelNumber()))) {
       double xs = getCrossSection(), kf = 1.0, ge = 1.0;
       if (config()->isDefined(TString::Format("kFactor.%d", eventInfo()->mcChannelNumber())))
@@ -572,7 +572,7 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
   var::isPassed.setValue(m_goodFakeComb ? true : var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
-  if (HG::isMC()) var::isDalitzEvent.setValue(m_isDalitz);
+  if (isMC()) var::isDalitzEvent.setValue(m_isDalitz);
   passJetEventCleaning();
 
   // Basic event weights
@@ -745,7 +745,7 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
 
       // Store m_yy using hardest vertex
       eventHandler()->storeVar<float>("m_yy_hardestVertex",  pointingTool->getCorrectedMass(leadPhotons, eventHandler()->hardestVertexZ()));
-      if (HG::isMC())
+      if (isMC())
         eventHandler()->storeVar<float>("m_yy_truthVertex", pointingTool->getCorrectedMass(leadPhotons, truthHandler()->truthVertexZ()) );
 
       // Store m_yy using zCommon
@@ -753,7 +753,7 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
       var::zCommon.setValue(xAOD::PVHelpers::getZCommonAndError(eventInfo(), &leadPhotons).first);
     } else {
       eventHandler()->storeVar<float>("m_yy_hardestVertex", -99);
-      if (HG::isMC())
+      if (isMC())
         eventHandler()->storeVar<float>("m_yy_truthVertex", -99);
       eventHandler()->storeVar<float>("m_yy_zCommon", -99);
     }
@@ -765,7 +765,7 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
   eventHandler()->hardestVertexZ();
   eventHandler()->pileupVertexSumPt2(); // also sets pileupVertexZ internally
 
-  if (HG::isMC()) truthHandler()->truthVertexZ();
+  if (isMC()) truthHandler()->truthVertexZ();
 
   const xAOD::VertexContainer* vertices = nullptr;
   if (event()->contains<xAOD::VertexContainer>("PrimaryVertices")) {
@@ -796,7 +796,7 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
   eventHandler()->bunchGapBeforeTrain();
 
   // Add MC only variables
-  if (HG::isMC()) {
+  if (isMC()) {
     truthHandler()->truthCategory();
     truthHandler()->isVyyOverlap();
 
@@ -1004,15 +1004,15 @@ TH1F* HggStarCutflowAndMxAOD::makeCutFlowHisto(int id, TString suffix) {
   int Ncuts = s_cutDescs.size();
 
   // create meaningful name of the cutflow histo
-  TString name(Form("CutFlow_%s%d",HG::isData()?"Run":"MC",std::abs(id)));
+  TString name(Form("CutFlow_%s%d",isData()?"Run":"MC",std::abs(id)));
 
-  bool hasMCname = HG::isMC() && config()->isDefined(Form("SampleName.%d",std::abs(id)));
+  bool hasMCname = isMC() && config()->isDefined(Form("SampleName.%d",std::abs(id)));
 
   if(hasMCname){
     name = Form("CutFlow_%s",getMCSampleName(std::abs(id)).Data());
   }
 
-  if (HG::isMC()&&!hasMCname&&config()->getStr("SampleName","sample")!="sample")
+  if (isMC()&&!hasMCname&&config()->getStr("SampleName","sample")!="sample")
     name="CutFlow_"+config()->getStr("SampleName");
   name+=suffix;
 
@@ -1029,11 +1029,11 @@ TH1F* HggStarCutflowAndMxAOD::makeCutFlowHisto(int id, TString suffix) {
 
 void HggStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
   getCutFlowHisto()->Fill(cut);
-  if (HG::isData()) return;
+  if (isData()) return;
   getCutFlowWeightedHisto()->Fill(cut,w);
-  if (m_isDalitz) return;
-  getCutFlowHisto(false)->Fill(cut);
-  getCutFlowWeightedHisto(false)->Fill(cut,w);
+  if (!m_isDalitz) return;
+  getCutFlowHisto(true)->Fill(cut);
+  getCutFlowWeightedHisto(true)->Fill(cut,w);
 }
 
 
@@ -1116,13 +1116,13 @@ EL::StatusCode HggStarCutflowAndMxAOD::fileExecute() {
 
 void HggStarCutflowAndMxAOD::printCutFlowHistos() {
   for ( auto entry : m_cFlowHistos ) {
-    printf("\n%s %d cut-flow%s\n",HG::isMC()?"MC sample":"Data run",
-           std::abs(entry.first),entry.first>0?", excluding Dalitz events":"");
+    printf("\n%s %d cut-flow%s\n",isMC()?"MC sample":"Data run",
+           std::abs(entry.first),entry.first>0?", all events":", only Dalitz events");
     printCutFlowHisto(entry.second,0);
   }
   for ( auto entry : m_cFlowHistosWeighted ) {
-    printf("\n%s %d cut-flow, weighted events%s\n",HG::isMC()?"MC sample":"Data run",
-           std::abs(entry.first),entry.first>0?", excluding Dalitz events":"");
+    printf("\n%s %d cut-flow, weighted events%s\n",isMC()?"MC sample":"Data run",
+           std::abs(entry.first),entry.first>0?", all events":", only Dalitz events");
     printCutFlowHisto(entry.second,2);
   }
   printf("\n");
