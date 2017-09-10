@@ -15,12 +15,16 @@ private:
 
   // Cut-flow - need to keep the same order!
   enum CutEnum {
-    NxAOD=0, NDxAOD=1, ALLEVTS=2, DUPLICATE=3, GRL=4, TRIGGER=5, DQ=6, VERTEX=7, TWO_LOOSE_GAM=8, AMBIGUITY=9,
-    TRIG_MATCH=10, GAM_TIGHTID=11, GAM_ISOLATION=12, RELPTCUTS=13, MASSCUT=14, PASSALL=15 };
+    NxAOD=0, NDxAOD=1, ALLEVTS=2, DUPLICATE=3, GRL=4, TRIGGER=5, DQ=6, VERTEX=7,
+    TWO_SF_LEPTONS=8,ONE_LOOSE_GAM=9, AMBIGUITY=10,
+    TWO_SF_LEPTONS_POSTOR=11,ONE_PHOTON_POSTOR=12,
+    TRIG_MATCH=13, GAM_TIGHTID=14, GAM_ISOLATION=15, RELPTCUTS=16, MASSCUT=17, PASSALL=18 };
   // names of all cuts (do not includ "pass all")
   const std::vector<TString> s_cutDescs =
     {"#it{N}_{xAOD}","#it{N}_{DxAOD}","All events","No duplicates","GRL","Pass trigger","Detector DQ","Has PV",
-     "2 loose photons","e-#gamma ambiguity","Trigger match","tight ID","isolation","rel. #it{p}_{T} cuts",
+     "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity",
+     "2 same-flavor leptons (post-OR)","1 loose photon (post-OR)",
+     "Trigger match","tight ID","isolation","rel. #it{p}_{T} cuts",
      "#it{m}_{#gamma#gamma} #in [105,160] GeV"};
 
   /// value of cut that fail selection: PASSALL if all cuts passed

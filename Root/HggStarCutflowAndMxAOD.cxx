@@ -153,9 +153,9 @@ EL::StatusCode HggStarCutflowAndMxAOD::execute()
   if (m_newFile && isDAOD() ) {
     addBookKeeping(getCutFlowHisto(),m_N_xAOD,m_N_DxAOD);
     if (isMC()) {
-      addBookKeeping(getCutFlowHisto(false),m_N_xAOD,m_N_DxAOD);
+      addBookKeeping(getCutFlowHisto(true),m_N_xAOD,m_N_DxAOD);
       addBookKeeping(getCutFlowWeightedHisto(),m_sumw_xAOD,m_sumw_DxAOD,m_sumw2_xAOD,m_sumw2_DxAOD);
-      addBookKeeping(getCutFlowWeightedHisto(false),m_sumw_xAOD,m_sumw_DxAOD,m_sumw2_xAOD,m_sumw2_DxAOD);
+      addBookKeeping(getCutFlowWeightedHisto(true),m_sumw_xAOD,m_sumw_DxAOD,m_sumw2_xAOD,m_sumw2_DxAOD);
     }
     m_newFile=false;
   }
@@ -248,11 +248,24 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
   //==== CUT 4 : Require a vertex ====
   if ( !eventHandler()->passVertex(eventInfo()) ) return VERTEX;
 
-  // retrieve the photons
-  xAOD::PhotonContainer   all_photons  = photonHandler() -> getCorrectedContainer();
-  xAOD::PhotonContainer   loosePhotons = photonHandler() -> applyPreSelection(all_photons);
+  // retrieve electrons, muons
+  m_allElectrons = electronHandler()->getCorrectedContainer();
+  m_selElectrons = electronHandler()->applySelection(m_allElectrons);
+
+  m_allMuons = muonHandler()->getCorrectedContainer();
+  xAOD::MuonContainer dirtyMuons = muonHandler()->applySelection(m_allMuons);
+
+  //==== CUT 4 : 2 SF leptons (before OR) ====
+  if (m_selElectrons.size() < 2 && dirtyMuons.size() < 2) return TWO_SF_LEPTONS;
+
+  // Get object containers
+  m_allPhotons = photonHandler()->getCorrectedContainer();
+  m_preSelPhotons = photonHandler()->applyPreSelection(m_allPhotons);
+  m_selPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
+  if (m_preSelPhotons.size()  ) m_selPhotons.push_back(m_preSelPhotons[0]);
+
   int nloose=0, namb=0, nHV=0;
-  for (auto gam:all_photons) {
+  for (auto gam:m_allPhotons) {
     if (photonHandler()->passOQCut(gam)       &&
         photonHandler()->passCleaningCut(gam) &&
         photonHandler()->passPtEtaCuts(gam)   &&
@@ -276,108 +289,52 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
   }
 
   //==== CUT 5 : Require two loose photons, pT>25 GeV ====
-  if (nloose<2) return TWO_LOOSE_GAM;
+  if (nloose<1) return ONE_LOOSE_GAM;
 
   //==== CUT 6 : Preselection
   // - Require two loose photons that also pass e-gamma ambiguity ====
   static bool requireAmbiguity = config()->getBool("PhotonHandler.Selection.ApplyAmbiguityCut", false);
-  if (requireAmbiguity && namb<2) return AMBIGUITY;
+  if (requireAmbiguity && namb<1) return AMBIGUITY;
 
-  static bool requireHV = config()->getBool("PhotonHandler.Selection.ApplyHVCut", false);
-  if (requireHV && nHV<2) return AMBIGUITY;
-
-  //==== CUT 7 : Require two loose photons to pass trigger matching
-  static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
-  if ( requireTriggerMatch && !passTriggerMatch(&loosePhotons) ) return TRIG_MATCH;
-
-  // Our *Higgs candidate photons* are the two, leading pre-selected photons
-  // These are also the photons used to define the primary vertex
-  xAOD::Photon* gam1 = loosePhotons[0], *gam2 = loosePhotons[1];
-
-  //==== CUT 8 : Require both photons to pass photon ID (isEM) ====
-  static bool requireTight = config()->getBool("PhotonHandler.Selection.ApplyPIDCut", true);
-  if (requireTight && (!photonHandler()->passPIDCut(gam1) ||
-      !photonHandler()->passPIDCut(gam2)) )
-    return GAM_TIGHTID;
-
-  //==== CUT 9 : Require both photons to fulfill the isolation criteria ===
-  static bool requireIso = config()->getBool("PhotonHandler.Selection.ApplyIsoCut", true);
-  if (requireIso && (!photonHandler()->passIsoCut(gam1) ||
-      !photonHandler()->passIsoCut(gam2)) )
-    return GAM_ISOLATION;
-
-  //==== CUT 10 : Relative pT cuts ====
-  if ( !passRelativePtCuts(loosePhotons) ) return RELPTCUTS;
-
-  //==== CUT 11 : Mass window cut ====
-  if ( !passMyyWindowCut(loosePhotons) ) return MASSCUT;
-
-  /*
-  // loop over the tigh photons and print if we find a tight photon that is not loose
-  for (auto gam:tightPhotons)
-    if (!photonHandler()->passPIDCut(gam,egammaPID::IsEMLoose)) {
-      photonHandler()->printPhoton(gam,"Tight-ID photon that failes Loose-ID");
-      if (!m_MxAODinput)
-        for (auto tgam:HG::getGoodTruthPhotons(truthPtcls))
-          HG::printTruthPtcl(tgam,"Truth photon");
-  }
- */
-
-  return PASSALL;
-}
-
-EL::StatusCode  HggStarCutflowAndMxAOD::doReco(bool isSys)
-{
-  // Get object containers
-  m_allPhotons = photonHandler()->getCorrectedContainer();
-  m_preSelPhotons = photonHandler()->applyPreSelection(m_allPhotons);
-
-  // selected the two Higgs candidate photons (used for pointing)
-  m_selPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
-  if (m_preSelPhotons.size()  ) m_selPhotons.push_back(m_preSelPhotons[0]);
-  if (m_preSelPhotons.size()>1) m_selPhotons.push_back(m_preSelPhotons[1]);
-
-  // The below logic is for use in background side-band studies
-  // For example, the loose-not-tight background category, where a leading loose photon
-  // is still considered as part of the diphoton system
-  // When checking for isPassed events, all photons are guaranteed to be tight
-  if (m_allowMoreThanTwoPhotons) {
-    // any tight isolated additional photon, is also treated as a photon
-    for (size_t i=2;i<m_preSelPhotons.size();++i) {
-      xAOD::Photon *gam = m_preSelPhotons[i];
-      if (photonHandler()->passIsoCut(gam) &&
-          photonHandler()->passPIDCut(gam) )
-        m_selPhotons.push_back(gam);
-    }
-  }
-
-  // If we enable fake photons then we replace the existing photon selection with the fake combinations.
-  if (m_enableFakePhotons) {
-    double weightFakePhotons = 1;
-    xAOD::PhotonContainer photonsWithFakes(SG::VIEW_ELEMENTS);
-    if (m_goodFakeComb)
-    {
-        photonsWithFakes = getFakePhotons(weightFakePhotons);
-        eventHandler()->storeVar<float>("weightFakePhotons", weightFakePhotons);
-        m_preSelPhotons = photonsWithFakes;
-        m_selPhotons    = photonsWithFakes;
-    }
-  }
+  // static bool requireHV = config()->getBool("PhotonHandler.Selection.ApplyHVCut", false);
+  // if (requireHV && nHV<1) return AMBIGUITY;
 
   m_allJets = jetHandler()->getCorrectedContainer();
   m_selJets = jetHandler()->applySelection(m_allJets);
-
-  m_allElectrons = electronHandler()->getCorrectedContainer();
-  m_selElectrons = electronHandler()->applySelection(m_allElectrons);
-
-  m_allMuons = muonHandler()->getCorrectedContainer();
-  xAOD::MuonContainer dirtyMuons = muonHandler()->applySelection(m_allMuons);
 
   // Removes overlap with candidate diphoton system, and any additional tight photons (if option set)
   overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_selElectrons, dirtyMuons);
 
   // Muon cleaning should be done after overlap removal
   m_selMuons = muonHandler()->applyCleaningSelection(dirtyMuons);
+
+  // Select Z candidate after overlap removal.
+
+  //==== CUT 7 : Require two loose photons to pass trigger matching
+  // static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
+  // if ( requireTriggerMatch && !passTriggerMatch(&loosePhotons) ) return TRIG_MATCH;
+
+  // Our *Higgs candidate photons* are the two, leading pre-selected photons
+  // These are also the photons used to define the primary vertex
+  // xAOD::Photon* gam1 = loosePhotons[0];
+
+  //==== CUT 8 : Require both photons to pass photon ID (isEM) ====
+  // Do we really want to require the highest-pt photon to pass tight ID? Can we ask for lower-pt gam?
+  // static bool requireTight = config()->getBool("PhotonHandler.Selection.ApplyPIDCut", true);
+  // if (requireTight && (!photonHandler()->passPIDCut(gam1)) ) return GAM_TIGHTID;
+
+  //==== CUT 9 : Require both photons to fulfill the isolation criteria ===
+  // static bool requireIso = config()->getBool("PhotonHandler.Selection.ApplyIsoCut", true);
+  // if (requireIso && (!photonHandler()->passIsoCut(gam1))) return GAM_ISOLATION;
+
+  //==== CUT 11 : Mass window cut ====
+  // if ( !passMyyWindowCut(loosePhotons) ) return MASSCUT;
+
+  return PASSALL;
+}
+
+EL::StatusCode  HggStarCutflowAndMxAOD::doReco(bool isSys){
+  // Do anything you missed in cutflow, and save the objects.
 
   // Rebuild MET using selected objects
   m_allMET = etmissHandler()->getCorrectedContainer(&m_selPhotons    ,
@@ -397,15 +354,9 @@ EL::StatusCode  HggStarCutflowAndMxAOD::doReco(bool isSys)
   setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, &m_selMET, &m_jvtJets);
 
   if (not m_photonAllSys) {
-    // Decorate yybb information to HGamEventInfo
     // Must come before writing out containers (Detailed mode decorates objects for studying)
-    yybbTool()->saveHHyybbInfo(m_preSelPhotons, m_allMuons, m_selJets, m_jvtJets);
-
     // Decorate MET information to HGamEventInfo
     metCatTool()->saveCategoryAndWeight(m_selPhotons, m_selElectrons, m_selMuons, m_selJets, m_selMET);
-
-    // Decorate FCNC information to HGamEventInfo
-    fcncTool()->saveFCNCInfo(m_selPhotons, m_selMuons, m_selElectrons, m_selMET, m_selJets);
   }
 
   // Adds event-level variables to TStore
@@ -521,24 +472,10 @@ void HggStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
 void HggStarCutflowAndMxAOD::writePhotonAllSysVars(bool truth)
 {
   var::m_yy.addToStore(truth);
-
   var::N_j.addToStore(truth);
-  var::Dphi_y_y.addToStore(truth);
-
   var::pT_y1.addToStore(truth);
-  var::pT_y2.addToStore(truth);
-
-  // Fiducial regions
-  var::catXS_VBF.addToStore(truth);
-  var::N_lep_15.addToStore(truth);
 
   // Differential variables
-  var::pT_yy.addToStore(truth);
-  var::yAbs_yy.addToStore(truth);
-  var::cosTS_yy.addToStore(truth);
-  var::pTt_yy.addToStore(truth);
-  var::Dy_y_y.addToStore(truth);
-
   var::N_j_30.addToStore(truth);
   var::N_j_50.addToStore(truth);
   var::pT_j1_30.addToStore(truth);
@@ -552,13 +489,6 @@ void HggStarCutflowAndMxAOD::writePhotonAllSysVars(bool truth)
   var::Dy_j_j_30.addToStore(truth);
   var::Dphi_j_j_30.addToStore(truth);
   var::Dphi_j_j_30_signed.addToStore(truth);
-
-  var::sumTau_yyj_30.addToStore(truth);
-  var::maxTau_yyj_30.addToStore(truth);
-  var::pT_yyjj_30.addToStore(truth);
-  var::Dy_yy_jj_30.addToStore(truth);
-  var::Dphi_yy_jj_30.addToStore(truth);
-  var::m_yyj.addToStore(truth);
 
   if (!truth) {
     var::weightN_lep_15.addToStore(truth);
@@ -671,17 +601,7 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 {
   var::m_yy.addToStore(truth);
 
-  // Fiducial regions
-  var::catXS_VBF.addToStore(truth);
-  var::N_lep_15.addToStore(truth);
-
   // Differential variables
-  var::pT_yy.addToStore(truth);
-  var::yAbs_yy.addToStore(truth);
-  var::cosTS_yy.addToStore(truth);
-  var::pTt_yy.addToStore(truth);
-  var::Dy_y_y.addToStore(truth);
-
   var::N_j_30.addToStore(truth);
   var::N_j_50.addToStore(truth);
   var::pT_j1_30.addToStore(truth);
@@ -695,13 +615,6 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::Dy_j_j_30.addToStore(truth);
   var::Dphi_j_j_30.addToStore(truth);
   var::Dphi_j_j_30_signed.addToStore(truth);
-
-  var::sumTau_yyj_30.addToStore(truth);
-  var::maxTau_yyj_30.addToStore(truth);
-  var::pT_yyjj_30.addToStore(truth);
-  var::Dy_yy_jj_30.addToStore(truth);
-  var::Dphi_yy_jj_30.addToStore(truth);
-  var::m_yyj.addToStore(truth);
 
   var::pT_hard.addToStore(truth);
   var::N_mu   .addToStore(truth);
@@ -821,11 +734,7 @@ void HggStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
   // Truth and reco vars
   var::passMeyCut   .addToStore(truth);
   var::pT_y1        .addToStore(truth);
-  var::pT_y2        .addToStore(truth);
   var::E_y1         .addToStore(truth);
-  var::E_y2         .addToStore(truth);
-  var::phiStar_yy   .addToStore(truth);
-  var::DR_y_y       .addToStore(truth);
   var::Zepp         .addToStore(truth);
 
   var::massTrans    .addToStore(truth);
@@ -841,9 +750,7 @@ void HggStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
   var::Dy_j_j       .addToStore(truth);
   var::Dphi_j_j     .addToStore(truth);
 
-  var::Dphi_yy_jj   .addToStore(truth);
   var::DRmin_y_j    .addToStore(truth);
-  var::cosTS_yyjj   .addToStore(truth);
 
   var::N_e          .addToStore(truth);
   var::N_mu         .addToStore(truth);
@@ -856,7 +763,6 @@ void HggStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
     var::DRmin_y_j_2  .addToStore(truth);
     var::m_alljet     .addToStore(truth);
     var::m_alljet_30  .addToStore(truth);
-    var::Dy_yy_jj     .addToStore(truth);
   }
 
 }
