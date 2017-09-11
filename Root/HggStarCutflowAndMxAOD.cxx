@@ -6,6 +6,9 @@
 #include "xAODCutFlow/CutBookkeeperContainer.h"
 
 #include "PhotonVertexSelection/PhotonPointingTool.h"
+#include "ZMassConstraint/ConstraintFit.h"
+
+#include "HGamGamStar/HggStarVariables.h"
 
 // this is needed to distribute the algorithm to the workers
 ClassImp(HggStarCutflowAndMxAOD)
@@ -560,71 +563,21 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
 
   // Additional variables useful for non-framework analysis
   int Nloose = m_preSelPhotons.size();
-  eventHandler()->storeVar<float>("m_yy_resolution",diphotonMassResolution(m_selPhotons));
   eventHandler()->storeVar<int>("NLoosePhotons",Nloose);
-  eventHandler()->storeVar<float>("met_hardVertexTST"  , m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->met  () : m_selMET["TST"]->met  ());
-  eventHandler()->storeVar<float>("sumet_hardVertexTST", m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->sumet() : m_selMET["TST"]->sumet());
-  eventHandler()->storeVar<float>("phi_hardVertexTST"  , m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->phi  () : m_selMET["TST"]->phi  ());
-
-  // High mass variables
-  bool passPID = false, passIsoMyy = false, passRelMyy = false, passIsoExot = false, passPtExot = false;
-  if (Nloose>=2) {
-    xAOD::Photon* y1 = m_preSelPhotons[0], *y2 = m_preSelPhotons[1];
-
-    passPID = m_goodFakeComb ? true : photonHandler()->passPIDCut(y1) && photonHandler()->passPIDCut(y2);
-    passIsoMyy = photonHandler()->passIsoCut(y1, HG::Iso::FixedCutTight) &&
-                 photonHandler()->passIsoCut(y2, HG::Iso::FixedCutTight);
-    passRelMyy = y1->pt()/var::m_yy() >= 0.4 && y2->pt()/var::m_yy() >= 0.3;
-
-    passIsoExot = photonHandler()->passIsoCut(y1, HG::Iso::FixedCutLooseCaloOnly) &&
-                  photonHandler()->passIsoCut(y2, HG::Iso::FixedCutLooseCaloOnly);
-    passPtExot  = y1->pt() >= 55.0*HG::GeV && y2->pt() >= 55.0*HG::GeV;
-  }
-
-  bool passTrigMatch = passTriggerMatch(&m_preSelPhotons);
-
-  // Spin-0 selection
-  eventHandler()->storeVar<char>("isPassedIsolationLowHighMyy", passIsoMyy);
-  eventHandler()->storeVar<char>("isPassedRelPtCutsLowHighMyy", passRelMyy);
-  eventHandler()->storeVar<char>("isPassedLowHighMyy"         , var::isPassedBasic() && Nloose >= 2 && passTrigMatch && passPID && passIsoMyy && passRelMyy);
-
-  // Spin-2 selection
-  eventHandler()->storeVar<char>("isPassedIsolationExotic", passIsoExot);
-  eventHandler()->storeVar<char>("isPassedlPtCutsExotic"  , passPtExot);
-  eventHandler()->storeVar<char>("isPassedExotic"         , var::isPassedBasic() && Nloose >= 2 && passTrigMatch && passPID && passIsoExot && passPtExot);
-  eventHandler()->storeVar<char>("isPassedExoticTight"    , var::isPassedBasic() && Nloose >= 2 && passTrigMatch && passPID && passIsoMyy && passPtExot);
+  // eventHandler()->storeVar<float>("met_hardVertexTST"  , m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->met  () : m_selMET["TST"]->met  ());
+  // eventHandler()->storeVar<float>("sumet_hardVertexTST", m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->sumet() : m_selMET["TST"]->sumet());
+  // eventHandler()->storeVar<float>("phi_hardVertexTST"  , m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->phi  () : m_selMET["TST"]->phi  ());
 
   writeNominalAndSystematicVars();
 }
 
 void HggStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 {
-  var::m_yy.addToStore(truth);
+  // var::m_yy.addToStore(truth);
+  var::m_lly.addToStore(truth);
 
-  // Differential variables
-  var::N_j_30.addToStore(truth);
-  var::N_j_50.addToStore(truth);
-  var::pT_j1_30.addToStore(truth);
-  var::pT_j2_30.addToStore(truth);
-  var::pT_j3_30.addToStore(truth);
-  var::yAbs_j1_30.addToStore(truth);
-  var::yAbs_j2_30.addToStore(truth);
-  var::HT_30.addToStore(truth);
-  var::HTall_30.addToStore(truth);
-  var::m_jj_30.addToStore(truth);
-  var::Dy_j_j_30.addToStore(truth);
-  var::Dphi_j_j_30.addToStore(truth);
-  var::Dphi_j_j_30_signed.addToStore(truth);
-
-  var::pT_hard.addToStore(truth);
   var::N_mu   .addToStore(truth);
   var::N_e    .addToStore(truth);
-  if (!truth) {
-    var::weightN_lep_15.addToStore(truth);
-    var::met_TST  .addToStore(truth);
-    var::sumet_TST.addToStore(truth);
-    var::phi_TST  .addToStore(truth);
-  }
 }
 
 
@@ -648,29 +601,6 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
   eventHandler()->storeVar<char>("isPassedIsolation",passIso);
   eventHandler()->storeVar<char>("isPassedRelPtCuts",passRelativePtCuts(m_preSelPhotons));
   eventHandler()->storeVar<char>("isPassedMassCut",passMyyWindowCut(m_preSelPhotons));
-
-  // Masses with different PV definitions
-  const CP::PhotonPointingTool *pointingTool = photonHandler()->getPointingTool();
-  if (pointingTool) {
-    if (m_cutFlow > AMBIGUITY) {
-      xAOD::PhotonContainer leadPhotons = m_preSelPhotons;
-      leadPhotons.resize(2);
-
-      // Store m_yy using hardest vertex
-      eventHandler()->storeVar<float>("m_yy_hardestVertex",  pointingTool->getCorrectedMass(leadPhotons, eventHandler()->hardestVertexZ()));
-      if (isMC())
-        eventHandler()->storeVar<float>("m_yy_truthVertex", pointingTool->getCorrectedMass(leadPhotons, truthHandler()->truthVertexZ()) );
-
-      // Store m_yy using zCommon
-      eventHandler()->storeVar<float>("m_yy_zCommon",  pointingTool->getCorrectedMass(leadPhotons, xAOD::PVHelpers::getZCommonAndError(eventInfo(), &leadPhotons).first ) );
-      var::zCommon.setValue(xAOD::PVHelpers::getZCommonAndError(eventInfo(), &leadPhotons).first);
-    } else {
-      eventHandler()->storeVar<float>("m_yy_hardestVertex", -99);
-      if (isMC())
-        eventHandler()->storeVar<float>("m_yy_truthVertex", -99);
-      eventHandler()->storeVar<float>("m_yy_zCommon", -99);
-    }
-  }
 
   // Vertex information
   eventHandler()->numberOfPrimaryVertices();
@@ -711,7 +641,6 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
   // Add MC only variables
   if (isMC()) {
     truthHandler()->truthCategory();
-    truthHandler()->isVyyOverlap();
 
     if (config()->isDefined(TString::Format("CrossSection.%d", eventInfo()->mcChannelNumber()))) {
       double xs = getCrossSection(), kf = 1.0, ge = 1.0;
@@ -731,39 +660,6 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
 
 void HggStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
 {
-  // Truth and reco vars
-  var::passMeyCut   .addToStore(truth);
-  var::pT_y1        .addToStore(truth);
-  var::E_y1         .addToStore(truth);
-  var::Zepp         .addToStore(truth);
-
-  var::massTrans    .addToStore(truth);
-  var::pTlepMET     .addToStore(truth);
-
-  var::N_j          .addToStore(truth);
-  var::N_j_central  .addToStore(truth);
-  var::N_j_central30.addToStore(truth);
-  var::pT_j1        .addToStore(truth);
-  var::pT_j2        .addToStore(truth);
-  var::pT_jj        .addToStore(truth);
-  var::m_jj         .addToStore(truth);
-  var::Dy_j_j       .addToStore(truth);
-  var::Dphi_j_j     .addToStore(truth);
-
-  var::DRmin_y_j    .addToStore(truth);
-
-  var::N_e          .addToStore(truth);
-  var::N_mu         .addToStore(truth);
-  var::N_lep        .addToStore(truth);
-  var::m_ee         .addToStore(truth);
-  var::m_mumu       .addToStore(truth);
-
-  if (not truth) {
-    var::Deta_j_j     .addToStore(truth);
-    var::DRmin_y_j_2  .addToStore(truth);
-    var::m_alljet     .addToStore(truth);
-    var::m_alljet_30  .addToStore(truth);
-  }
 
 }
 
@@ -850,17 +746,10 @@ EL::StatusCode  HggStarCutflowAndMxAOD::doTruth()
     truthHandler()->forwardEventShapeDensity();
 
     var::pT_h1.addToStore(truth);
-    var::pT_h2.addToStore(truth);
     var::y_h1.addToStore(truth);
-    var::y_h2.addToStore(truth);
     var::m_h1.addToStore(truth);
-    var::m_h2.addToStore(truth);
 
     eventHandler()->storeTruthVar<int>("N_j_btag30", bjets.size());
-
-    char xsec_ttHsemi = var::N_lep_15.truth() >= 1 && var::N_j_30.truth() >= 3 && bjets.size() >= 1;
-    char xsec_ttHhad = var::N_lep_15.truth() == 0 && var::N_j_30.truth() >= 4 && bjets.size() >= 1;
-    eventHandler()->storeTruthVar<char>("catXS_ttH", xsec_ttHsemi || xsec_ttHhad);
 
     eventHandler()->storeTruthVar<float>("met_NonInt"  , met["NonInt"]->met()); // MET from neutrinos
     eventHandler()->storeTruthVar<float>("sumet_Int"   , met["Int"   ]->sumet()); // SumET from hadrons, etc.
@@ -868,33 +757,6 @@ EL::StatusCode  HggStarCutflowAndMxAOD::doTruth()
 
     // High mass fiducial variables
     static SG::AuxElement::Accessor<float> etcone40("etcone40");
-
-    bool isFiducialLowHighMyy = false, isFiducialExotic = false;
-    if (all_photons.size() > 1) {
-      const xAOD::TruthParticle *gam1 = all_photons[0], *gam2 = all_photons[1];
-
-      isFiducialLowHighMyy = isFiducialExotic = true;
-
-      // Eta cut
-      if (fabs(gam1->eta()) >= 2.37 || fabs(gam2->eta()) >= 2.37)
-        isFiducialLowHighMyy = isFiducialExotic = false;
-      // Isolation cut
-      if (etcone40(*gam1)/(gam1->pt() + 120e3) >= 0.05 ||
-          etcone40(*gam2)/(gam2->pt() + 120e3) >= 0.05 )
-        isFiducialLowHighMyy = isFiducialExotic = false;
-
-      // Scalar relative pT cut
-      if (gam1->pt()/var::m_yy.truth() < 0.4 || gam2->pt()/var::m_yy.truth() < 0.3)
-        isFiducialLowHighMyy = false;
-
-      // Exotic pT cut
-      if (gam1->pt() < 55.0*HG::GeV || gam2->pt() < 55.0*HG::GeV)
-        isFiducialExotic = false;
-
-    }
-
-    eventHandler()->storeTruthVar<char>("isFiducialLowHighMyy", isFiducialLowHighMyy);
-    eventHandler()->storeTruthVar<char>("isFiducialExotic", isFiducialExotic);
 
   }
 

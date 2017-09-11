@@ -2,14 +2,12 @@
 #define HGamGamStar_HggStarCutflowAndMxAOD_H
 
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
+#include "FsrUtils/FsrPhotonTool.h"
+#include "AsgTools/ToolHandle.h"
+#include "ZMassConstraint/IConstraintFit.h"
 
 class HggStarCutflowAndMxAOD : public HgammaAnalysis
 {
-public:
-
-  // variables that don't get filled at submission time should be
-  // protected from being send from the submission node to the worker
-  // node (done by the //!)
 
 private:
 
@@ -61,6 +59,9 @@ private:
   int m_N_xAOD, m_N_DxAOD;
   double m_sumw_xAOD, m_sumw2_xAOD, m_sumw_DxAOD, m_sumw2_DxAOD;
   bool m_newFile;
+
+  // Tools
+  ToolHandle<ZMassConstraint::IConstraintFit> m_massConstraint;
 
   // Containers
   xAOD::PhotonContainer m_allPhotons; //!
