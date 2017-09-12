@@ -460,6 +460,7 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 {
   // var::m_yy.addToStore(truth);
   var::m_lly.addToStore(truth);
+  var::m_ll.addToStore(truth);
 
   var::N_mu   .addToStore(truth);
   var::N_e    .addToStore(truth);
