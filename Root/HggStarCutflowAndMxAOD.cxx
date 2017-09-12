@@ -409,52 +409,6 @@ void HggStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
     eventHandler()->storeVar<char>("isPassedPreselection",Nloose>=2);
   }
 
-  // Cross-section fiducial regions
-  xAOD::JetContainer jets30(SG::VIEW_ELEMENTS);
-  double weightBJet30 = 1.0;
-  static SG::AuxElement::ConstAccessor<float> SF_bjet("SF_MV2c10_FixedCutBEff_70");
-  for (auto jet: m_selJets) {
-    if (jet->pt() < 30.0*HG::GeV) continue;
-    jets30.push_back(jet);
-    weightBJet30 *= SF_bjet(*jet);
-  }
-
-  xAOD::JetContainer bjets30 = jetHandler()->applyBJetSelection(jets30);
-  int nbjet30 = bjets30.size();
-
-  eventHandler()->storeVar<int>("N_j_btag30", nbjet30);
-
-  char xsec_ttHsemi = var::N_lep_15() >= 1 && var::N_j_30() >= 3 && nbjet30 >= 1;
-  char xsec_ttHhad = var::N_lep_15() == 0 && var::N_j_30() >= 4 && nbjet30 >= 1;
-  eventHandler()->storeVar<char>("catXS_ttH", xsec_ttHsemi || xsec_ttHhad);
-  eventHandler()->storeVar<float>("weightCatXS_ttH", weightBJet30*var::weightN_lep_15());
-
-  // Mass measurement variables
-  xAOD::EventInfo *ei = HG::VarHandler::getInstance()->getEventInfoFromStore();
-  static SG::AuxElement::Accessor<float> eta_y1("eta_y1"), eta_y2("eta_y2");
-  static SG::AuxElement::Accessor<float> etas2_y1("etas2_y1"), etas2_y2("etas2_y2");
-  static SG::AuxElement::Accessor<int> conversionType_y1("conversionType_y1"), conversionType_y2("conversionType_y2");
-
-  if (m_selPhotons.size() > 0) {
-    eta_y1(*ei) = m_selPhotons[0]->eta();
-    etas2_y1(*ei) = m_selPhotons[0]->caloCluster()->etaBE(2);
-    conversionType_y1(*ei) = m_selPhotons[0]->conversionType();
-  } else {
-    eta_y1(*ei) = -99;
-    etas2_y1(*ei) = -99;
-    conversionType_y1(*ei) = -99;
-  }
-
-  if (m_selPhotons.size() > 1) {
-    eta_y2(*ei) = m_selPhotons[1]->eta();
-    etas2_y2(*ei) = m_selPhotons[1]->caloCluster()->etaBE(2);
-    conversionType_y2(*ei) = m_selPhotons[1]->conversionType();
-  } else {
-    eta_y2(*ei) = -99;
-    etas2_y2(*ei) = -99;
-    conversionType_y2(*ei) = -99;
-  }
-
   // Add MC only variables
   if (isMC()) {
     if (config()->isDefined(TString::Format("CrossSection.%d", eventInfo()->mcChannelNumber()))) {
@@ -474,36 +428,14 @@ void HggStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
 
 void HggStarCutflowAndMxAOD::writePhotonAllSysVars(bool truth)
 {
-  var::m_yy.addToStore(truth);
-  var::N_j.addToStore(truth);
-  var::pT_y1.addToStore(truth);
 
-  // Differential variables
-  var::N_j_30.addToStore(truth);
-  var::N_j_50.addToStore(truth);
-  var::pT_j1_30.addToStore(truth);
-  var::pT_j2_30.addToStore(truth);
-  var::pT_j3_30.addToStore(truth);
-  var::yAbs_j1_30.addToStore(truth);
-  var::yAbs_j2_30.addToStore(truth);
-  var::HT_30.addToStore(truth);
-  var::HTall_30.addToStore(truth);
-  var::m_jj_30.addToStore(truth);
-  var::Dy_j_j_30.addToStore(truth);
-  var::Dphi_j_j_30.addToStore(truth);
-  var::Dphi_j_j_30_signed.addToStore(truth);
-
-  if (!truth) {
-    var::weightN_lep_15.addToStore(truth);
-    var::met_TST.addToStore(truth);
-  }
 }
 
 void HggStarCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
 {
   // Basic event selection flags
-  var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
-  var::isPassed.setValue(m_goodFakeComb ? true : var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
+  // var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
+  // var::isPassed.setValue(m_goodFakeComb ? true : var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
   if (isMC()) var::isDalitzEvent.setValue(m_isDalitz);
   passJetEventCleaning();
@@ -511,50 +443,6 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   // Basic event weights
   eventHandler()->pileupWeight();
   eventHandler()->vertexWeight();
-
-  // Define the signal jets from the no-jvt cut collection
-  // Jets with pT > 30/50 GeV are used for pT_j1_30, N_j_50, etc.
-  xAOD::JetContainer jvtJets30(SG::VIEW_ELEMENTS), jvtJets50(SG::VIEW_ELEMENTS);
-  for (auto jet: m_jvtJets) {
-    if (jet->pt() < 30.0*HG::GeV)
-      continue;
-    jvtJets30.push_back(jet);
-
-    if (jet->pt() < 50.0*HG::GeV)
-      continue;
-    jvtJets50.push_back(jet);
-  }
-
-  eventHandler()->storeVar<float>("weightJvt", HG::JetHandler::multiplyJvtWeights(&m_jvtJets));
-  eventHandler()->storeVar<float>("weightJvt_30", HG::JetHandler::multiplyJvtWeights(&jvtJets30));
-  eventHandler()->storeVar<float>("weightJvt_50", HG::JetHandler::multiplyJvtWeights(&jvtJets50));
-
-  // Default b-jet information for people outside the framework
-  xAOD::JetContainer bjets = jetHandler()->applyBJetSelection(m_selJets);
-  eventHandler()->storeVar<int>("N_j_btag", bjets.size());
-
-  xAOD::JetContainer jets30(SG::VIEW_ELEMENTS);
-  double weightBJet30 = 1.0;
-  static SG::AuxElement::ConstAccessor<float> SF_bjet("SF_MV2c10_FixedCutBEff_70");
-  for (auto jet: m_selJets) {
-    if (jet->pt() < 30.0*HG::GeV) continue;
-    jets30.push_back(jet);
-    weightBJet30 *= SF_bjet(*jet);
-  }
-
-  xAOD::JetContainer bjets30 = jetHandler()->applyBJetSelection(jets30);
-  int nbjet30 = bjets30.size();
-
-  eventHandler()->storeVar<int>("N_j_btag30", nbjet30);
-
-  char xsec_ttHsemi = var::N_lep_15() >= 1 && var::N_j_30() >= 3 && nbjet30 >= 1;
-  char xsec_ttHhad = var::N_lep_15() == 0 && var::N_j_30() >= 4 && nbjet30 >= 1;
-  eventHandler()->storeVar<char>("catXS_ttH", xsec_ttHsemi || xsec_ttHhad);
-  eventHandler()->storeVar<float>("weightCatXS_ttH", weightBJet30*var::weightN_lep_15());
-
-  //Fake photon weight to be included into final weight. If we have it enabled.
-  if (m_goodFakeComb)
-    var::weight.setValue(weight()*eventHandler()->getVar<float>("weightFakePhotons"));
 
   if (!isSys) {
     // Make sure every trigger is checked, and decorated to EventInfo
@@ -564,9 +452,6 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   // Additional variables useful for non-framework analysis
   int Nloose = m_preSelPhotons.size();
   eventHandler()->storeVar<int>("NLoosePhotons",Nloose);
-  // eventHandler()->storeVar<float>("met_hardVertexTST"  , m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->met  () : m_selMET["TST"]->met  ());
-  // eventHandler()->storeVar<float>("sumet_hardVertexTST", m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->sumet() : m_selMET["TST"]->sumet());
-  // eventHandler()->storeVar<float>("phi_hardVertexTST"  , m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->phi  () : m_selMET["TST"]->phi  ());
 
   writeNominalAndSystematicVars();
 }
@@ -599,7 +484,6 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
   eventHandler()->storeVar<char>("isPassedTriggerMatch",passTrigMatch);
   eventHandler()->storeVar<char>("isPassedPID",passPID);
   eventHandler()->storeVar<char>("isPassedIsolation",passIso);
-  eventHandler()->storeVar<char>("isPassedRelPtCuts",passRelativePtCuts(m_preSelPhotons));
   eventHandler()->storeVar<char>("isPassedMassCut",passMyyWindowCut(m_preSelPhotons));
 
   // Vertex information
@@ -665,26 +549,11 @@ void HggStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
 
 void HggStarCutflowAndMxAOD::writeDetailed()
 {
-  // Just calling these adds the variables to the TStore
-  eventHandler()->selectedVertexSumPt2();
-  eventHandler()->hardestVertexSumPt2();
-#if __RELEASE__ < 2100
-  eventHandler()->eventShapeDensity();
-#endif
-  eventHandler()->centralEventShapeDensity();
-  eventHandler()->forwardEventShapeDensity();
-
   writeDetailedVars();
 }
 
 void HggStarCutflowAndMxAOD::writeDetailedVars(bool truth)
 {
-  var::Dphi_y_y     .addToStore(truth);
-  var::yAbs_j1      .addToStore(truth);
-  var::yAbs_j2      .addToStore(truth);
-  var::pT_yyj       .addToStore(truth);
-  var::Dy_yy_jj     .addToStore(truth);
-  var::m_yyjj       .addToStore(truth);
 
 }
 
@@ -741,19 +610,9 @@ EL::StatusCode  HggStarCutflowAndMxAOD::doTruth()
     if (m_saveDetailed)
       writeDetailedVars(truth);
 
-    truthHandler()->passFiducial(&all_photons); // calls passFiducialKinOnly internally
-    truthHandler()->centralEventShapeDensity();
-    truthHandler()->forwardEventShapeDensity();
-
     var::pT_h1.addToStore(truth);
     var::y_h1.addToStore(truth);
     var::m_h1.addToStore(truth);
-
-    eventHandler()->storeTruthVar<int>("N_j_btag30", bjets.size());
-
-    eventHandler()->storeTruthVar<float>("met_NonInt"  , met["NonInt"]->met()); // MET from neutrinos
-    eventHandler()->storeTruthVar<float>("sumet_Int"   , met["Int"   ]->sumet()); // SumET from hadrons, etc.
-    eventHandler()->storeTruthVar<float>("met_NonHad"  , truthHandler()->getMissingET_NonHad());
 
     // High mass fiducial variables
     static SG::AuxElement::Accessor<float> etcone40("etcone40");
