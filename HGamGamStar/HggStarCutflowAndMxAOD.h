@@ -99,7 +99,7 @@ private:
   }
 
   /// \brief get the "sample ID", meaning run number for data and MC channel number for MC
-  inline int getSampleID() { return isMC() ? eventInfo()->mcChannelNumber() : eventInfo()->runNumber(); }
+  inline int getSampleID() { return HG::isMC() ? eventInfo()->mcChannelNumber() : eventInfo()->runNumber(); }
 
   TH1F* getCutFlowHisto(bool onlyDalitz=false) {
     int ID = getSampleID()*(onlyDalitz?-1:1);

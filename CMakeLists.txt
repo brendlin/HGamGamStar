@@ -9,6 +9,8 @@ atlas_subdir( HGamGamStar )
 atlas_depends_on_subdirs( PUBLIC
                           HGamCore/HGamAnalysisFramework
                           Event/xAOD/xAODCutFlow
+                          PhysicsAnalysis/AnalysisCommon/FsrUtils
+                          PhysicsAnalysis/HiggsPhys/Run2/HZZ/Tools/ZMassConstraint
                           )
 
 # Find the needed external(s):
@@ -28,6 +30,8 @@ atlas_add_library( HGamGamStarLib
                    LINK_LIBRARIES ${ROOT_LIBRARIES}
                    HGamAnalysisFrameworkLib
                    xAODCutFlow
+                   FsrUtilsLib
+                   ZMassConstraintLib
                    )
 
 # Install files from the package:
