@@ -426,7 +426,7 @@ void HggStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
   writePhotonAllSysVars();
 }
 
-void HggStarCutflowAndMxAOD::writePhotonAllSysVars(bool truth)
+void HggStarCutflowAndMxAOD::writePhotonAllSysVars(bool /*truth*/)
 {
 
 }
@@ -493,7 +493,7 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
   eventHandler()->hardestVertexZ();
   eventHandler()->pileupVertexSumPt2(); // also sets pileupVertexZ internally
 
-  if (HG::isMC()) truthHandler()->truthVertexZ();
+  if (HG::isMC()) truthHandler()->vertexZ();
 
   const xAOD::VertexContainer* vertices = nullptr;
   if (event()->contains<xAOD::VertexContainer>("PrimaryVertices")) {
@@ -525,7 +525,7 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
 
   // Add MC only variables
   if (HG::isMC()) {
-    truthHandler()->truthCategory();
+    truthHandler()->catCoup();
 
     if (config()->isDefined(TString::Format("CrossSection.%d", eventInfo()->mcChannelNumber()))) {
       double xs = getCrossSection(), kf = 1.0, ge = 1.0;
@@ -543,7 +543,7 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
 
 }
 
-void HggStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
+void HggStarCutflowAndMxAOD::writeNominalOnlyVars(bool /*truth*/)
 {
 
 }
@@ -553,7 +553,7 @@ void HggStarCutflowAndMxAOD::writeDetailed()
   writeDetailedVars();
 }
 
-void HggStarCutflowAndMxAOD::writeDetailedVars(bool truth)
+void HggStarCutflowAndMxAOD::writeDetailedVars(bool /*truth*/)
 {
 
 }
