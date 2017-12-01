@@ -74,9 +74,11 @@ private:
 
   xAOD::ElectronContainer m_allElectrons; //!
   xAOD::ElectronContainer m_selElectrons; //!
+  xAOD::ElectronContainer m_preSelElectrons; //!
 
   xAOD::MuonContainer m_allMuons; //!
   xAOD::MuonContainer m_selMuons; //!
+  xAOD::MuonContainer m_preSelMuons; //!
 
   xAOD::MissingETContainer m_allMET; //!
   xAOD::MissingETContainer m_selMET; //!
