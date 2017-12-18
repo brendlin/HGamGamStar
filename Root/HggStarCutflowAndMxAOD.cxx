@@ -318,15 +318,12 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
   // Select Z candidate after overlap removal.
   // choose leading OSSF pair
   int nOSSFpair=0;
-  TLorentzVector p_l1, p_l2;
   m_selElectrons = xAOD::ElectronContainer(SG::VIEW_ELEMENTS);
   m_selMuons = xAOD::MuonContainer(SG::VIEW_ELEMENTS);
   if(m_preSelElectrons.size()>=2){
     for(int ilepton1=0; ilepton1<((int)m_preSelElectrons.size()-1); ilepton1++){
       for(int ilepton2=ilepton1+1; ilepton2< (int)m_preSelElectrons.size(); ilepton2++){
         if(m_preSelElectrons[ilepton1]->charge() + m_preSelElectrons[ilepton2]->charge() == 0){
-          p_l1.SetPtEtaPhiM(m_preSelElectrons[ilepton1]->pt(), m_preSelElectrons[ilepton1]->eta(), m_preSelElectrons[ilepton1]->phi(), m_preSelElectrons[ilepton1]->m());
-          p_l2.SetPtEtaPhiM(m_preSelElectrons[ilepton2]->pt(), m_preSelElectrons[ilepton2]->eta(), m_preSelElectrons[ilepton2]->phi(), m_preSelElectrons[ilepton2]->m());
           nOSSFpair++;
           m_selElectrons.push_back(m_preSelElectrons[ilepton1]);
           m_selElectrons.push_back(m_preSelElectrons[ilepton2]);
@@ -339,8 +336,6 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
     for(int ilepton1=0; ilepton1<((int)m_preSelMuons.size()-1); ilepton1++){
       for(int ilepton2=ilepton1+1; ilepton2< (int)m_preSelMuons.size(); ilepton2++){
         if(m_preSelMuons[ilepton1]->charge() + m_preSelMuons[ilepton2]->charge() == 0){
-          p_l1.SetPtEtaPhiM(m_preSelMuons[ilepton1]->pt(), m_preSelMuons[ilepton1]->eta(), m_preSelMuons[ilepton1]->phi(), m_preSelMuons[ilepton1]->m());
-          p_l2.SetPtEtaPhiM(m_preSelMuons[ilepton2]->pt(), m_preSelMuons[ilepton2]->eta(), m_preSelMuons[ilepton2]->phi(), m_preSelMuons[ilepton2]->m());
           nOSSFpair++;
           m_selMuons.push_back(m_preSelMuons[ilepton1]);
           m_selMuons.push_back(m_preSelMuons[ilepton2]);
