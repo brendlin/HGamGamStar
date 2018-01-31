@@ -253,13 +253,13 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
 
   // retrieve electrons, muons
   m_allElectrons = electronHandler()->getCorrectedContainer();
-  m_selElectrons = electronHandler()->applySelection(m_allElectrons);
+  m_preSelElectrons = electronHandler()->applySelection(m_allElectrons);
 
   m_allMuons = muonHandler()->getCorrectedContainer();
   xAOD::MuonContainer dirtyMuons = muonHandler()->applySelection(m_allMuons);
 
   //==== CUT 4 : 2 SF leptons (before OR) ====
-  if (m_selElectrons.size() < 2 && dirtyMuons.size() < 2) return TWO_SF_LEPTONS;
+  if (m_preSelElectrons.size() < 2 && dirtyMuons.size() < 2) return TWO_SF_LEPTONS;
 
   // Get object containers
   m_allPhotons = photonHandler()->getCorrectedContainer();
@@ -306,12 +306,60 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
   m_selJets = jetHandler()->applySelection(m_allJets);
 
   // Removes overlap with candidate diphoton system, and any additional tight photons (if option set)
-  overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_selElectrons, dirtyMuons);
+  overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_preSelElectrons, dirtyMuons);
+
+  //above doesn't have option to remove photon overlapping with lepton
+  overlapHandler()->removeOverlap(m_selPhotons, m_preSelElectrons, 0.4);
+  overlapHandler()->removeOverlap(m_selPhotons, dirtyMuons, 0.4);
 
   // Muon cleaning should be done after overlap removal
-  m_selMuons = muonHandler()->applyCleaningSelection(dirtyMuons);
+  m_preSelMuons = muonHandler()->applyCleaningSelection(dirtyMuons);
 
   // Select Z candidate after overlap removal.
+  // choose leading OSSF pair
+  int nOSSFpair=0;
+  m_selElectrons = xAOD::ElectronContainer(SG::VIEW_ELEMENTS);
+  m_selMuons = xAOD::MuonContainer(SG::VIEW_ELEMENTS);
+  if(m_preSelElectrons.size()>=2){
+    for(int ilepton1=0; ilepton1<((int)m_preSelElectrons.size()-1); ilepton1++){
+      for(int ilepton2=ilepton1+1; ilepton2< (int)m_preSelElectrons.size(); ilepton2++){
+        if(m_preSelElectrons[ilepton1]->charge() + m_preSelElectrons[ilepton2]->charge() == 0){
+          nOSSFpair++;
+          m_selElectrons.push_back(m_preSelElectrons[ilepton1]);
+          m_selElectrons.push_back(m_preSelElectrons[ilepton2]);
+          break;
+        }
+      }
+    }
+  }
+  if(m_preSelMuons.size()>=2){
+    for(int ilepton1=0; ilepton1<((int)m_preSelMuons.size()-1); ilepton1++){
+      for(int ilepton2=ilepton1+1; ilepton2< (int)m_preSelMuons.size(); ilepton2++){
+        if(m_preSelMuons[ilepton1]->charge() + m_preSelMuons[ilepton2]->charge() == 0){
+          nOSSFpair++;
+          m_selMuons.push_back(m_preSelMuons[ilepton1]);
+          m_selMuons.push_back(m_preSelMuons[ilepton2]);
+          break;
+        }
+      }
+    }
+  }
+  if (nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
+
+  if (m_selPhotons.size()!=1) return ONE_PHOTON_POSTOR;
+
+  //trigger matching
+  static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
+  //if ( requireTriggerMatch && !passTriggerMatch(NULL, &m_selElectrons, &m_selMuons, NULL) ) return TRIG_MATCH; //doesn't work
+  if ( requireTriggerMatch){
+    StrV m_requiredTriggers = config()->getStrV("EventHandler.RequiredTriggers");
+    int itrigmatch=0;
+    for (auto trig: m_requiredTriggers) {
+      if (passTriggerMatch(trig, NULL, &m_selElectrons, &m_selMuons, NULL) ) itrigmatch++;
+    }
+    if (itrigmatch==0) return TRIG_MATCH;
+  }
+
 
   //==== CUT 7 : Require two loose photons to pass trigger matching
   // static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
@@ -461,6 +509,8 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   // var::m_yy.addToStore(truth);
   var::m_lly.addToStore(truth);
   var::m_ll.addToStore(truth);
+  var::pt_lly.addToStore(truth);
+  var::pt_ll.addToStore(truth);
 
   var::N_mu   .addToStore(truth);
   var::N_e    .addToStore(truth);
@@ -500,23 +550,23 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
     if (event()->retrieve(vertices,"PrimaryVertices").isFailure())
       HG::fatal("Error retrieving PrimaryVertices, exiting");
 
-    std::vector<float> verticesZ;
-    std::vector<float> verticesScore;
-    static SG::AuxElement::ConstAccessor<float> vertexScore("vertexScore");
+    //std::vector<float> verticesZ;
+    //std::vector<float> verticesScore;
+    //static SG::AuxElement::ConstAccessor<float> vertexScore("vertexScore");
 
-    if (vertices->size() == 1) {
-      // DxAODs in p2669 have issues with only dummy vertex and vertex score decoration
-      verticesZ.push_back(-999);
-      verticesScore.push_back(-99);
-    } else {
-      for (auto vertex : *vertices){
-        verticesZ.push_back(vertex->z());
-        verticesScore.push_back(vertexScore(*vertex));
-      }
-    }
+    //if (vertices->size() == 1) {
+    //  // DxAODs in p2669 have issues with only dummy vertex and vertex score decoration
+    //  verticesZ.push_back(-999);
+    //  verticesScore.push_back(-99);
+    //} else {
+    //  for (auto vertex : *vertices){
+    //    verticesZ.push_back(vertex->z());
+    //    verticesScore.push_back(vertexScore(*vertex));
+    //  }
+    //}
 
-    eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesZ"    , verticesZ    ); 
-    eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesScore", verticesScore); 
+    //eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesZ"    , verticesZ    ); 
+    //eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesScore", verticesScore); 
   }
 
   // Bunch train information
