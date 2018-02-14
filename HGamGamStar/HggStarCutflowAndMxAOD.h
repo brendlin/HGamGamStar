@@ -106,14 +106,14 @@ private:
   TH1F* getCutFlowHisto(bool onlyDalitz=false) {
     int ID = getSampleID()*(onlyDalitz?-1:1);
     if (TH1F *h = m_cFlowHistos[ID]) return h;
-    m_cFlowHistos[ID] = makeCutFlowHisto(ID,onlyDalitz?"":"_onlyDalitz");
+    m_cFlowHistos[ID] = makeCutFlowHisto(ID,onlyDalitz?"_onlyDalitz":"");
     return m_cFlowHistos[ID];
   }
 
   TH1F* getCutFlowWeightedHisto(bool onlyDalitz=false) {
     int ID = getSampleID()*(onlyDalitz?-1:1);
     if (TH1F *h = m_cFlowHistosWeighted[ID]) return h;
-    m_cFlowHistosWeighted[ID] = makeCutFlowHisto(ID,onlyDalitz?"_weighted":"_onlyDalitz_weighted");
+    m_cFlowHistosWeighted[ID] = makeCutFlowHisto(ID,onlyDalitz?"_onlyDalitz_weighted":"_weighted");
     return m_cFlowHistosWeighted[ID];
   }
 
