@@ -266,6 +266,7 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
   m_preSelPhotons = photonHandler()->applyPreSelection(m_allPhotons);
   m_selPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
   if (m_preSelPhotons.size()  ) m_selPhotons.push_back(m_preSelPhotons[0]);
+  if (m_preSelPhotons.size() > 1) { m_selPhotons.push_back(m_preSelPhotons[1]); }
 
   int nloose=0, namb=0, nHV=0;
   for (auto gam:m_allPhotons) {
@@ -327,7 +328,6 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
           nOSSFpair++;
           m_selElectrons.push_back(m_preSelElectrons[ilepton1]);
           m_selElectrons.push_back(m_preSelElectrons[ilepton2]);
-          break;
         }
       }
     }
@@ -339,7 +339,6 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
           nOSSFpair++;
           m_selMuons.push_back(m_preSelMuons[ilepton1]);
           m_selMuons.push_back(m_preSelMuons[ilepton2]);
-          break;
         }
       }
     }
