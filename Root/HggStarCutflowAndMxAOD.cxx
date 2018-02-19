@@ -345,7 +345,7 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
   }
   if (nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
 
-  if (m_selPhotons.size()!=1) return ONE_PHOTON_POSTOR;
+  if (m_selPhotons.size()==0) return ONE_PHOTON_POSTOR;
 
   //trigger matching
   static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
