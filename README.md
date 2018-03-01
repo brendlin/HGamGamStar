@@ -12,15 +12,14 @@ If you are running outside of the lxplus network, it is suggested that you creat
 
 To checkout the necessary packages, do:
 
-    git clone ssh://git@gitlab.cern.ch:7999/brendlin/HGamGamStar.git
-    git clone --recursive ssh://git@gitlab.cern.ch:7999/atlas-hgam-sw/HGamCore.git 
+    git clone --recursive ssh://git@gitlab.cern.ch:7999/brendlin/HGamGamStar.git
 
 Compiling
 ---------
 
-To compile in Rel 21.2.4, do:
+To compile in Rel 21.2.14, do:
 
-    asetup AnalysisBase,21.2.4,here # only needed once per login session
+    asetup AnalysisBase,21.2.14,here # only needed once per login session
     cd $TestArea/../build
     cmake ../source
     cmake --build .
@@ -37,3 +36,23 @@ To see more details on how to run, look at `HGamCore/HGamAnalysisFramework/Root/
     runHggStarCutflowAndMxAOD  InputFileList: myFileList.txt  HGamGamStar/HggStarMxAOD.config
     
 The jobs follow the same convention as [the HGam tutorial twiki.](https://twiki.cern.ch/twiki/bin/viewauth/AtlasProtected/HGamAnalysisFrameworkTutorial).
+
+Updating the HGamCore Tag
+---------
+To update the HGamCore tag, do:
+```
+cd HGamGamStar/HGamCore
+git checkout v1.1.2-h017
+cd ../
+git submodule update --init --recursive
+# don't forget to commit to the HGamGamStar repository.
+```
+
+Unfortunately, the commit hash is saved instead of the tag name, so you will
+have to match the has to the tag name if you want to see which one is currently
+used. For convenience, here is a list of the tags and their corresponding
+hashes used in this package:
+
+| HGamCore tag | HGamCore commit hash |
+| ------------ | ----------- |
+| v1.1.2-h017  | cb2c8452    |

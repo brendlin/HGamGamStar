@@ -1,0 +1,3 @@
+[submodule "HGamCore"]
+	path = HGamCore
+	url = ../../atlas-hgam-sw/HGamCore
