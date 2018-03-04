@@ -43,3 +43,5 @@ atlas_install_data( data/* )
 atlas_add_executable( runHggStarCutflowAndMxAOD util/runHggStarCutflowAndMxAOD.cxx
                       INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
                       LINK_LIBRARIES ${ROOT_LIBRARIES} HGamGamStarLib )
+
+atlas_install_scripts( scripts/runJob.py )
