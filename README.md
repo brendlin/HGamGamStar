@@ -17,9 +17,9 @@ To checkout the necessary packages, do:
 Compiling
 ---------
 
-To compile in Rel 21.2.20, do:
+To compile in Rel 21.2.22, do:
 
-    asetup AnalysisBase,21.2.20,here # only needed once per login session
+    asetup AnalysisBase,21.2.22,here # only needed once per login session
     cd $TestArea/../build
     cmake ../source
     cmake --build .
@@ -42,7 +42,7 @@ Updating the HGamCore Tag
 To update the HGamCore tag, do:
 ```
 cd HGamGamStar/HGamCore
-git checkout v1.1.2-h017
+git checkout v1.3.0-h019
 git submodule update --init --recursive
 # don't forget to commit to the HGamGamStar repository.
 ```
@@ -56,3 +56,4 @@ hashes used in this package:
 | ------------ | ----------- |
 | v1.1.2-h017  | cb2c8452    |
 | v1.2.0-h018  | 04d6a778    |
+| v1.3.0-h019  | 76779324    |
