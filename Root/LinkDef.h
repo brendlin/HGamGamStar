@@ -1,5 +1,5 @@
 #include <HGamGamStar/MxAODTool.h>
-#include <HGamGamStar/HggStarCutflowAndMxAOD.h>
+#include <HGamGamStar/ZyCutflowAndMxAOD.h>
 #include <HGamGamStar/HiggsGamGamStarCutflowAndMxAOD.h>
 
 #ifdef __CINT__
@@ -14,6 +14,6 @@
 
 #ifdef __CINT__
 #pragma link C++ class MxAODTool+;
-#pragma link C++ class HggStarCutflowAndMxAOD+;
+#pragma link C++ class ZyCutflowAndMxAOD+;
 #pragma link C++ class HiggsGamGamStarCutflowAndMxAOD+;
 #endif

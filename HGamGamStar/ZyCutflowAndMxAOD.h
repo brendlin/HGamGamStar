@@ -1,12 +1,13 @@
-#ifndef HGamGamStar_HggStarCutflowAndMxAOD_H
-#define HGamGamStar_HggStarCutflowAndMxAOD_H
+#ifndef HGamGamStar_ZyCutflowAndMxAOD_H
+#define HGamGamStar_ZyCutflowAndMxAOD_H
 
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
+#include "HGamGamStar/MxAODTool.h"
 #include "FsrUtils/FsrPhotonTool.h"
 #include "AsgTools/ToolHandle.h"
 #include "ZMassConstraint/IConstraintFit.h"
 
-class HggStarCutflowAndMxAOD : public HgammaAnalysis
+class ZyCutflowAndMxAOD : public MxAODTool
 {
 
 private:
@@ -132,11 +133,6 @@ private:
   EL::StatusCode doReco(bool isSys = false);
   EL::StatusCode doTruth();
 
-  /// Declares list of output variables to be written.
-  /// configKey defines the key that specifies the list of variable names
-  /// the name in the output file will be of the form outName+"Aux."+VARNAME
-  void declareOutputVariables(TString outName, TString configKey, StrV extra = {}, StrV ignore = {});
-
   double diphotonMassResolution(xAOD::PhotonContainer &gams) {
     static SG::AuxElement::Accessor<float> dE("relEreso");
     if (gams.size()<2) return -99.0;
@@ -150,9 +146,9 @@ private:
 public:
 
   // this is a standard constructor
-  HggStarCutflowAndMxAOD() { }
-  HggStarCutflowAndMxAOD(const char *name);
-  virtual ~HggStarCutflowAndMxAOD();
+  ZyCutflowAndMxAOD() { }
+  ZyCutflowAndMxAOD(const char *name);
+  virtual ~ZyCutflowAndMxAOD();
 
   // these are the functions inherited from HgammaAnalysis
   virtual EL::StatusCode createOutput();
@@ -173,7 +169,7 @@ public:
   void writeDetailedVars(bool truth = false);
 
   // this is needed to distribute the algorithm to the workers
-  ClassDef(HggStarCutflowAndMxAOD, 1);
+  ClassDef(ZyCutflowAndMxAOD, 1);
 };
 
-#endif // HGamGamStar_HggStarCutflowAndMxAOD_H
+#endif // HGamGamStar_ZyCutflowAndMxAOD_H

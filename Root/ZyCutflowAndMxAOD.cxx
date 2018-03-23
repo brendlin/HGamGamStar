@@ -1,4 +1,4 @@
-#include "HGamGamStar/HggStarCutflowAndMxAOD.h"
+#include "HGamGamStar/ZyCutflowAndMxAOD.h"
 #include "HGamAnalysisFramework/HGamVariables.h"
 #include <EventLoop/Worker.h>
 
@@ -11,38 +11,16 @@
 #include "HGamGamStar/HggStarVariables.h"
 
 // this is needed to distribute the algorithm to the workers
-ClassImp(HggStarCutflowAndMxAOD)
+ClassImp(ZyCutflowAndMxAOD)
 
-HggStarCutflowAndMxAOD::HggStarCutflowAndMxAOD(const char *name)
-: HgammaAnalysis(name), m_goodFakeComb(false), m_N_xAOD(0), m_N_DxAOD(0),
+ZyCutflowAndMxAOD::ZyCutflowAndMxAOD(const char *name)
+: MxAODTool(name), m_goodFakeComb(false), m_N_xAOD(0), m_N_DxAOD(0),
   m_sumw_xAOD(0.0), m_sumw2_xAOD(0.0), m_sumw_DxAOD(0.0), m_sumw2_DxAOD(0.0) { }
 
-HggStarCutflowAndMxAOD::~HggStarCutflowAndMxAOD() {}
+ZyCutflowAndMxAOD::~ZyCutflowAndMxAOD() {}
 
-void HggStarCutflowAndMxAOD::declareOutputVariables(TString outName, TString configKey, StrV extra, StrV ignore) {
-  if (config()->isDefined(configKey)) {
-    TString vars = config()->getStr(configKey).Data();
 
-    if (m_saveDetailed) {
-      TString detailKey = configKey.ReplaceAll("Variables", "DetailedVariables");
-      if (config()->isDefined(detailKey)) {
-        TString detailed = config()->getStr(detailKey);
-        vars += "." + detailed;
-      }
-    }
-
-    for (TString val: extra)
-      vars += val;
-
-    for (TString val: ignore)
-      vars = vars.ReplaceAll(val, "");
-
-    event()->setAuxItemList((outName+"Aux.").Data(), vars.Data());
-  }
-  else HG::fatal("Cannot find "+configKey);
-}
-
-EL::StatusCode HggStarCutflowAndMxAOD::createOutput()
+EL::StatusCode ZyCutflowAndMxAOD::createOutput()
 {
   // Read the output branch names - add option to make this configurable in future ?
   m_photonContainerName = "HGam"+config()->getStr("PhotonHandler.ContainerName");
@@ -147,7 +125,7 @@ EL::StatusCode HggStarCutflowAndMxAOD::createOutput()
   return EL::StatusCode::SUCCESS;
 }
 
-EL::StatusCode HggStarCutflowAndMxAOD::execute()
+EL::StatusCode ZyCutflowAndMxAOD::execute()
 {
   // Needed for all underlaying tools to be working corectly!
   HgammaAnalysis::execute();
@@ -200,7 +178,7 @@ EL::StatusCode HggStarCutflowAndMxAOD::execute()
       if (sys.name() == "") continue;
 
       // apply the systmeatic variation and calculate the outupt
-      CP_CHECK("HggStarCutflowAndMxAOD::execute()", applySystematicVariation(sys));
+      CP_CHECK("ZyCutflowAndMxAOD::execute()", applySystematicVariation(sys));
       m_cutFlow = cutflow();
       doReco(true);
     }
@@ -219,7 +197,7 @@ EL::StatusCode HggStarCutflowAndMxAOD::execute()
 }
 
 // Returns value of the last cut passed in the cut sequence
-HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
+ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
 {
   //Check if there are two good fakes. Needed so we dont slim the event at trigger.
   m_goodFakeComb = false;
@@ -383,7 +361,7 @@ HggStarCutflowAndMxAOD::CutEnum HggStarCutflowAndMxAOD::cutflow()
   return PASSALL;
 }
 
-EL::StatusCode  HggStarCutflowAndMxAOD::doReco(bool isSys){
+EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
   // Do anything you missed in cutflow, and save the objects.
 
   // Rebuild MET using selected objects
@@ -443,7 +421,7 @@ EL::StatusCode  HggStarCutflowAndMxAOD::doReco(bool isSys){
   return EL::StatusCode::SUCCESS;
 }
 
-void HggStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
+void ZyCutflowAndMxAOD::writePhotonAllSys(bool isSys)
 {
   // Basic event selection flags
   var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
@@ -473,12 +451,12 @@ void HggStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
   writePhotonAllSysVars();
 }
 
-void HggStarCutflowAndMxAOD::writePhotonAllSysVars(bool /*truth*/)
+void ZyCutflowAndMxAOD::writePhotonAllSysVars(bool /*truth*/)
 {
 
 }
 
-void HggStarCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
+void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
 {
   // Basic event selection flags
   // var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
@@ -500,10 +478,25 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   int Nloose = m_preSelPhotons.size();
   eventHandler()->storeVar<int>("NLoosePhotons",Nloose);
 
+  //store passAll flag
+  bool passPt = false, passPID = false, passIso = false, passMll = false, passLPt = false, passAll = false;
+  if (m_selPhotons.size()>0){
+    xAOD::Photon *y1 = m_selPhotons[0];
+    passPt  = y1->pt() >= 15.0 * HG::GeV;
+    passPID = photonHandler()->passPIDCut(y1);
+    passIso = photonHandler()->passIsoCut(y1, HG::Iso::FixedCutLoose);
+  }
+  passMll = var::m_ll()>=40.0 * HG::GeV;
+  if ( m_selElectrons.size()>0 ) passLPt = m_selElectrons[0]->pt() >= 30.0 * HG::GeV && m_selElectrons[1]->pt() >= 25.0 * HG::GeV ;
+  else if (m_selMuons.size()>0 ) passLPt = m_selMuons[0]->pt() >= 30.0 * HG::GeV && m_selMuons[1]->pt() >= 25.0 * HG::GeV;
+  passAll = passPt && passPID && passIso && passMll && var::cutFlow()>14 && passLPt;
+  eventHandler()->storeVar<char>("isPassedZy", passAll);
+
+
   writeNominalAndSystematicVars();
 }
 
-void HggStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
+void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 {
   // var::m_yy.addToStore(truth);
   var::m_lly.addToStore(truth);
@@ -516,7 +509,7 @@ void HggStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 }
 
 
-void HggStarCutflowAndMxAOD::writeNominalOnly()
+void ZyCutflowAndMxAOD::writeNominalOnly()
 {
   eventHandler()->mu();
   eventHandler()->runNumber();
@@ -592,22 +585,22 @@ void HggStarCutflowAndMxAOD::writeNominalOnly()
 
 }
 
-void HggStarCutflowAndMxAOD::writeNominalOnlyVars(bool /*truth*/)
+void ZyCutflowAndMxAOD::writeNominalOnlyVars(bool /*truth*/)
 {
 
 }
 
-void HggStarCutflowAndMxAOD::writeDetailed()
+void ZyCutflowAndMxAOD::writeDetailed()
 {
   writeDetailedVars();
 }
 
-void HggStarCutflowAndMxAOD::writeDetailedVars(bool /*truth*/)
+void ZyCutflowAndMxAOD::writeDetailedVars(bool /*truth*/)
 {
 
 }
 
-EL::StatusCode  HggStarCutflowAndMxAOD::doTruth()
+EL::StatusCode  ZyCutflowAndMxAOD::doTruth()
 {
   // Truth particles
   xAOD::TruthParticleContainer all_photons   = truthHandler()->getPhotons();
@@ -677,7 +670,7 @@ EL::StatusCode  HggStarCutflowAndMxAOD::doTruth()
 
 
 
-TH1F* HggStarCutflowAndMxAOD::makeCutFlowHisto(int id, TString suffix) {
+TH1F* ZyCutflowAndMxAOD::makeCutFlowHisto(int id, TString suffix) {
   int Ncuts = s_cutDescs.size();
 
   // create meaningful name of the cutflow histo
@@ -704,7 +697,7 @@ TH1F* HggStarCutflowAndMxAOD::makeCutFlowHisto(int id, TString suffix) {
   return h;
 }
 
-void HggStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
+void ZyCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
   getCutFlowHisto()->Fill(cut);
   if (HG::isData()) return;
   getCutFlowWeightedHisto()->Fill(cut,w);
@@ -714,7 +707,7 @@ void HggStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
 }
 
 
-EL::StatusCode HggStarCutflowAndMxAOD::finalize() {
+EL::StatusCode ZyCutflowAndMxAOD::finalize() {
   printf("\nEvent selection cut flow:\n");
   printCutFlowHistos();
 
@@ -724,7 +717,7 @@ EL::StatusCode HggStarCutflowAndMxAOD::finalize() {
   return EL::StatusCode::SUCCESS;
 }
 
-EL::StatusCode HggStarCutflowAndMxAOD::fileExecute() {
+EL::StatusCode ZyCutflowAndMxAOD::fileExecute() {
   HgammaAnalysis::fileExecute();
 
   // Tell the code a new file has just been opened
@@ -791,7 +784,7 @@ EL::StatusCode HggStarCutflowAndMxAOD::fileExecute() {
   return EL::StatusCode::SUCCESS;
 }
 
-void HggStarCutflowAndMxAOD::printCutFlowHistos() {
+void ZyCutflowAndMxAOD::printCutFlowHistos() {
   for ( auto entry : m_cFlowHistos ) {
     printf("\n%s %d cut-flow%s\n",HG::isMC()?"MC sample":"Data run",
            std::abs(entry.first),entry.first>0?", all events":", only Dalitz events");
@@ -805,7 +798,7 @@ void HggStarCutflowAndMxAOD::printCutFlowHistos() {
   printf("\n");
 }
 
-void HggStarCutflowAndMxAOD::printCutFlowHisto(TH1F *h, int Ndecimals) {
+void ZyCutflowAndMxAOD::printCutFlowHisto(TH1F *h, int Ndecimals) {
   TString format("  %-24s%10."); format+=Ndecimals; format+="f%11.2f%%%11.2f%%\n";
   int all_bin = h->FindBin(ALLEVTS);
   printf("  %-24s%10s%12s%12s\n","Event selection","Nevents","Cut rej.","Tot. eff.");
