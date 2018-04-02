@@ -225,6 +225,32 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_yStar_undressed_h1 : public VarBase<float> {
+  public:
+  m_yStar_undressed_h1() : VarBase("m_yStar_undressed_h1") { m_default = -99; m_truthOnly = true; }
+    ~m_yStar_undressed_h1() { }
+
+    // "undressed" here means no final-state radiation off of the leptons included.
+
+    float calculateValue(bool truth)
+    {
+      if (not truth)
+      { return m_default; }
+
+      const xAOD::TruthParticleContainer *higgses = (xAOD::TruthParticleContainer*)HG::VarHandler::getInstance()->getHiggsBosons();
+
+      if (higgses->size() == 0) return m_default;
+
+      TruthPtcls decayProds = getHyyStarSignalDecayProducts((*higgses)[0]);
+      TruthPtcls childleps = FilterLeptons(decayProds);
+
+      if (childleps.size() != 2) return m_default;
+
+      return (childleps[0]->p4() + childleps[1]->p4()).M();
+    }
+  };
+
+  //____________________________________________________________________________
 
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
                            double& return_mll,double closest_to=91188.);
@@ -245,6 +271,7 @@ namespace var {
   extern HG::ystar_pdg_flavor ystar_pdg_flavor;
   extern HG::isNonHyyStarHiggs isNonHyyStarHiggs;
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
+  extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
 }
 
 

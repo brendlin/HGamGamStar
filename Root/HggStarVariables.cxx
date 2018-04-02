@@ -13,6 +13,7 @@ namespace var {
   HG::ystar_pdg_flavor ystar_pdg_flavor;
   HG::isNonHyyStarHiggs isNonHyyStarHiggs;
   HG::pT_yDirect_h1 pT_yDirect_h1;
+  HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
 }
 
 void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
@@ -52,6 +53,7 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
 HG::TruthPtcls HG::getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl)
 {
   // Recursive, starting from the Higgs
+  // STABLE particles returned.
 
   if (ptcl == nullptr) { HG::fatal("getHyyStarSignalDecayProducts FATAL: particle is NULL"); }
 

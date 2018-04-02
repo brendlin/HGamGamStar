@@ -299,7 +299,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   m_allJets = jetHandler()->getCorrectedContainer();
   m_selJets = jetHandler()->applySelection(m_allJets);
 
-  // Removes overlap with candidate diphoton system, and any additional tight photons (if option set)
+  // Removes overlap with candidate photon, and any additional tight photons (if option set)
   overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_preSelElectrons, dirtyMuons);
 
   //above doesn't have option to remove photon overlapping with lepton
@@ -334,8 +334,8 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
   //trigger matching
   static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
-  //if ( requireTriggerMatch && !passTriggerMatch(NULL, &m_selElectrons, &m_selMuons, NULL) ) return TRIG_MATCH; //doesn't work
-  if ( requireTriggerMatch){
+
+  if ( requireTriggerMatch ){
     StrV m_requiredTriggers = config()->getStrV("EventHandler.RequiredTriggers");
     int itrigmatch=0;
     for (auto trig: m_requiredTriggers) {
@@ -653,6 +653,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
     var::deltaR_l1l2_h1.addToStore(truth);
     var::ystar_pdg_flavor.addToStore(truth);
     var::pT_yDirect_h1.addToStore(truth);
+    var::m_yStar_undressed_h1.addToStore(truth);
 
     // High mass fiducial variables
     static SG::AuxElement::Accessor<float> etcone40("etcone40");
