@@ -132,9 +132,7 @@ EL::StatusCode ZyCutflowAndMxAOD::execute()
     // Initialize cutflow histograms by calling them.
     getCutFlowHisto();
     if (HG::isMC()) {
-      getCutFlowHisto(true);
       getCutFlowWeightedHisto();
-      getCutFlowWeightedHisto(true);
     }
 
     // Fill the AOD and DAOD entries of the cutflow histograms.
@@ -148,10 +146,6 @@ EL::StatusCode ZyCutflowAndMxAOD::execute()
 
   // apply cuts. Returned value will be the last passed cut
   m_cutFlow = cutflow();
-
-  // flag current event as a MC Dalitz event
-  // (needed for cut-flow histograms)
-  m_isDalitz = HG::isMC() && eventHandler()->isDalitz();
 
   // fill the cut-flow histograms up to tight selection
   double wi = weightInitial();
@@ -432,7 +426,6 @@ void ZyCutflowAndMxAOD::writePhotonAllSys(bool isSys)
   var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
   var::isPassed.setValue(m_goodFakeComb ? true : eventHandler()->pass() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
-  if (HG::isMC()) var::isDalitzEvent.setValue(m_isDalitz);
 
   if (!isSys) {
     int Nloose = m_preSelPhotons.size();
@@ -467,7 +460,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   // var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
   // var::isPassed.setValue(m_goodFakeComb ? true : var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
-  if (HG::isMC()) var::isDalitzEvent.setValue(m_isDalitz);
+
   passJetEventCleaning();
 
   // Basic event weights
@@ -679,9 +672,7 @@ void ZyCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
   getCutFlowHisto()->Fill(cut);
   if (HG::isData()) return;
   getCutFlowWeightedHisto()->Fill(cut,w);
-  if (!m_isDalitz) return;
-  getCutFlowHisto(true)->Fill(cut);
-  getCutFlowWeightedHisto(true)->Fill(cut,w);
+  return;
 }
 
 

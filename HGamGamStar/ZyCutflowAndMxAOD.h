@@ -39,9 +39,6 @@ private:
   // what skimming to apply
   int m_skimCut;
 
-  // whether it's a Dalitz event
-  bool m_isDalitz;
-
   // whether to apply systematics, save the differential variables and the truth
   bool m_applySystematics, m_saveObjects, m_saveDetailed, m_saveTruthObjects, m_saveTruthVars;
   bool m_allowMoreThanTwoPhotons;
@@ -83,18 +80,17 @@ private:
 private:
   /// helper methods to create, fill and print the cut flow
 
-  TH1F* getCutFlowHisto(bool onlyDalitz=false) {
-    int ID = getSampleID()*(onlyDalitz?-1:1);
+  TH1F* getCutFlowHisto() {
+    int ID = getSampleID();
     if (TH1F *h = m_cFlowHistos[ID]) return h;
-    m_cFlowHistos[ID] = makeCutFlowHisto(ID, s_cutDescs, onlyDalitz?"_onlyDalitz":"");
+    m_cFlowHistos[ID] = makeCutFlowHisto(ID, s_cutDescs);
     return m_cFlowHistos[ID];
   }
 
-  TH1F* getCutFlowWeightedHisto(bool onlyDalitz=false) {
-    int ID = getSampleID()*(onlyDalitz?-1:1);
+  TH1F* getCutFlowWeightedHisto() {
+    int ID = getSampleID();
     if (TH1F *h = m_cFlowHistosWeighted[ID]) return h;
-    m_cFlowHistosWeighted[ID] = makeCutFlowHisto(ID, s_cutDescs,
-                                                 onlyDalitz?"_onlyDalitz_weighted":"_weighted");
+    m_cFlowHistosWeighted[ID] = makeCutFlowHisto(ID, s_cutDescs, "_weighted");
     return m_cFlowHistosWeighted[ID];
   }
 
