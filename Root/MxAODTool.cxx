@@ -70,10 +70,11 @@ EL::StatusCode MxAODTool::fillCutFlowWithBookkeeperInfo()
   if (amdt.inputMetaStore()->retrieve(fmd, "FileMetaData").isFailure())
   { HG::fatal("Cannot find FileMetaData in the input file."); }
 
+  // Get the dataType (e.g. "StreamDAOD_HIGG1D1")
   std::string dataType;
   fmd->value(xAOD::FileMetaData::dataType, dataType);
-  std::cout << "dataType: " << dataType << std::endl;
 
+  // Get the DAOD name (e.g. "HIGG1D1")
   TString str_daod = dataType;
   str_daod.ReplaceAll("StreamDAOD_", "");
 
