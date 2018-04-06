@@ -142,18 +142,34 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
       return EL::StatusCode::FAILURE;
     }
 
+    m_crossSectionBRfilterEff = -1;
+
+    if (HG::isMC()) {
+      // We want the code to fail if the cross section is not defined.
+      m_crossSectionBRfilterEff = getCrossSection();
+
+      if (config()->isDefined(Form("kFactor.%d", eventInfo()->mcChannelNumber())))
+      { m_crossSectionBRfilterEff *= getKFactor(); }
+
+      if (config()->isDefined(Form("GeneratorEfficiency.%d", eventInfo()->mcChannelNumber())))
+      { m_crossSectionBRfilterEff *= getGeneratorEfficiency(); }
+    }
+
     m_newFileMetaData = false;
   }
 
+  m_isNonHyyStarHiggs = false;
+
   // flag current event as a MC Dalitz event
   // (needed for cut-flow histograms)
-  const xAOD::TruthParticleContainer *truthParticles = nullptr;
-  TString truthPartContName = config()->getStr("TruthParticles.ContainerName", "TruthParticle");
-  if (event()->retrieve(truthParticles, truthPartContName.Data()).isFailure())
-  { HG::fatal("Can't access TruthParticleContainer"); }
-  m_isNonHyyStarHiggs = HG::isMC() && HG::eventIsNonHyyStarHiggs(truthParticles);
-  var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
-  // We needed those lines for isNonHyyStarHiggs
+  if (HG::isMC()) {
+    const xAOD::TruthParticleContainer *truthParticles = nullptr;
+    TString truthPartContName = config()->getStr("TruthParticles.ContainerName", "TruthParticle");
+    if (event()->retrieve(truthParticles, truthPartContName.Data()).isFailure())
+    { HG::fatal("Can't access TruthParticleContainer"); }
+    m_isNonHyyStarHiggs = HG::isMC() && HG::eventIsNonHyyStarHiggs(truthParticles);
+    var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
+  }
 
   // apply cuts. Returned value will be the last passed cut
   m_cutFlow = cutflow();
@@ -401,22 +417,29 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
 
   // Adds event-level variables to TStore
   if (m_photonAllSys)
+  {
+    // Write when using FULL_v1 photon systematics (separated from the other systs)
     writePhotonAllSys(isSys);
+  }
   else
-    writeNominalAndSystematic(isSys);
+  {
+    // Write in the nominal and systematics loops
+    writeNominalAndSystematic();
 
-  if (not isSys && not m_photonAllSys) {
-    writeNominalOnly();
+    // Write only in the nominal loop
+    if (not isSys)
+    {
+      writeNominalOnly();
 
-    if (m_saveDetailed)
-      writeDetailed();
+      if (m_saveDetailed) { writeDetailed(); }
 
-    if (m_saveObjects) {
-      CP_CHECK("execute()", photonHandler  ()->writeContainer(m_selPhotons  ));
-      CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
-      CP_CHECK("execute()", jetHandler     ()->writeContainer(m_selJets     ));
-      CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
-      CP_CHECK("execute()", etmissHandler  ()->writeContainer(m_selMET      ));
+      if (m_saveObjects) {
+        CP_CHECK("execute()", photonHandler  ()->writeContainer(m_selPhotons  ));
+        CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
+        CP_CHECK("execute()", jetHandler     ()->writeContainer(m_selJets     ));
+        CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
+        CP_CHECK("execute()", etmissHandler  ()->writeContainer(m_selMET      ));
+      }
     }
   }
 
@@ -447,16 +470,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
 
   // Add MC only variables
   if (HG::isMC()) {
-    if (config()->isDefined(TString::Format("CrossSection.%d", eventInfo()->mcChannelNumber()))) {
-      double xs = getCrossSection(), kf = 1.0, ge = 1.0;
-      if (config()->isDefined(TString::Format("kFactor.%d", eventInfo()->mcChannelNumber())))
-        kf = getKFactor();
-      if (config()->isDefined(TString::Format("GeneratorEfficiency.%d", eventInfo()->mcChannelNumber())))
-        ge = getGeneratorEfficiency();
-      eventHandler()->storeVar<float>("crossSectionBRfilterEff", xs*kf*ge);
-    } else {
-      eventHandler()->storeVar<float>("crossSectionBRfilterEff", -1);
-    }
+    eventHandler()->storeVar<float>("crossSectionBRfilterEff", m_crossSectionBRfilterEff);
   }
 
   writePhotonAllSysVars();
@@ -467,7 +481,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writePhotonAllSysVars(bool /*truth*/)
 
 }
 
-void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
+void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic()
 {
   // Basic event selection flags
   // var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
@@ -478,11 +492,6 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   // Basic event weights
   eventHandler()->pileupWeight();
   eventHandler()->vertexWeight();
-
-  if (!isSys) {
-    // Make sure every trigger is checked, and decorated to EventInfo
-    eventHandler()->getPassedTriggers();
-  }
 
   // Additional variables useful for non-framework analysis
   int Nloose = m_preSelPhotons.size();
@@ -508,6 +517,9 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
 {
   eventHandler()->mu();
   eventHandler()->runNumber();
+
+  // Make sure every trigger is checked, and decorated to EventInfo
+  eventHandler()->getPassedTriggers();
 
   // Additional cut flow granularity
   int Nloose = m_preSelPhotons.size();
@@ -563,17 +575,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
   // Add MC only variables
   if (HG::isMC()) {
     truthHandler()->catCoup();
-
-    if (config()->isDefined(TString::Format("CrossSection.%d", eventInfo()->mcChannelNumber()))) {
-      double xs = getCrossSection(), kf = 1.0, ge = 1.0;
-      if (config()->isDefined(TString::Format("kFactor.%d", eventInfo()->mcChannelNumber())))
-        kf = getKFactor();
-      if (config()->isDefined(TString::Format("GeneratorEfficiency.%d", eventInfo()->mcChannelNumber())))
-        ge = getGeneratorEfficiency();
-      eventHandler()->storeVar<float>("crossSectionBRfilterEff", xs*kf*ge);
-    } else {
-      eventHandler()->storeVar<float>("crossSectionBRfilterEff", -1);
-    }
+    eventHandler()->storeVar<float>("crossSectionBRfilterEff", m_crossSectionBRfilterEff);
   }
 
   writeNominalOnlyVars();

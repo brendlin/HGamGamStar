@@ -43,6 +43,9 @@ private:
   // whether it's a Dalitz event
   bool m_isNonHyyStarHiggs;
 
+  // store the crossSectionBRfilterEff value once per file
+  float m_crossSectionBRfilterEff;
+
   // whether to apply systematics, save the differential variables and the truth
   bool m_applySystematics, m_saveObjects, m_saveTruthObjects, m_saveTruthVars;
   bool m_allowMoreThanTwoPhotons;
@@ -121,13 +124,20 @@ public:
   virtual EL::StatusCode finalize();
   virtual EL::StatusCode fileExecute();
 
-  // Functions for saving information
+  // Variables to write when using FULL_v1 photon systematics
+  // (separated from the other systs due to file size)
   void writePhotonAllSys(bool isSys);
-  void writeNominalAndSystematic(bool isSys);
+
+  // Variables to write to nominal file and (non-photon) systematics file
+  void writeNominalAndSystematic();
+
+  // Variables to write only to the nominal file
   void writeNominalOnly();
+
+  // Detailed variables to write if "SaveDetailedVariables" is set (only called for nominal case)
   void writeDetailed();
 
-  // Functions for writting variables
+  // Functions for writing variables (E.g. "writeBlahVars" is called by "writeBlah")
   void writePhotonAllSysVars(bool truth = false);
   void writeNominalAndSystematicVars(bool truth = false);
   void writeNominalOnlyVars(bool truth = false);
