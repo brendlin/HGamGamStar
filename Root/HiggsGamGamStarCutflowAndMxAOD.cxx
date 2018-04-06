@@ -73,15 +73,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   extra = {};
   declareOutputVariables(m_truthEvtsName,"MxAOD.Variables.TruthEvents", extra, ignore);
 
-  // a.3 BTagging variables - If 20.7 switch decoration names.
-  TString mv2_tagger = "MV2c10";
-  #ifdef __Rel20p1__
-    mv2_tagger = "MV2c20";
-    TString vars = config()->getStr("MxAOD.Variables.Jet");
-    vars.ReplaceAll("MV2c10","MV2c20");
-    config()->setValue("MxAOD.Variables.Jet",vars);
-  #endif
-
   // b. Selected objects
 
   // If we have a detailed run then append a list of extra variables to add to jets
@@ -95,7 +86,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   if (HG::isData()) ignore = {".isEMTight_nofudge", ".isTight_nofudge", ".topoetcone20_DDcorrected", ".topoetcone40_DDcorrected", ".truthOrigin", ".truthType", ".truthConvRadius", ".scaleFactor", ".truthLink", ".parentPdgId", ".pdgId"};
   declareOutputVariables(m_photonContainerName, "MxAOD.Variables.Photon"  , {}, ignore);
   declareOutputVariables("HGamPhotonsWithFakes","MxAOD.Variables.Photon"  , {}, ignore);
-  if (HG::isData()) ignore = {".SF_"+mv2_tagger+"_FixedCutBEff_60", ".SF_"+mv2_tagger+"_FixedCutBEff_70", ".SF_"+mv2_tagger+"_FixedCutBEff_77", ".SF_"+mv2_tagger+"_FixedCutBEff_85", ".Eff_"+mv2_tagger+"_FixedCutBEff_60", ".Eff_"+mv2_tagger+"_FixedCutBEff_70", ".Eff_"+mv2_tagger+"_FixedCutBEff_77", ".Eff_"+mv2_tagger+"_FixedCutBEff_85", ".InEff_"+mv2_tagger+"_FixedCutBEff_60", ".InEff_"+mv2_tagger+"_FixedCutBEff_70", ".InEff_"+mv2_tagger+"_FixedCutBEff_77", ".InEff_"+mv2_tagger+"_FixedCutBEff_85", ".HadronConeExclTruthLabelID"};
+  if (HG::isData()) ignore = {".SF_MV2c10_FixedCutBEff_60", ".SF_MV2c10_FixedCutBEff_70", ".SF_MV2c10_FixedCutBEff_77", ".SF_MV2c10_FixedCutBEff_85", ".Eff_MV2c10_FixedCutBEff_60", ".Eff_MV2c10_FixedCutBEff_70", ".Eff_MV2c10_FixedCutBEff_77", ".Eff_MV2c10_FixedCutBEff_85", ".InEff_MV2c10_FixedCutBEff_60", ".InEff_MV2c10_FixedCutBEff_70", ".InEff_MV2c10_FixedCutBEff_77", ".InEff_MV2c10_FixedCutBEff_85", ".HadronConeExclTruthLabelID"};
   declareOutputVariables(m_jetContainerName   , "MxAOD.Variables.Jet"     , {}, ignore);
   if (HG::isData()) ignore = {".scaleFactor", ".truthLink"};
   declareOutputVariables(m_elecContainerName  , "MxAOD.Variables.Electron", {}, ignore);
@@ -502,7 +493,10 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic()
 
 void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 {
-  // var::m_yy.addToStore(truth);
+  // Put here all of the HGamVariables that you want to save in the nominal loop and
+  // the systematics loops.
+  // In the truth case, there is no "systematic" case, so they are saved only once.
+
   var::m_lly.addToStore(truth);
   var::m_ll.addToStore(truth);
   var::pt_lly.addToStore(truth);
@@ -513,8 +507,31 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 }
 
 
+void HiggsGamGamStarCutflowAndMxAOD::writeTruthOnlyVars()
+{
+  // Put here the truth-only HGamVariables that you want to save to the MxAOD.
+
+  bool truth = true;
+
+  var::pT_h1.addToStore(truth);
+  var::y_h1.addToStore(truth);
+  var::m_h1.addToStore(truth);
+
+  var::pT_l1_h1.addToStore(truth);
+  var::pT_l2_h1.addToStore(truth);
+  var::deltaR_l1l2_h1.addToStore(truth);
+  var::ystar_pdg_flavor.addToStore(truth);
+  var::pT_yDirect_h1.addToStore(truth);
+  var::m_yStar_undressed_h1.addToStore(truth);
+
+}
+
+
 void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
 {
+  // Put here the things that you want to save only in the nominal loop (not
+  // the systematics loops).
+
   eventHandler()->mu();
   eventHandler()->runNumber();
 
@@ -584,16 +601,23 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
 
 void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool /*truth*/)
 {
+  // Put here all of the HGamVariables that you want to save in the nominal loop only
+  // (not the systematics loops).
 
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::writeDetailed()
 {
+  // Put here all of the things that you want to save in the case where
+  // "SaveDetailedVariables" is set to TRUE in the config file.
+
   writeDetailedVars();
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::writeDetailedVars(bool /*truth*/)
 {
+  // Put here all of the HGamVariables that you want to save in the case where
+  // "SaveDetailedVariables" is set to TRUE in the config file.
 
 }
 
@@ -647,23 +671,9 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
 
     writeNominalAndSystematicVars(truth);
     writeNominalOnlyVars(truth);
+    writeTruthOnlyVars();
     if (m_saveDetailed)
-      writeDetailedVars(truth);
-
-    // Add truth-only variables here.
-    var::pT_h1.addToStore(truth);
-    var::y_h1.addToStore(truth);
-    var::m_h1.addToStore(truth);
-
-    var::pT_l1_h1.addToStore(truth);
-    var::pT_l2_h1.addToStore(truth);
-    var::deltaR_l1l2_h1.addToStore(truth);
-    var::ystar_pdg_flavor.addToStore(truth);
-    var::pT_yDirect_h1.addToStore(truth);
-    var::m_yStar_undressed_h1.addToStore(truth);
-
-    // High mass fiducial variables
-    static SG::AuxElement::Accessor<float> etcone40("etcone40");
+    { writeDetailedVars(truth); }
 
   }
 

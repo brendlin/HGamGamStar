@@ -142,6 +142,7 @@ public:
   void writeNominalAndSystematicVars(bool truth = false);
   void writeNominalOnlyVars(bool truth = false);
   void writeDetailedVars(bool truth = false);
+  void writeTruthOnlyVars();
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(HiggsGamGamStarCutflowAndMxAOD, 1);
