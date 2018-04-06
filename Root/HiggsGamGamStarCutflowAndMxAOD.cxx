@@ -2,9 +2,6 @@
 #include "HGamAnalysisFramework/HGamVariables.h"
 #include <EventLoop/Worker.h>
 
-#include "xAODCutFlow/CutBookkeeper.h"
-#include "xAODCutFlow/CutBookkeeperContainer.h"
-
 #include "PhotonVertexSelection/PhotonPointingTool.h"
 #include "ZMassConstraint/ConstraintFit.h"
 
@@ -14,8 +11,7 @@
 ClassImp(HiggsGamGamStarCutflowAndMxAOD)
 
 HiggsGamGamStarCutflowAndMxAOD::HiggsGamGamStarCutflowAndMxAOD(const char *name)
-: MxAODTool(name), m_goodFakeComb(false), m_N_xAOD(0), m_N_DxAOD(0),
-  m_sumw_xAOD(0.0), m_sumw2_xAOD(0.0), m_sumw_DxAOD(0.0), m_sumw2_DxAOD(0.0) { }
+: MxAODTool(name), m_goodFakeComb(false) { }
 
 HiggsGamGamStarCutflowAndMxAOD::~HiggsGamGamStarCutflowAndMxAOD() {}
 
@@ -129,15 +125,24 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   // Needed for all underlaying tools to be working corectly!
   HgammaAnalysis::execute();
 
-  // if it's a new file, update the book-keeper
-  if (m_newFile && HG::isDAOD() ) {
-    addBookKeeping(getCutFlowHisto(),m_N_xAOD,m_N_DxAOD);
+  // Handle File Metadata (need to put this here because we need sample ID to define cutflow histo
+  if (m_newFileMetaData) {
+
+    // Initialize cutflow histograms by calling them.
+    getCutFlowHisto();
     if (HG::isMC()) {
-      addBookKeeping(getCutFlowHisto(true),m_N_xAOD,m_N_DxAOD);
-      addBookKeeping(getCutFlowWeightedHisto(),m_sumw_xAOD,m_sumw_DxAOD,m_sumw2_xAOD,m_sumw2_DxAOD);
-      addBookKeeping(getCutFlowWeightedHisto(true),m_sumw_xAOD,m_sumw_DxAOD,m_sumw2_xAOD,m_sumw2_DxAOD);
+      getCutFlowHisto(true);
+      getCutFlowWeightedHisto();
+      getCutFlowWeightedHisto(true);
     }
-    m_newFile=false;
+
+    // Fill the AOD and DAOD entries of the cutflow histograms.
+    if (MxAODTool::fillCutFlowWithBookkeeperInfo() == EL::StatusCode::FAILURE)
+    {
+      return EL::StatusCode::FAILURE;
+    }
+
+    m_newFileMetaData = false;
   }
 
   // flag current event as a MC Dalitz event
@@ -668,32 +673,6 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
 
 
 
-TH1F* HiggsGamGamStarCutflowAndMxAOD::makeCutFlowHisto(int id, TString suffix) {
-  int Ncuts = s_cutDescs.size();
-
-  // create meaningful name of the cutflow histo
-  TString name(Form("CutFlow_%s%d",HG::isData()?"Run":"MC",std::abs(id)));
-
-  bool hasMCname = HG::isMC() && config()->isDefined(Form("SampleName.%d",std::abs(id)));
-
-  if(hasMCname){
-    name = Form("CutFlow_%s",getMCSampleName(std::abs(id)).Data());
-  }
-
-  if (HG::isMC()&&!hasMCname&&config()->getStr("SampleName","sample")!="sample")
-    name="CutFlow_"+config()->getStr("SampleName");
-  name+=suffix;
-
-  // maybe should make sure we don't switch directory?
-  TDirectory *dir = gDirectory;
-  TFile *file = wk()->getOutputFile("MxAOD");
-  TH1F *h = new TH1F(name,name,Ncuts,0,Ncuts);
-  h->SetDirectory(file); // probably not needed
-  for (int bin=1;bin<=Ncuts;++bin)
-    h->GetXaxis()->SetBinLabel(bin,s_cutDescs[bin-1]);
-  dir->cd();
-  return h;
-}
 
 void HiggsGamGamStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
   getCutFlowHisto()->Fill(cut);
@@ -716,97 +695,12 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::finalize() {
 }
 
 EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::fileExecute() {
+  // Things that you need to process for each individual input file, even those containing no events.
+
   HgammaAnalysis::fileExecute();
 
-  // Tell the code a new file has just been opened
-  m_newFile=true;
+  // Signals to the code (in execute) that we have to book cutflow information.
+  m_newFileMetaData = true;
 
-  TTree *MetaData = dynamic_cast<TTree*>(wk()->inputFile()->Get("MetaData"));
-  if (MetaData == nullptr)
-    HG::fatal("Couldn't find MetaData TTree in event, is this a proper xAOD file? Exiting.");
-
-  // The isDAOD flag set in HgammaAnalysis::changeInput is not available here, so we get it maually.
-  bool tmp_isDAOD = false;
-  for (auto branch : * MetaData->GetListOfBranches())
-  {
-    if (TString(branch->GetName()).Contains("StreamDAOD")) {
-      tmp_isDAOD = true;
-      break;
-    }
-  }
-
-  if ( tmp_isDAOD ) {
-    // If we get here, this is a DxAOD
-
-    // 1. Check if there if the incomplete book-keeper object has entreies (that would be bad!)
-    const xAOD::CutBookkeeperContainer* incompleteCBC = nullptr;
-    EL_CHECK( "fileExecute()", wk()->xaodEvent()->retrieveMetaInput(incompleteCBC,"IncompleteCutBookkeepers") );
-    if ( incompleteCBC->size() != 0 ) {
-      // fatal or error? let's start with a hard fatal!
-      // HG::fatal("Issue with DxAOD book keeper. It's incomplete. File corrupted?");
-      Warning("fileExecute()",
-	      "Issue with DxAOD book keeper. It's incomplete. File corrupted? %s %s",
-	      "If this is data, this is known to happen (but not understood).",
-              "If this is MC, this is expected to happen, and can probably be ignored.");
-    }
-
-    // 2. now get the actual bookkeeper
-    const xAOD::CutBookkeeperContainer* completeCBC = nullptr;
-    EL_CHECK( "fileExecute()", wk()->xaodEvent()->retrieveMetaInput(completeCBC,"CutBookkeepers") );
-
-    int maxAcycle = -1, maxDcycle = -1;
-    for ( auto cbk : *completeCBC ) {
-      Info("fileExecute()","  Book keeper name=%s, inputStream=%s, cycle=%d, nAcceptedEvents=%d", cbk->name().c_str(), cbk->inputStream().c_str(), cbk->cycle(), (int)cbk->nAcceptedEvents());
-
-      if ( cbk->name().empty() ) continue;
-
-      // Use the DxAOD numbers from the largest cycle
-      if (TString(cbk->name()).Contains("HIGG1D1") && cbk->inputStream() == "StreamAOD" && cbk->cycle() > maxDcycle) {
-        maxDcycle     = cbk->cycle();
-	m_N_DxAOD     = cbk->nAcceptedEvents();
-	m_sumw_DxAOD  = cbk->sumOfEventWeights();
-	m_sumw2_DxAOD = cbk->sumOfEventWeightsSquared();
-      }
-
-
-      // Use the xAOD numbers from the largest cycle
-      if (cbk->name() == "AllExecutedEvents" && cbk->inputStream() == "StreamAOD" && cbk->cycle() > maxAcycle) {
-        maxAcycle    = cbk->cycle();
-	m_N_xAOD     = cbk->nAcceptedEvents();
-	m_sumw_xAOD  = cbk->sumOfEventWeights();
-	m_sumw2_xAOD = cbk->sumOfEventWeightsSquared();
-      }
-    }
-    Info("fileExecute()","Book keeper anticipates %i events in current input file (%i in parent xAOD)",m_N_DxAOD,m_N_xAOD);
-  }
   return EL::StatusCode::SUCCESS;
-}
-
-void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
-  for ( auto entry : m_cFlowHistos ) {
-    printf("\n%s %d cut-flow%s\n",HG::isMC()?"MC sample":"Data run",
-           std::abs(entry.first),entry.first>0?", all events":", only Dalitz events");
-    printCutFlowHisto(entry.second,0);
-  }
-  for ( auto entry : m_cFlowHistosWeighted ) {
-    printf("\n%s %d cut-flow, weighted events%s\n",HG::isMC()?"MC sample":"Data run",
-           std::abs(entry.first),entry.first>0?", all events":", only Dalitz events");
-    printCutFlowHisto(entry.second,2);
-  }
-  printf("\n");
-}
-
-void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHisto(TH1F *h, int Ndecimals) {
-  TString format("  %-24s%10."); format+=Ndecimals; format+="f%11.2f%%%11.2f%%\n";
-  int all_bin = h->FindBin(ALLEVTS);
-  printf("  %-24s%10s%12s%12s\n","Event selection","Nevents","Cut rej.","Tot. eff.");
-  for (int bin=1;bin<=h->GetNbinsX();++bin) {
-    double ntot=h->GetBinContent(all_bin), n=h->GetBinContent(bin), nprev=h->GetBinContent(bin-1);
-    TString cutName(h->GetXaxis()->GetBinLabel(bin));
-    cutName.ReplaceAll("#it{m}_{#gamma#gamma}","m_yy");
-    if (bin==1||nprev==0||n==nprev)
-      printf(format.Data(),cutName.Data(),n,-1e-10,n/ntot*100);
-    else // if the cut does something, print more information
-      printf(format.Data(),cutName.Data(),n,(n-nprev)/nprev*100,n/ntot*100);
-  }
 }
