@@ -3,9 +3,9 @@
 
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
 #include "HGamGamStar/MxAODTool.h"
-#include "FsrUtils/FsrPhotonTool.h"
+/* #include "FsrUtils/FsrPhotonTool.h" */
 #include "AsgTools/ToolHandle.h"
-#include "ZMassConstraint/IConstraintFit.h"
+/* #include "ZMassConstraint/IConstraintFit.h" */
 
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
@@ -48,21 +48,9 @@ private:
 
   // whether to apply systematics, save the differential variables and the truth
   bool m_applySystematics, m_saveObjects, m_saveTruthObjects, m_saveTruthVars;
-  bool m_allowMoreThanTwoPhotons;
-
-  // whether to save fake photon combinations
-  bool m_enableFakePhotons;
-  //If we have two good fakes then we need to pass the slimming
-  bool m_goodFakeComb;
-
-  //Whether we are running yybb-tool in detailed mode
-  bool m_detailedHHyybb;
 
   // Temporary flag for photon all sys
   bool m_photonAllSys;
-
-  // Tools
-  ToolHandle<ZMassConstraint::IConstraintFit> m_massConstraint;
 
   // Containers
   xAOD::PhotonContainer m_allPhotons; //!

@@ -2,8 +2,8 @@
 #include "HGamAnalysisFramework/HGamVariables.h"
 #include <EventLoop/Worker.h>
 
-#include "PhotonVertexSelection/PhotonPointingTool.h"
-#include "ZMassConstraint/ConstraintFit.h"
+// #include "PhotonVertexSelection/PhotonPointingTool.h"
+// #include "ZMassConstraint/ConstraintFit.h"
 
 #include "HGamGamStar/HggStarVariables.h"
 
@@ -11,7 +11,7 @@
 ClassImp(HiggsGamGamStarCutflowAndMxAOD)
 
 HiggsGamGamStarCutflowAndMxAOD::HiggsGamGamStarCutflowAndMxAOD(const char *name)
-: MxAODTool(name), m_goodFakeComb(false) { }
+: MxAODTool(name) { }
 
 HiggsGamGamStarCutflowAndMxAOD::~HiggsGamGamStarCutflowAndMxAOD() {}
 
@@ -36,9 +36,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   if (m_applySystematics && m_skimCut >= 1)
     HG::fatal("Running over systematics and applying a skimming cut is currently not possible.");
 
-  // Whether to allow more than two good photons
-  m_allowMoreThanTwoPhotons = config()->getBool("AllowMoreThanTwoPhotons",false);
-
   // Whether to save objects (photons, jets ...)
   m_saveObjects = config()->getBool("SaveObjects",false);
 
@@ -48,12 +45,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   // Whether to save the truth objects and differential variables
   m_saveTruthObjects = HG::isMC() && config()->getBool("SaveTruthObjects",false);
   m_saveTruthVars    = HG::isMC() && config()->getBool("SaveTruthVariables",false);
-
-  //Save fake photon combinations
-  m_enableFakePhotons = HG::isMC() && config()->getBool("SaveFakePhotonCombinations", false);
-
-  // Whether we are running with yybb-tool in detailed mode.
-  m_detailedHHyybb = config()->getBool("HHyybb.DetailedInfo",false);
 
   // Temporary hack for large PhotonAllSys samples
   m_photonAllSys = config()->getStr("PhotonHandler.Calibration.decorrelationModel") == "FULL_v1";
@@ -74,14 +65,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   declareOutputVariables(m_truthEvtsName,"MxAOD.Variables.TruthEvents", extra, ignore);
 
   // b. Selected objects
-
-  // If we have a detailed run then append a list of extra variables to add to jets
-  if(m_detailedHHyybb)
-  {
-    TString yybb_detailedJetVars = config()->getStr("MxAOD.Variables.Jet")+config()->getStr("MxAOD.yybb-Detailed.Jet");
-    yybb_detailedJetVars.ReplaceAll(" ",""); //Remove spaces in lists...
-    config()->setValue("MxAOD.Variables.Jet",yybb_detailedJetVars.Data());
-  }
 
   if (HG::isData()) ignore = {".isEMTight_nofudge", ".isTight_nofudge", ".topoetcone20_DDcorrected", ".topoetcone40_DDcorrected", ".truthOrigin", ".truthType", ".truthConvRadius", ".scaleFactor", ".truthLink", ".parentPdgId", ".pdgId"};
   declareOutputVariables(m_photonContainerName, "MxAOD.Variables.Photon"  , {}, ignore);
@@ -224,15 +207,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   m_allJets = xAOD::JetContainer(SG::VIEW_ELEMENTS);
   m_selJets = xAOD::JetContainer(SG::VIEW_ELEMENTS);
 
-  //Check if there are two good fakes. Needed so we dont slim the event at trigger.
-  m_goodFakeComb = false;
-  if(HG::isMC() && m_enableFakePhotons){
-      double weightFakePhotons = 1;
-      xAOD::PhotonContainer photonsWithFakes = getFakePhotons(weightFakePhotons);
-      m_goodFakeComb = photonsWithFakes.size()>1 ? true : false;
-      if(m_goodFakeComb) return PASSALL;
-  }
-
   //==== CUT "-1" : Remove truth Higgs events that are not leptonic Dalitz ====
   if ( m_isNonHyyStarHiggs ) return HIGGS_LEP_DALITZ;
 
@@ -356,11 +330,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (itrigmatch==0) return TRIG_MATCH;
   }
 
-
-  //==== CUT 7 : Require two loose photons to pass trigger matching
-  // static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
-  // if ( requireTriggerMatch && !passTriggerMatch(&loosePhotons) ) return TRIG_MATCH;
-
   // Our *Higgs candidate photons* are the two, leading pre-selected photons
   // These are also the photons used to define the primary vertex
   // xAOD::Photon* gam1 = loosePhotons[0];
@@ -399,12 +368,6 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
   setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, &m_selMET, &m_jvtJets);
-
-  if (not m_photonAllSys) {
-    // Must come before writing out containers (Detailed mode decorates objects for studying)
-    // Decorate MET information to HGamEventInfo
-    metCatTool()->saveCategoryAndWeight(m_selPhotons, m_selElectrons, m_selMuons, m_selJets, m_selMET);
-  }
 
   // Adds event-level variables to TStore
   if (m_photonAllSys)
@@ -450,13 +413,13 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
 void HiggsGamGamStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
 {
   // Basic event selection flags
-  var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
-  var::isPassed.setValue(m_goodFakeComb ? true : eventHandler()->pass() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
+  var::isPassedBasic.setValue(eventHandler()->pass());
+  var::isPassed.setValue(eventHandler()->pass() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
 
   if (!isSys) {
     int Nloose = m_preSelPhotons.size();
-    eventHandler()->storeVar<char>("isPassedPreselection",Nloose>=2);
+    eventHandler()->storeVar<char>("isPassedPreselection",Nloose>=1);
   }
 
   // Add MC only variables
@@ -475,8 +438,8 @@ void HiggsGamGamStarCutflowAndMxAOD::writePhotonAllSysVars(bool /*truth*/)
 void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic()
 {
   // Basic event selection flags
-  // var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
-  // var::isPassed.setValue(m_goodFakeComb ? true : var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
+  var::isPassedBasic.setValue(eventHandler()->pass());
+  var::isPassed.setValue(var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
   passJetEventCleaning();
 
@@ -542,12 +505,12 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
   int Nloose = m_preSelPhotons.size();
   bool passTrigMatch = passTriggerMatch(&m_preSelPhotons);
   bool passIso = false, passPID = false;
-  if (Nloose>=2) {
-    xAOD::Photon* y1 = m_preSelPhotons[0], *y2 = m_preSelPhotons[1];
-    passIso = m_goodFakeComb ? true : photonHandler()->passIsoCut(y1) && photonHandler()->passIsoCut(y2);
-    passPID = m_goodFakeComb ? true : photonHandler()->passPIDCut(y1) && photonHandler()->passPIDCut(y2);
+  if (Nloose>=1) {
+    xAOD::Photon* y1 = m_preSelPhotons[0];
+    passIso = photonHandler()->passIsoCut(y1);
+    passPID = photonHandler()->passPIDCut(y1);
   }
-  eventHandler()->storeVar<char>("isPassedPreselection",Nloose>=2);
+  eventHandler()->storeVar<char>("isPassedPreselection",Nloose>=1);
   eventHandler()->storeVar<char>("isPassedTriggerMatch",passTrigMatch);
   eventHandler()->storeVar<char>("isPassedPID",passPID);
   eventHandler()->storeVar<char>("isPassedIsolation",passIso);
@@ -560,30 +523,6 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
   eventHandler()->pileupVertexSumPt2(); // also sets pileupVertexZ internally
 
   if (HG::isMC()) truthHandler()->vertexZ();
-
-  const xAOD::VertexContainer* vertices = nullptr;
-  if (event()->contains<xAOD::VertexContainer>("PrimaryVertices")) {
-    if (event()->retrieve(vertices,"PrimaryVertices").isFailure())
-      HG::fatal("Error retrieving PrimaryVertices, exiting");
-
-    //std::vector<float> verticesZ;
-    //std::vector<float> verticesScore;
-    //static SG::AuxElement::ConstAccessor<float> vertexScore("vertexScore");
-
-    //if (vertices->size() == 1) {
-    //  // DxAODs in p2669 have issues with only dummy vertex and vertex score decoration
-    //  verticesZ.push_back(-999);
-    //  verticesScore.push_back(-99);
-    //} else {
-    //  for (auto vertex : *vertices){
-    //    verticesZ.push_back(vertex->z());
-    //    verticesScore.push_back(vertexScore(*vertex));
-    //  }
-    //}
-
-    //eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesZ"    , verticesZ    ); 
-    //eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesScore", verticesScore); 
-  }
 
   // Bunch train information
   eventHandler()->bunchDistanceFromFront();
