@@ -511,6 +511,8 @@ void ZyCutflowAndMxAOD::writeNominalOnly()
 {
   eventHandler()->mu();
   eventHandler()->runNumber();
+  eventHandler()->centralEventShapeDensity();
+  eventHandler()->forwardEventShapeDensity();
 
   // Additional cut flow granularity
   int Nloose = m_preSelPhotons.size();
