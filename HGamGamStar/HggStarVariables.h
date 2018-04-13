@@ -21,6 +21,10 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      // getPhotons only returns the leading photon candidate.
+      // For Truth: best to use "m_h1"
       (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
@@ -41,6 +45,9 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      // For Truth: best to use "m_yStar_undressed_h1"
       (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
@@ -60,6 +67,8 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
       (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
@@ -255,8 +264,20 @@ namespace HG {
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
                            double& return_mll,double closest_to=91188.);
 
+  typedef std::vector<xAOD::TrackParticle const *> TrackParticleVec_t;
+
+  void AssignZbosonIndices(TrackParticleVec_t& leps,int& return_lep1i,int& return_lep2i,
+                           double& return_mll,double closest_to=91188.);
+
+  /* typedef std::vector< const xAOD::IParticle* > ConstPartCont_t; */
+  /* void AssignZbosonIndices(const ConstPartCont_t& leps,int& return_lep1i,int& return_lep2i, */
+  /*                          double& return_mll,double closest_to=91188.); */
+
   bool eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
   bool isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl);
+
+  /* typedef std::vector< xAOD::TrackParticle const *> ConstTrackPartCont_t; */
+  TrackParticleVec_t getTracksFromElectrons(const xAOD::ElectronContainer& elecs);
 
 }
 

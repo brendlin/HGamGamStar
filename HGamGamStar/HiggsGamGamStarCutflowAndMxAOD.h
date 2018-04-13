@@ -6,6 +6,7 @@
 /* #include "FsrUtils/FsrPhotonTool.h" */
 #include "AsgTools/ToolHandle.h"
 /* #include "ZMassConstraint/IConstraintFit.h" */
+#include "HGamGamStar/HggStarVariables.h"
 
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
@@ -18,7 +19,7 @@ private:
     HIGGS_LEP_DALITZ=3, DUPLICATE=4, GRL=5, TRIGGER=6, DQ=7, VERTEX=8,
     TWO_SF_LEPTONS=9,ONE_LOOSE_GAM=10, AMBIGUITY=11,
     TWO_SF_LEPTONS_POSTOR=12,ONE_PHOTON_POSTOR=13,
-    TRIG_MATCH=14, GAM_TIGHTID=15, GAM_ISOLATION=16, MASSCUT=17, PASSALL=18
+    TRIG_MATCH=14, GAM_TIGHTID=15, GAM_ISOLATION=16, ZMASSCUT=17, LLGMASSCUT=18, PASSALL=19
   };
 
   // names of all cuts (do not includ "pass all")
@@ -26,8 +27,8 @@ private:
     {"Lepton Dalitz truth","No duplicates","GRL","Pass trigger","Detector DQ","Has PV",
      "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity",
      "2 same-flavor leptons (post-OR)","1 loose photon (post-OR)",
-     "Trigger match","tight ID","isolation",
-     "#it{m}_{#gamma#gamma} #in [105,160] GeV"};
+     "Trigger match","tight ID","isolation","#it{m}_{ll} < 45 GeV",
+     "#it{m}_{ll#gamma} #in [105,160] GeV"};
 
   /// value of cut that fail selection: PASSALL if all cuts passed
   CutEnum m_cutFlow;
@@ -65,6 +66,9 @@ private:
   xAOD::ElectronContainer m_selElectrons; //!
   xAOD::ElectronContainer m_preSelElectrons; //!
 
+  HG::TrackParticleVec_t m_preSelTracks; //!
+  xAOD::TrackParticleContainer m_selTracks; //!
+
   xAOD::MuonContainer m_allMuons; //!
   xAOD::MuonContainer m_selMuons; //!
   xAOD::MuonContainer m_preSelMuons; //!
@@ -98,6 +102,10 @@ private:
   CutEnum cutflow();
   EL::StatusCode doReco(bool isSys = false);
   EL::StatusCode doTruth();
+
+  void GetElectronsAssociatedToTracks(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2,
+                                      xAOD::ElectronContainer& preSelElecs,
+                                      xAOD::ElectronContainer& selElecs);
 
 public:
 

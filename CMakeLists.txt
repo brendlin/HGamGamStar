@@ -20,6 +20,7 @@ find_package( ROOT COMPONENTS Core RIO Hist Tree )
 atlas_add_root_dictionary ( HGamGamStarLib HGamGamStarCintDict
                             ROOT_HEADERS HGamGamStar/ZyCutflowAndMxAOD.h
                             HGamGamStar/HiggsGamGamStarCutflowAndMxAOD.h
+                            HGamGamStar/TrackHandler.h
                             HGamGamStar/MxAODTool.h Root/LinkDef.h
                             EXTERNAL_PACKAGES ROOT
                             )

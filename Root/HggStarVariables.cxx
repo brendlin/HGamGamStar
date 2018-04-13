@@ -1,6 +1,7 @@
 #include "HGamGamStar/HggStarVariables.h"
 
 #include "HGamAnalysisFramework/TruthHandler.h"
+#include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 
 namespace var {
   HG::m_lly m_lly;
@@ -20,6 +21,7 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
                              double& return_mll,double closest_to){
 
   double min_delta = DBL_MAX;
+  bool sortby_pt = true;
 
   for (unsigned int i=0;i<leps.size();++i) {
     const xAOD::IParticle* lepi = leps[i];
@@ -38,8 +40,44 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
 
       TLorentzVector tmp = lepi->p4() + lepj->p4();
 
-      if (fabs(tmp.M()-closest_to) < min_delta) {
-        min_delta = fabs(tmp.M()-closest_to);
+      double metric = (sortby_pt ? tmp.Pt() : tmp.M() );
+
+      if ( fabs( metric - closest_to ) < min_delta) {
+        min_delta = fabs( metric - closest_to );
+        return_lep1i = i;
+        return_lep2i = j;
+        return_mll = tmp.M();
+      }
+
+    }
+  }
+  return;
+}
+
+void HG::AssignZbosonIndices(TrackParticleVec_t& leps,int& return_lep1i,int& return_lep2i,
+                             double& return_mll,double closest_to){
+
+  // ConstDataVector<xAOD::IParticleContainer>
+
+  double min_delta = DBL_MAX;
+  bool sortby_pt = true;
+
+  for (unsigned int i=0;i<leps.size();++i) {
+    const xAOD::TrackParticle* lepi = leps[i];
+    for (unsigned int j=0;j<leps.size();++j) {
+      if (j == i) continue;
+
+      const xAOD::TrackParticle* lepj = leps[j];
+
+      if (lepi->pt() < lepj->pt()) continue;
+      if (lepi->charge() == lepj->charge()) continue;
+
+      TLorentzVector tmp = lepi->p4() + lepj->p4();
+
+      double metric = (sortby_pt ? tmp.Pt() : tmp.M() );
+
+      if ( fabs( metric - closest_to ) < min_delta) {
+        min_delta = fabs( metric - closest_to );
         return_lep1i = i;
         return_lep2i = j;
         return_mll = tmp.M();
@@ -147,4 +185,60 @@ bool HG::eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer * allParticle
   if (directphots.size() != 1) return true;
 
   return false;
+}
+
+HG::TrackParticleVec_t HG::getTracksFromElectrons(const xAOD::ElectronContainer& elecs) {
+
+  //std::set<xAOD::TrackParticle const *> trackContainer;
+  // ConstTrackPartCont_t trackContainer(SG::VIEW_ELEMENTS);
+  TrackParticleVec_t trackContainer;
+
+  int nGoodQuality = 0;
+
+  // std::cout << "~~~~~~" << std::endl;
+  for (auto electron : elecs) {
+
+    if ( std::abs( electron->caloCluster()->etaBE(2) ) > 2.47 ) continue;
+    if ( electron->pt() < 4500. ) continue;
+
+    // std::cout << Form("Electron pt: %.0f eta: %.3f has %lu tracks",
+    //                   electron->pt(),
+    //                   electron->caloCluster()->etaBE(2),
+    //                   electron->nTrackParticles()) << std::endl;
+
+    for (unsigned int i=0; i<electron->nTrackParticles(); ++i) {
+
+      const xAOD::TrackParticle* tp = electron->trackParticle(i);
+      // std::cout << Form("pt: %.0f eta: %.3f",tp->pt(),tp->eta()) << std::endl;
+
+      int nSiHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfSiliconHitsAndDeadSensors(tp);
+      int nPixHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(tp);
+      // int passBLayerRequirement = ElectronSelectorHelpers::passBLayerRequirement(tp);
+
+      if (nSiHitsPlusDeadSensors  < 7) continue;
+      if (nPixHitsPlusDeadSensors < 2) continue;
+      // if (!passBLayerRequirement) continue;
+
+      nGoodQuality++;
+
+      auto it = std::find(trackContainer.begin(), trackContainer.end(), tp);
+      if (it == trackContainer.end()) {
+        trackContainer.push_back(tp);
+      }
+      else {
+        // std::cout << "Found a duplicate track!" << std::endl;
+        continue;
+      }
+
+    }
+
+  }
+
+  // std::cout << "Number of elecss in Total: " << elecs.size() << std::endl;
+  // std::cout << "Number of OQ trk in Total: " << nGoodQuality << std::endl;
+  // std::cout << "Number of unique tracks in Total: " << trackContainer.size() << std::endl;
+  // std::cout << "Final size of trackContainer: " << trackContainer.size() << std::endl;
+
+  return trackContainer;
+
 }
