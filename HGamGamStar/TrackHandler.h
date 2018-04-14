@@ -10,6 +10,13 @@ namespace HG {
 
   private:
 
+    bool m_doTrqCuts;
+    int m_nSiMin;
+    int m_nPixMin;
+
+    double  m_etaCut;
+    double  m_ptCut;
+
   public:
 
     /// constructor
@@ -19,6 +26,10 @@ namespace HG {
     virtual ~TrackHandler();
 
     virtual EL::StatusCode initialize(Config &config);
+
+    virtual xAOD::TrackParticleContainer getCorrectedContainer();
+    virtual xAOD::TrackParticleContainer applySelection(xAOD::TrackParticleContainer &container);
+    virtual CP::SystematicCode    applySystematicVariation(const CP::SystematicSet &sys);
 
   };
 

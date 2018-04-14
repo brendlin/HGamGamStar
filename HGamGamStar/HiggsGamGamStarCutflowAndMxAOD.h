@@ -7,6 +7,7 @@
 #include "AsgTools/ToolHandle.h"
 /* #include "ZMassConstraint/IConstraintFit.h" */
 #include "HGamGamStar/HggStarVariables.h"
+#include "HGamGamStar/TrackHandler.h"
 
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
@@ -107,6 +108,14 @@ private:
                                       xAOD::ElectronContainer& preSelElecs,
                                       xAOD::ElectronContainer& selElecs);
 
+private:
+#ifndef __CINT__
+  HG::TrackHandler *m_trackHandler; //!
+#endif // __CINT__
+
+protected:
+  inline virtual HG::TrackHandler *trackHandler() { return m_trackHandler; }
+
 public:
 
   // this is a standard constructor
@@ -116,6 +125,7 @@ public:
 
   // these are the functions inherited from HgammaAnalysis
   virtual EL::StatusCode createOutput();
+  virtual EL::StatusCode initialize();
   virtual EL::StatusCode execute();
   virtual EL::StatusCode finalize();
   virtual EL::StatusCode fileExecute();

@@ -9,9 +9,22 @@
 ClassImp(HiggsGamGamStarCutflowAndMxAOD)
 
 HiggsGamGamStarCutflowAndMxAOD::HiggsGamGamStarCutflowAndMxAOD(const char *name)
-: MxAODTool(name) { }
+: MxAODTool(name)
+  , m_trackHandler(nullptr)
+{ }
 
 HiggsGamGamStarCutflowAndMxAOD::~HiggsGamGamStarCutflowAndMxAOD() {}
+
+EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
+{
+  HgammaAnalysis::initialize();
+
+  m_trackHandler = new HG::TrackHandler("TrackHandler", event(), store());
+  ANA_CHECK(m_trackHandler->initialize(*config()));
+
+  return EL::StatusCode::SUCCESS;
+}
+
 
 EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
 {
@@ -695,6 +708,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::finalize() {
 
   // Write the output to file
   HgammaAnalysis::finalize();
+
+  SafeDelete(m_trackHandler);
 
   return EL::StatusCode::SUCCESS;
 }
