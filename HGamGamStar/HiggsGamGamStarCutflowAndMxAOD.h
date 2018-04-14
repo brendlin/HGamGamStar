@@ -65,7 +65,7 @@ private:
 
   xAOD::ElectronContainer m_allElectrons; //!
   xAOD::ElectronContainer m_selElectrons; //!
-  xAOD::ElectronContainer m_preSelElectrons; //!
+  // xAOD::ElectronContainer m_preSelElectrons; //!
 
   xAOD::TrackParticleContainer m_allTracks; //!
   xAOD::TrackParticleContainer m_preSelTracks; //!

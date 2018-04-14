@@ -160,15 +160,15 @@ HG::TrackHandler::GetElecsAssociatedToTracks(const xAOD::TrackParticle& trk1,
     if ( std::abs( electron->caloCluster()->etaBE(2) ) > m_eleEtaCut ) continue;
     if ( electron->pt() < m_elePtCut ) continue;
 
+    bool matches = false;
+
     for (unsigned int i=0; i<electron->nTrackParticles(); ++i) {
-
       const xAOD::TrackParticle* ele_tp = electron->trackParticle(i);
-
-      if (ele_tp->p4() == trk1.p4() || ele_tp->p4() == trk2.p4())
-      {
-        selected.push_back(electron);
-      }
+      matches = matches || ele_tp->p4() == trk1.p4() || ele_tp->p4() == trk2.p4();
     }
+
+    if (matches) selected.push_back(electron);
+
   }
 
   return selected;

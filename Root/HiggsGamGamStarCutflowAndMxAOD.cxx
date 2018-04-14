@@ -350,7 +350,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_selTracks.push_back(m_preSelTracks[sel_trk2]);
 
     m_selElectrons = m_trackHandler->GetElecsAssociatedToTracks(*m_selTracks[0],
-                                                                *m_selTracks[1],m_preSelElectrons);
+                                                                *m_selTracks[1],m_allElectrons);
 
     m_ll = return_mtrktrk;
     m_lly = (m_selTracks[0]->p4() + m_selTracks[1]->p4() + m_selPhotons[0]->p4()).M();
@@ -370,7 +370,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
   //==== CUT 13 : Whether SF leptons survive OR
   if (m_selElectrons.size() == 0 && m_selMuons.size() < 2) return TWO_SF_LEPTONS_POSTOR;
-  if (electrons_preOR > 0 && m_selElectrons.size() != electrons_preOR) return TWO_SF_LEPTONS_POSTOR;
+  if (m_selMuons.size() == 0 && m_selElectrons.size() != electrons_preOR) return TWO_SF_LEPTONS_POSTOR;
 
   //==== CUT 14 : Muon cleaning should be done after overlap removal. Cleaning removes isBad muons.
   for (auto muon : m_selMuons) {
