@@ -245,23 +245,24 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
   // retrieve electrons, muons
   m_allElectrons = electronHandler()->getCorrectedContainer();
-  m_preSelTracks = HG::getTracksFromElectrons(m_allElectrons);
+  m_allTracks = trackHandler()->getCorrectedContainer();
+  m_preSelTracks = trackHandler()->findTracksFromElectrons(m_allTracks,m_allElectrons);
 
   // Electron applySelection applies PID, IP and Iso cuts
   //m_preSelElectrons = electronHandler()->applySelection(m_allElectrons);
 
   m_allMuons = muonHandler()->getCorrectedContainer();
-  xAOD::MuonContainer dirtyMuons = muonHandler()->applySelection(m_allMuons);
+  xAOD::MuonContainer m_preSelMuons = muonHandler()->applySelection(m_allMuons);
 
   // //==== CUTs on leptons
-  // if (m_preSelElectrons.size() < 2 && dirtyMuons.size() < 2) {
+  // if (m_preSelElectrons.size() < 2 && m_preSelMuons.size() < 2) {
   //   return LEPTON_ID;
   //   return LEPTON_ISOLATION;
   //   return LEPTON_IPCUTS;
   // }
 
   //==== CUT 9 : 2 SF leptons (before OR) ====
-  if (m_preSelTracks.size() < 2 && dirtyMuons.size() < 2) return TWO_SF_LEPTONS;
+  if (m_preSelTracks.size() < 2 && m_preSelMuons.size() < 2) return TWO_SF_LEPTONS;
 
   // Get object containers
   m_allPhotons = photonHandler()->getCorrectedContainer();
@@ -310,22 +311,11 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   static bool requireHV = config()->getBool("PhotonHandler.Selection.ApplyHVCut", false);
   if (requireHV && nHV<1) return AMBIGUITY;
 
-  m_allJets = jetHandler()->getCorrectedContainer();
-  m_selJets = jetHandler()->applySelection(m_allJets);
-
-  // Removes overlap with candidate photon, and any additional tight photons (if option set)
-  overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_preSelElectrons, dirtyMuons);
-
-  //above doesn't have option to remove photon overlapping with lepton
-  overlapHandler()->removeOverlap(m_selPhotons, m_preSelElectrons, 0.4);
-  overlapHandler()->removeOverlap(m_selPhotons, dirtyMuons, 0.4);
-
   // Muon cleaning should be done after overlap removal. Cleaning removes isBad muons.
-  m_preSelMuons = muonHandler()->applyCleaningSelection(dirtyMuons);
+  // m_preSelMuons = muonHandler()->applyCleaningSelection(dirtyMuons);
 
   // Select Z candidate after overlap removal.
   // Find the highest-mll pair closest to (13 TeV)
-
   int sel_muon1 = -1, sel_muon2 = -1;
   double return_mmumu = -1;
   HG::AssignZbosonIndices(m_preSelMuons,sel_muon1,sel_muon2,return_mmumu,13000.*HG::GeV);
@@ -346,7 +336,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // }
 
   //==== CUT 12 : Whether SF leptons survive OR
-  if (return_mmumu < 0 && return_mtrktrk < 0) return TWO_SF_LEPTONS_POSTOR;
+  if (return_mmumu < 0 && return_mtrktrk < 0) return ZBOSON_ASSIGNMENT;
 
   double m_lly = -999, m_ll = -999;
 
@@ -356,25 +346,42 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_ll = return_mmumu;
     m_lly = (m_selMuons[0]->p4() + m_selMuons[1]->p4() + m_selPhotons[0]->p4()).M();
   } else {
-    // m_selTracks.push_back(m_preSelTracks[sel_trk1]);
-    // m_selTracks.push_back(m_preSelTracks[sel_trk2]);
+    m_selTracks.push_back(m_preSelTracks[sel_trk1]);
+    m_selTracks.push_back(m_preSelTracks[sel_trk2]);
 
-    GetElectronsAssociatedToTracks(*m_preSelTracks[sel_trk1],*m_preSelTracks[sel_trk2],
-                                   m_preSelElectrons,m_selElectrons);
+    m_selElectrons = m_trackHandler->GetElecsAssociatedToTracks(*m_selTracks[0],
+                                                                *m_selTracks[1],m_preSelElectrons);
 
     m_ll = return_mtrktrk;
-    // m_lly = (m_selTracks[0]->p4() + m_selTracks[1]->p4() + m_selPhotons[0]->p4()).M();
-
-    // m_selElectrons.push_back(m_preSelElectrons[sel_ele1]);
-    // m_selElectrons.push_back(m_preSelElectrons[sel_ele2]);
-    //m_lly = return_mee;
-    //m_lly = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4() + m_selPhotons[0]->p4()).M();
+    m_lly = (m_selTracks[0]->p4() + m_selTracks[1]->p4() + m_selPhotons[0]->p4()).M();
   }
 
-  //==== CUT 13 : Photon gets lost in overlap removal
+  m_allJets = jetHandler()->getCorrectedContainer();
+  m_selJets = jetHandler()->applySelection(m_allJets);
+
+  unsigned int electrons_preOR = m_selElectrons.size();
+
+  // Removes overlap with candidate photon, and any additional tight photons (if option set)
+  overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_selElectrons, m_selMuons);
+
+  //above doesn't have option to remove photon overlapping with lepton
+  overlapHandler()->removeOverlap(m_selPhotons, m_selElectrons, 0.4);
+  overlapHandler()->removeOverlap(m_selPhotons, m_selMuons, 0.4);
+
+  //==== CUT 13 : Whether SF leptons survive OR
+  if (m_selElectrons.size() == 0 && m_selMuons.size() < 2) return TWO_SF_LEPTONS_POSTOR;
+  if (electrons_preOR > 0 && m_selElectrons.size() != electrons_preOR) return TWO_SF_LEPTONS_POSTOR;
+
+  //==== CUT 14 : Muon cleaning should be done after overlap removal. Cleaning removes isBad muons.
+  for (auto muon : m_selMuons) {
+    SG::AuxElement::Accessor<char> isBad("isBad");
+    if (isBad.isAvailable(*muon) && isBad(*muon)) return BAD_MUON;
+  }
+
+  //==== CUT 15 : Photon gets lost in overlap removal
   if (m_selPhotons.size()==0) return ONE_PHOTON_POSTOR;
 
-  //==== CUT 14: Trigger matching
+  //==== CUT 16: Trigger matching
   static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
 
   if ( requireTriggerMatch ){
@@ -386,19 +393,19 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (itrigmatch==0) return TRIG_MATCH;
   }
 
-  // ==== CUT 15 : Require both photons to pass photon ID (isEM) ====
+  //==== CUT 17 : Require both photons to pass photon ID (isEM) ====
   // Do we really want to require the highest-pt photon to pass tight ID? Can we ask for lower-pt gam?
   static bool requireTight = config()->getBool("PhotonHandler.Selection.ApplyPIDCut", true);
   if (requireTight && (!photonHandler()->passPIDCut(m_selPhotons[0])) ) return GAM_TIGHTID;
 
-  //==== CUT 16 : Require both photons to fulfill the isolation criteria ===
+  //==== CUT 18 : Require both photons to fulfill the isolation criteria ===
   static bool requireIso = config()->getBool("PhotonHandler.Selection.ApplyIsoCut", true);
   if (requireIso && (!photonHandler()->passIsoCut(m_selPhotons[0]))) return GAM_ISOLATION;
 
-  //==== CUT 17 : Z Mass window cut ====
+  //==== CUT 19 : Z Mass window cut ====
   if ( m_ll > 45.*HG::GeV ) return ZMASSCUT;
 
-  //==== CUT 18 : lly window cut ====
+  //==== CUT 20 : lly window cut ====
   if ( 105.*HG::GeV > m_lly || m_lly > 160.*HG::GeV ) return LLGMASSCUT;
 
   return PASSALL;
@@ -675,20 +682,6 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   HG::VarHandler::getInstance()->writeTruth();
 
   return EL::StatusCode::SUCCESS;
-}
-
-
-void HiggsGamGamStarCutflowAndMxAOD::GetElectronsAssociatedToTracks(const xAOD::TrackParticle& /*trk1*/,
-                                                                    const xAOD::TrackParticle& /*trk2*/,
-                                                                    xAOD::ElectronContainer& preSelElecs,
-                                                                    xAOD::ElectronContainer& selElecs)
-{
-
-  for (auto elec : preSelElecs) {
-    selElecs.push_back(elec);
-  }
-
-  return;
 }
 
 

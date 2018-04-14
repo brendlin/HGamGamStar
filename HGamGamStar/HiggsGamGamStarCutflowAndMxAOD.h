@@ -19,15 +19,15 @@ private:
     // Covered in MxAODTool: NxAOD=0, NDxAOD=1, ALLEVTS=2
     HIGGS_LEP_DALITZ=3, DUPLICATE=4, GRL=5, TRIGGER=6, DQ=7, VERTEX=8,
     TWO_SF_LEPTONS=9,ONE_LOOSE_GAM=10, AMBIGUITY=11,
-    TWO_SF_LEPTONS_POSTOR=12,ONE_PHOTON_POSTOR=13,
-    TRIG_MATCH=14, GAM_TIGHTID=15, GAM_ISOLATION=16, ZMASSCUT=17, LLGMASSCUT=18, PASSALL=19
+    ZBOSON_ASSIGNMENT=12,TWO_SF_LEPTONS_POSTOR=13,BAD_MUON=14,ONE_PHOTON_POSTOR=15,
+    TRIG_MATCH=16, GAM_TIGHTID=17, GAM_ISOLATION=18, ZMASSCUT=19, LLGMASSCUT=20, PASSALL=21
   };
 
   // names of all cuts (do not includ "pass all")
   const std::vector<TString> s_cutDescs =
     {"Lepton Dalitz truth","No duplicates","GRL","Pass trigger","Detector DQ","Has PV",
-     "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity",
-     "2 same-flavor leptons (post-OR)","1 loose photon (post-OR)",
+     "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity","Z-boson assignment",
+     "2 same-flavor leptons (post-OR)","Bad muon","1 loose photon (post-OR)",
      "Trigger match","tight ID","isolation","#it{m}_{ll} < 45 GeV",
      "#it{m}_{ll#gamma} #in [105,160] GeV"};
 
@@ -67,7 +67,8 @@ private:
   xAOD::ElectronContainer m_selElectrons; //!
   xAOD::ElectronContainer m_preSelElectrons; //!
 
-  HG::TrackParticleVec_t m_preSelTracks; //!
+  xAOD::TrackParticleContainer m_allTracks; //!
+  xAOD::TrackParticleContainer m_preSelTracks; //!
   xAOD::TrackParticleContainer m_selTracks; //!
 
   xAOD::MuonContainer m_allMuons; //!
@@ -103,10 +104,6 @@ private:
   CutEnum cutflow();
   EL::StatusCode doReco(bool isSys = false);
   EL::StatusCode doTruth();
-
-  void GetElectronsAssociatedToTracks(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2,
-                                      xAOD::ElectronContainer& preSelElecs,
-                                      xAOD::ElectronContainer& selElecs);
 
 private:
 #ifndef __CINT__

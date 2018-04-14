@@ -17,6 +17,10 @@ namespace HG {
     double  m_etaCut;
     double  m_ptCut;
 
+    // pt, eta cuts on underlying electron
+    double  m_eleEtaCut;
+    double  m_elePtCut;
+
   public:
 
     /// constructor
@@ -30,6 +34,13 @@ namespace HG {
     virtual xAOD::TrackParticleContainer getCorrectedContainer();
     virtual xAOD::TrackParticleContainer applySelection(xAOD::TrackParticleContainer &container);
     virtual CP::SystematicCode    applySystematicVariation(const CP::SystematicSet &sys);
+
+    xAOD::TrackParticleContainer findTracksFromElectrons(xAOD::TrackParticleContainer& container,
+                                                         const xAOD::ElectronContainer& elecs);
+
+    xAOD::ElectronContainer GetElecsAssociatedToTracks(const xAOD::TrackParticle& trk1,
+                                                       const xAOD::TrackParticle& trk2,
+                                                       xAOD::ElectronContainer& preSelElecs);
 
   };
 
