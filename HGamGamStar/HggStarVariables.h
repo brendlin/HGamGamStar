@@ -264,20 +264,8 @@ namespace HG {
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
                            double& return_mll,double closest_to=91188.);
 
-  typedef std::vector<xAOD::TrackParticle const *> TrackParticleVec_t;
-
-  void AssignZbosonIndices(TrackParticleVec_t& leps,int& return_lep1i,int& return_lep2i,
-                           double& return_mll,double closest_to=91188.);
-
-  /* typedef std::vector< const xAOD::IParticle* > ConstPartCont_t; */
-  /* void AssignZbosonIndices(const ConstPartCont_t& leps,int& return_lep1i,int& return_lep2i, */
-  /*                          double& return_mll,double closest_to=91188.); */
-
   bool eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
   bool isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl);
-
-  /* typedef std::vector< xAOD::TrackParticle const *> ConstTrackPartCont_t; */
-  TrackParticleVec_t getTracksFromElectrons(const xAOD::ElectronContainer& elecs);
 
 }
 
