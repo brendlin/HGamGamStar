@@ -35,7 +35,7 @@ private:
   CutEnum m_cutFlow;
 
   // names of the output containers
-  TString m_photonContainerName, m_jetContainerName, m_elecContainerName, m_muonContainerName;
+  TString m_photonContainerName, m_jetContainerName, m_elecContainerName, m_muonContainerName, m_trackContainerName;
   TString m_photonTruthContainerName, m_jetTruthContainerName, m_elecTruthContainerName, m_muonTruthContainerName;
   TString m_evtInfoName, m_truthEvtsName;
 

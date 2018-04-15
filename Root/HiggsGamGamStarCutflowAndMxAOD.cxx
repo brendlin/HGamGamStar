@@ -35,6 +35,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   m_jetContainerName    = "HGam"+config()->getStr("JetHandler.ContainerName");
   m_elecContainerName   = "HGam"+config()->getStr("ElectronHandler.ContainerName");
   m_muonContainerName   = "HGam"+config()->getStr("MuonHandler.ContainerName");
+  m_trackContainerName  = "HGam"+config()->getStr("TrackHandler.ContainerName");
   m_evtInfoName         = "EventInfo";
   m_truthEvtsName       = "TruthEvents";
 
@@ -82,13 +83,25 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   if (HG::isData()) ignore = {".isEMTight_nofudge", ".isTight_nofudge", ".topoetcone20_DDcorrected", ".topoetcone40_DDcorrected", ".truthOrigin", ".truthType", ".truthConvRadius", ".scaleFactor", ".truthLink", ".parentPdgId", ".pdgId"};
   declareOutputVariables(m_photonContainerName, "MxAOD.Variables.Photon"  , {}, ignore);
   declareOutputVariables("HGamPhotonsWithFakes","MxAOD.Variables.Photon"  , {}, ignore);
-  if (HG::isData()) ignore = {".SF_MV2c10_FixedCutBEff_60", ".SF_MV2c10_FixedCutBEff_70", ".SF_MV2c10_FixedCutBEff_77", ".SF_MV2c10_FixedCutBEff_85", ".Eff_MV2c10_FixedCutBEff_60", ".Eff_MV2c10_FixedCutBEff_70", ".Eff_MV2c10_FixedCutBEff_77", ".Eff_MV2c10_FixedCutBEff_85", ".InEff_MV2c10_FixedCutBEff_60", ".InEff_MV2c10_FixedCutBEff_70", ".InEff_MV2c10_FixedCutBEff_77", ".InEff_MV2c10_FixedCutBEff_85", ".HadronConeExclTruthLabelID"};
+
+  if (HG::isData()) ignore = {".SF_MV2c10_FixedCutBEff_60", ".SF_MV2c10_FixedCutBEff_70",
+                              ".SF_MV2c10_FixedCutBEff_77", ".SF_MV2c10_FixedCutBEff_85",
+                              ".Eff_MV2c10_FixedCutBEff_60", ".Eff_MV2c10_FixedCutBEff_70",
+                              ".Eff_MV2c10_FixedCutBEff_77", ".Eff_MV2c10_FixedCutBEff_85",
+                              ".InEff_MV2c10_FixedCutBEff_60", ".InEff_MV2c10_FixedCutBEff_70",
+                              ".InEff_MV2c10_FixedCutBEff_77", ".InEff_MV2c10_FixedCutBEff_85",
+                              ".HadronConeExclTruthLabelID"};
   declareOutputVariables(m_jetContainerName   , "MxAOD.Variables.Jet"     , {}, ignore);
+
   if (HG::isData()) ignore = {".scaleFactor", ".truthLink"};
   declareOutputVariables(m_elecContainerName  , "MxAOD.Variables.Electron", {}, ignore);
+
   if (HG::isData()) ignore = {".scaleFactor"};
   declareOutputVariables(m_muonContainerName  , "MxAOD.Variables.Muon"    , {}, ignore);
   declareOutputVariables("HGamMuonsInJets"    , "MxAOD.Variables.Muon"    , {}, ignore);
+
+  ignore = {};
+  declareOutputVariables(m_trackContainerName , "MxAOD.Variables.Track"   , {}, ignore);
 
   // c. Truth objects
   if (HG::isMC()) {
@@ -458,6 +471,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
       if (m_saveObjects) {
         CP_CHECK("execute()", photonHandler  ()->writeContainer(m_selPhotons  ));
         CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
+        CP_CHECK("execute()", trackHandler   ()->writeContainer(m_selTracks   ));
         CP_CHECK("execute()", jetHandler     ()->writeContainer(m_selJets     ));
         CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
         CP_CHECK("execute()", etmissHandler  ()->writeContainer(m_selMET      ));
