@@ -4,6 +4,8 @@
 #include "HGamAnalysisFramework/VarHandler.h"
 #include "HGamAnalysisFramework/HgammaIncludes.h"
 
+#include "HGamGamStar/ExtraHggStarObjects.h"
+
 #include "xAODBase/IParticleContainer.h"
 #include "xAODBase/IParticle.h"
 
@@ -97,6 +99,27 @@ namespace HG {
       if (eles->size() >= 2)
         return ((*eles)[0]->p4() + (*eles)[1]->p4()).Pt();
       return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class m_lly_track4mom : public VarBase<float> {
+  public:
+  m_lly_track4mom() : VarBase("m_lly_track4mom") { m_default = -99; m_recoOnly = true; }
+    ~m_lly_track4mom() { }
+
+    float calculateValue(bool truth)
+    {
+      if (truth)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      if (gams->size() < 1) return m_default;
+
+      const xAOD::IParticleContainer *trks = ExtraHggStarObjects::getInstance()->getElectronTracks();
+      if (trks->size() < 2) return m_default;
+
+      return ((*trks)[0]->p4() + (*trks)[1]->p4() + (*gams)[0]->p4()).M();
     }
   };
 
@@ -274,6 +297,7 @@ namespace var {
   extern HG::m_ll m_ll;
   extern HG::pt_lly pt_lly;
   extern HG::pt_ll pt_ll;
+  extern HG::m_lly_track4mom m_lly_track4mom;
   extern HG::pT_l1_h1 pT_l1_h1;
   extern HG::pT_l2_h1 pT_l2_h1;
   extern HG::deltaR_l1l2_h1 deltaR_l1l2_h1;
