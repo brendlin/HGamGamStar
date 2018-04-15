@@ -16,6 +16,7 @@ namespace HG {
 
 //____________________________________________________________________________
 HG::ExtraHggStarObjects::ExtraHggStarObjects()
+  : m_tracksAvail(false)
 {
 
 }
@@ -24,4 +25,21 @@ HG::ExtraHggStarObjects::ExtraHggStarObjects()
 HG::ExtraHggStarObjects::~ExtraHggStarObjects()
 {
 
+}
+
+//______________________________________________________________________________
+void HG::ExtraHggStarObjects::setElectronTrackContainer(const xAOD::IParticleContainer *tracks)
+{
+  if (tracks) {
+    m_tracks = *tracks;
+    m_tracksAvail = true;
+  }
+  return;
+}
+
+//______________________________________________________________________________
+void HG::ExtraHggStarObjects::clearContainers()
+{
+  m_tracks.clear();
+  m_tracksAvail = false;
 }

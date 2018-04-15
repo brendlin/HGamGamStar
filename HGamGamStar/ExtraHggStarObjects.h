@@ -7,15 +7,28 @@
 // true uh stuff.
 //
 
+#include "xAODBase/IParticleContainer.h"
+
 namespace HG {
 
   class ExtraHggStarObjects {
   private:
     static ExtraHggStarObjects *m_ptr;
 
+    xAOD::IParticleContainer m_tracks;
+    bool m_tracksAvail;
+
   public:
     /// Get instance of singleton class
     static ExtraHggStarObjects *getInstance();
+
+    void setElectronTrackContainer(const xAOD::IParticleContainer* tracks);
+
+    /// Reset containers to null pointers to avoid carry-over from previous event
+    void clearContainers();
+
+    /// Get pointer to collection
+    const xAOD::IParticleContainer *getElectronTracks(bool truth = false) const;
 
   private:
     /// Default constructor - note that it is private

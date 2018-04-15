@@ -2,6 +2,8 @@
 #include "HGamAnalysisFramework/HGamVariables.h"
 #include <EventLoop/Worker.h>
 
+#include "HGamGamStar/ExtraHggStarObjects.h"
+
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
 // #include "ZMassConstraint/ConstraintFit.h"
 
@@ -109,6 +111,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 {
   // Needed for all underlaying tools to be working corectly!
   HgammaAnalysis::execute();
+
+  // Clear containers which point to objects from previous event
+  HG::ExtraHggStarObjects::getInstance()->clearContainers();
 
   // Handle File Metadata (need to put this here because we need sample ID to define cutflow histo
   if (m_newFileMetaData) {
@@ -430,6 +435,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
   setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, &m_selMET, &m_jvtJets);
+  HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&m_selTracks);
 
   // Adds event-level variables to TStore
   if (m_photonAllSys)

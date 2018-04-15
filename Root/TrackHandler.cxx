@@ -147,6 +147,7 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
 }
 
+//______________________________________________________________________________
 xAOD::ElectronContainer
 HG::TrackHandler::GetElecsAssociatedToTracks(const xAOD::TrackParticle& trk1,
                                              const xAOD::TrackParticle& trk2,
