@@ -124,6 +124,24 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_ll_track4mom : public VarBase<float> {
+  public:
+  m_ll_track4mom() : VarBase("m_ll_track4mom") { m_default = -99; m_recoOnly = true; }
+    ~m_ll_track4mom() { }
+
+    float calculateValue(bool truth)
+    {
+      if (truth)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *trks = ExtraHggStarObjects::getInstance()->getElectronTracks();
+      if (trks->size() < 2) return m_default;
+
+      return ((*trks)[0]->p4() + (*trks)[1]->p4()).M();
+    }
+  };
+
+  //____________________________________________________________________________
   class pT_l1_h1 : public VarBase<float> {
   public:
   pT_l1_h1() : VarBase("pT_l1_h1") { m_default = -99; m_truthOnly = true; }
@@ -298,6 +316,7 @@ namespace var {
   extern HG::pt_lly pt_lly;
   extern HG::pt_ll pt_ll;
   extern HG::m_lly_track4mom m_lly_track4mom;
+  extern HG::m_ll_track4mom m_ll_track4mom;
   extern HG::pT_l1_h1 pT_l1_h1;
   extern HG::pT_l2_h1 pT_l2_h1;
   extern HG::deltaR_l1l2_h1 deltaR_l1l2_h1;

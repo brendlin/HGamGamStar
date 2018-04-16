@@ -550,6 +550,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   if (!truth)
   {
     var::m_lly_track4mom.addToStore(truth);
+    var::m_ll_track4mom.addToStore(truth);
   }
 
   var::N_mu   .addToStore(truth);
