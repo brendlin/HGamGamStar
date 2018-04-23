@@ -7,6 +7,8 @@ namespace var {
   HG::m_ll m_ll;
   HG::pt_lly pt_lly;
   HG::pt_ll pt_ll;
+  HG::pt_llyy pt_llyy;
+  HG::m_llyy m_llyy;
   HG::pT_l1_h1 pT_l1_h1;
   HG::pT_l2_h1 pT_l2_h1;
   HG::deltaR_l1l2_h1 deltaR_l1l2_h1;
