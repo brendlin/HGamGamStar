@@ -40,6 +40,10 @@ def getFilesFromCommandLine(Input,InputList) :
     if InputList :
         for fileName in open(InputList).readlines() :
             fileName = fileName.replace('\n','')
+            if fileName == '' :
+                continue
+            if '#' in fileName :
+                continue
             files.append(fileName)
 
     return files
@@ -92,6 +96,49 @@ def SetEventsPerWorker(sh,conf) :
         print details.format(sample.name(),nEventsInSample,maxEvents,nJobs)
 
     return
+
+#-------------------------------------------------------------------------
+def SaveSamplesInGridDirectFile(sh) :
+    # Save the files from GridDirect (to save time on the next run)
+
+    for sample in sh :
+
+        gd_name = 'GridDirect_%s.txt'%(sample.name())
+        if os.path.exists(gd_name) :
+            continue
+
+        griddirect_file = open(gd_name,'w')
+
+        nentries = sample.meta().castDouble(ROOT.SH.MetaFields.numEvents,-1)
+        griddirect_file.write('# nentries: %s\n'%(nentries))
+
+        for i in range(sample.numFiles()) :
+            griddirect_file.write('%s\n'%(sample.fileName(i)))
+
+        griddirect_file.close()
+        print 'GridDirect file saved to %s.'%(gd_name)
+
+    return
+
+#-------------------------------------------------------------------------
+def GetGridDirectResultFromFile(sh,ds) :
+    # If a file was saved with the results from the previous GridDirect call, take it from that file.
+
+    gd_name = 'GridDirect_%s.txt'%(ds)
+    if os.path.exists(gd_name) :
+
+        localfiles = getFilesFromCommandLine(None,gd_name)
+        sample = ROOT.SH.SampleLocal(ds)
+
+        for localfile in localfiles :
+            sample.add(localfile)
+
+        print 'Adding files via previous call to GridDirect for',ds
+        sh.add(sample)
+
+        return True
+
+    return False
 
 #-------------------------------------------------------------------------
 def SetGridEngineOpts(driver,conf) :
@@ -280,6 +327,11 @@ def main (options,args) :
         griddsets = getFilesFromCommandLine(options.Input,options.InputList)
 
         for ds in griddsets :
+
+            if GetGridDirectResultFromFile(myhandler,ds) :
+                # we just added it.
+                continue
+
             ROOT.SH.scanRucio(myhandler,ds)
 
         # last argument is whether to allow partial datasets:
@@ -288,6 +340,8 @@ def main (options,args) :
         print 'SH::makeGridDirect LOCALGROUPDISK: \"%s\"'%(localgroupdisk)
         ROOT.SH.makeGridDirect(myhandler,localgroupdisk,griddirect_from,griddirect_to,False)
 
+        # Save these results to a file
+        SaveSamplesInGridDirectFile(myhandler)
 
     # Grid samples
     elif options.Grid :
