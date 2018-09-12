@@ -10,6 +10,8 @@ namespace var {
   HG::pt_ll pt_ll;
   HG::m_lly_track4mom m_lly_track4mom;
   HG::m_ll_track4mom m_ll_track4mom;
+  HG::pt_llyy pt_llyy;
+  HG::m_llyy m_llyy;
   HG::pT_l1_h1 pT_l1_h1;
   HG::pT_l2_h1 pT_l2_h1;
   HG::deltaR_l1l2_h1 deltaR_l1l2_h1;

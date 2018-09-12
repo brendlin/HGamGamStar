@@ -496,11 +496,13 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
 
 void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 {
-  // var::m_yy.addToStore(truth);
+  var::m_yy.addToStore(truth);
   var::m_lly.addToStore(truth);
   var::m_ll.addToStore(truth);
   var::pt_lly.addToStore(truth);
   var::pt_ll.addToStore(truth);
+  var::pt_llyy.addToStore(truth);
+  var::m_llyy.addToStore(truth);
 
   var::N_mu   .addToStore(truth);
   var::N_e    .addToStore(truth);
@@ -511,6 +513,8 @@ void ZyCutflowAndMxAOD::writeNominalOnly()
 {
   eventHandler()->mu();
   eventHandler()->runNumber();
+  eventHandler()->centralEventShapeDensity();
+  eventHandler()->forwardEventShapeDensity();
 
   // Additional cut flow granularity
   int Nloose = m_preSelPhotons.size();
