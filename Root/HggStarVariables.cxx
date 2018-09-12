@@ -1,12 +1,15 @@
 #include "HGamGamStar/HggStarVariables.h"
 
 #include "HGamAnalysisFramework/TruthHandler.h"
+#include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 
 namespace var {
   HG::m_lly m_lly;
   HG::m_ll m_ll;
   HG::pt_lly pt_lly;
   HG::pt_ll pt_ll;
+  HG::m_lly_track4mom m_lly_track4mom;
+  HG::m_ll_track4mom m_ll_track4mom;
   HG::pt_llyy pt_llyy;
   HG::m_llyy m_llyy;
   HG::pT_l1_h1 pT_l1_h1;
@@ -15,12 +18,14 @@ namespace var {
   HG::ystar_pdg_flavor ystar_pdg_flavor;
   HG::isNonHyyStarHiggs isNonHyyStarHiggs;
   HG::pT_yDirect_h1 pT_yDirect_h1;
+  HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
 }
 
 void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
                              double& return_mll,double closest_to){
 
   double min_delta = DBL_MAX;
+  bool sortby_pt = true;
 
   for (unsigned int i=0;i<leps.size();++i) {
     const xAOD::IParticle* lepi = leps[i];
@@ -31,6 +36,9 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
 
       if (lepi->pt() < lepj->pt()) continue;
 
+      if (lepi->type() == xAOD::Type::TrackParticle &&
+          ((xAOD::TrackParticle*)lepi)->charge() == ((xAOD::TrackParticle*)lepj)->charge()) continue;
+
       if (lepi->type() == xAOD::Type::Electron &&
           ((xAOD::Electron*)lepi)->charge() == ((xAOD::Electron*)lepj)->charge()) continue;
 
@@ -39,8 +47,10 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
 
       TLorentzVector tmp = lepi->p4() + lepj->p4();
 
-      if (fabs(tmp.M()-closest_to) < min_delta) {
-        min_delta = fabs(tmp.M()-closest_to);
+      double metric = (sortby_pt ? tmp.Pt() : tmp.M() );
+
+      if ( fabs( metric - closest_to ) < min_delta) {
+        min_delta = fabs( metric - closest_to );
         return_lep1i = i;
         return_lep2i = j;
         return_mll = tmp.M();
@@ -54,6 +64,7 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
 HG::TruthPtcls HG::getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl)
 {
   // Recursive, starting from the Higgs
+  // STABLE particles returned.
 
   if (ptcl == nullptr) { HG::fatal("getHyyStarSignalDecayProducts FATAL: particle is NULL"); }
 
