@@ -12,6 +12,7 @@ If you are running outside of the lxplus network, it is suggested that you creat
 
 To checkout the necessary packages, do:
 
+    cd source
     git clone --recursive ssh://git@gitlab.cern.ch:7999/brendlin/HGamGamStar.git
 
 Compiling
