@@ -51,6 +51,7 @@ Running - New Tools!
 ---------
 A new run tool, based in Python, allows for more user-friendly job running. To run a test job, do:
 
+    cd $TestArea/../run
     runJob.py --InputList MyList.txt --OutputDir Test --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config -n 10000
 
  - **--Alg**: the options are "ZyCutflowAndMxAOD" or "HiggsGamGamStarCutflowAndMxAOD".
@@ -106,6 +107,7 @@ automatically convert the DSIDs in your localgroupdisk to a list of files.
  - Then you can run the job on condor with the following command:
 
     ```
+    cd $TestArea/../run
     runJob.py --InputList Samples.txt --OutputDir MyOutputDir --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000
     ```
 
