@@ -67,7 +67,29 @@ Some more details about using this run scheme with Condor:
  - **--optCondorConf**: Another option to add to the condor option configuration (expert mode)
  - **--Condor_UseLD_LIBRARY_PATH**: Some systems refuse to export `LD_LIBRARY_PATH` to your worker nodes, so some code was written to do this for you if it's necessary. (This is a boolean). If you work at DESY, then this is probably necessary.
 
-Putting it all together:
+### How to use the **--GridDirect** option
+
+You will need to export a few variables to your environment so that the code knows how to access your local group disk.
+(You can put these in your `.bash_profile` startup script too):
+
+    export LOCALGROUPDISK="DESY-HH_LOCALGROUPDISK"
+    export GRIDDIRECT_FROM="root://dcache-atlas-xrootd.desy.de:1094//"
+    export GRIDDIRECT_TO="/"
+
+The last two variables relate to how to interpret the file paths on your institute's local group disk. If you do not know the file protocol, try running:
+
+    rucio list-file-replicas --protocols root --rse DESY-HH_LOCALGROUPDISK SOMEDATASET
+    
+where `SOMEDATASET` is an existing dataset on your local group disk.
+For DESY, the output of this command shows file paths that look like `root://dcache-atlas-xrootd.desy.de:1094//some/file/path`.
+The `GRIDDIRECT_FROM` and `GRIDDIRECT_TO` environment variables are telling the code to replace `root://dcache-atlas-xrootd.desy.de:1094//` with `/`
+in order to convert to a local file path. (Note that DESY is the only environment where this was tested, so please contact the developers if
+you can't figure out your system.)
+
+Once you've set up these environment variables, you can use the built-in functionality to
+automatically convert the DSIDs in your localgroupdisk to a list of files.
+
+### Putting it all together
 
  - You have a list of datasets that you want to run on condor. You make a file Samples.txt that looks like:
 
