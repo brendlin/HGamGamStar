@@ -2,6 +2,15 @@ H&rarr;&gamma;&gamma;* MxAOD Code Description
 ========================
 This is a description of how to run the MxAOD code for the H&rarr;&gamma;&gamma;* analysis.
 
+Initial setup
+--------
+
+To set up the ATLAS environment, run (or put in your `.bash_profile` startup file):
+    
+    export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
+    alias 'setupATLAS=source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh'
+    setupATLAS
+
 Checking Out the code
 --------
 If you are running outside of the lxplus network, it is suggested that you create a kerberos ticket by running "kinit username@CERN.CH" and authenticating with your password. Then, set up your area -- for instance:
@@ -18,9 +27,9 @@ To checkout the necessary packages, do:
 Compiling
 ---------
 
-To compile in Rel 21.2.22, do:
+To compile in Rel 21.2.25, do:
 
-    asetup AnalysisBase,21.2.22,here # only needed once per login session
+    asetup AnalysisBase,21.2.25,here # only needed once per login session
     cd $TestArea/../build
     cmake ../source
     cmake --build .
