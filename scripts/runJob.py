@@ -38,7 +38,14 @@ def getFilesFromCommandLine(Input,InputList) :
         files += Input.split(',')
 
     if InputList :
-        for fileName in open(InputList).readlines() :
+
+        tmp_inputlist = ROOT.PathResolverFindCalibFile(InputList)
+        if not tmp_inputlist :
+            Error('Cannot find text file specified by --InputList')
+        else :
+            print 'Found file %s (specified using --InputList)'%(tmp_inputlist)
+
+        for fileName in open(tmp_inputlist).readlines() :
             fileName = fileName.replace('\n','')
             if fileName == '' :
                 continue
