@@ -327,6 +327,10 @@ def main (options,args) :
         griddsets = getFilesFromCommandLine(options.Input,options.InputList)
 
         for ds in griddsets :
+            
+            if 'TeV' not in ds :
+                print 'The dataset ' + ds + ' is in the wrong format, or there\'s an empty line(s) in your input file. Skipping it.'
+                continue
 
             if GetGridDirectResultFromFile(myhandler,ds) :
                 # we just added it.
