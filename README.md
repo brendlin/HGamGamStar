@@ -113,13 +113,18 @@ automatically convert the DSIDs in your localgroupdisk to a list of files.
 
 Updating the HGamCore Tag
 ---------
-To update the HGamCore tag, do:
-```
-cd HGamGamStar/HGamCore
-git checkout v1.3.0-h019
-git submodule update --init --recursive
-# don't forget to commit to the HGamGamStar repository.
-```
+If you are a *user* who is trying to update the HGamGamStar package, including an update to submodule tags, first make sure your
+submodules have no local edits. Then do:
+
+    git pull
+    git submodule update --recursive
+    
+If you are a developer trying to update to a new HGamCore tag, do e.g.:
+
+    cd HGamGamStar/HGamCore
+    git checkout v1.3.0-h019
+    git submodule update --init --recursive
+    # don't forget to commit to the HGamGamStar repository.
 
 Unfortunately, the commit hash is saved instead of the tag name, so you will
 have to match the has to the tag name if you want to see which one is currently
