@@ -471,7 +471,7 @@ if __name__ == "__main__":
 
     # Grid Output grid tag / local prod tag:
     p.add_option('--GridTag',type='string',default=None,dest='GridTag',help='GridTag (user.<UserName>.<Tag>)' )
-    p.add_option('--ProdTag',type='string',default=None,dest='ProdTag',help='Production Tag (e.g. h016)' )
+    p.add_option('--ProdTag',type='string',default=None,dest='ProdTag',help='Production Tag (e.g. h016) (only used with GridDirect)' )
 
     options,args = p.parse_args()
 
