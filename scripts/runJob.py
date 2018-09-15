@@ -354,6 +354,9 @@ def main (options,args) :
         # Save these results to a file
         SaveSamplesInGridDirectFile(myhandler)
 
+        # Set output dataset names
+        HelperTools.SetOutputDatasetNames(myhandler,conf.getStr('ProdTag','').Data())
+
     # Grid samples
     elif options.Grid :
 
@@ -466,8 +469,9 @@ if __name__ == "__main__":
     for opt in GetGridOptionsDouble() + GetGridOptionsString() + ['nc_grid_filter'] :
         p.add_option('--%s'%(opt),type='string',default=None,dest=opt,help=opt)
 
-    # Grid Output grid tag:
+    # Grid Output grid tag / local prod tag:
     p.add_option('--GridTag',type='string',default=None,dest='GridTag',help='GridTag (user.<UserName>.<Tag>)' )
+    p.add_option('--ProdTag',type='string',default=None,dest='ProdTag',help='Production Tag (e.g. h016) (only used with GridDirect)' )
 
     options,args = p.parse_args()
 
