@@ -4,6 +4,8 @@
 #include "HGamAnalysisFramework/VarHandler.h"
 #include "HGamAnalysisFramework/HgammaIncludes.h"
 
+#include "HGamGamStar/ExtraHggStarObjects.h"
+
 #include "xAODBase/IParticleContainer.h"
 #include "xAODBase/IParticle.h"
 
@@ -21,6 +23,10 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      // getPhotons only returns the leading photon candidate.
+      // For Truth: best to use "m_h1"
       (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
@@ -41,6 +47,9 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      // For Truth: best to use "m_yStar_undressed_h1"
       (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
@@ -60,6 +69,8 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
       (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
@@ -92,6 +103,27 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_lly_track4mom : public VarBase<float> {
+  public:
+  m_lly_track4mom() : VarBase("m_lly_track4mom") { m_default = -99; m_recoOnly = true; }
+    ~m_lly_track4mom() { }
+
+    float calculateValue(bool truth)
+    {
+      if (truth)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      if (gams->size() < 1) return m_default;
+
+      const xAOD::IParticleContainer *trks = ExtraHggStarObjects::getInstance()->getElectronTracks();
+      if (trks->size() < 2) return m_default;
+
+      return ((*trks)[0]->p4() + (*trks)[1]->p4() + (*gams)[0]->p4()).M();
+    }
+  };
+
+  //____________________________________________________________________________
   class m_llyy : public VarBase<float> {
   public:
   m_llyy() : VarBase("m_llyy") { m_default = -99; }
@@ -108,6 +140,24 @@ namespace HG {
       if (eles->size() >= 2 && gams->size() >= 2)
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4() + (*gams)[1]->p4()).M();
       return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class m_ll_track4mom : public VarBase<float> {
+  public:
+  m_ll_track4mom() : VarBase("m_ll_track4mom") { m_default = -99; m_recoOnly = true; }
+    ~m_ll_track4mom() { }
+
+    float calculateValue(bool truth)
+    {
+      if (truth)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *trks = ExtraHggStarObjects::getInstance()->getElectronTracks();
+      if (trks->size() < 2) return m_default;
+
+      return ((*trks)[0]->p4() + (*trks)[1]->p4()).M();
     }
   };
 
@@ -265,6 +315,32 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_yStar_undressed_h1 : public VarBase<float> {
+  public:
+  m_yStar_undressed_h1() : VarBase("m_yStar_undressed_h1") { m_default = -99; m_truthOnly = true; }
+    ~m_yStar_undressed_h1() { }
+
+    // "undressed" here means no final-state radiation off of the leptons included.
+
+    float calculateValue(bool truth)
+    {
+      if (not truth)
+      { return m_default; }
+
+      const xAOD::TruthParticleContainer *higgses = (xAOD::TruthParticleContainer*)HG::VarHandler::getInstance()->getHiggsBosons();
+
+      if (higgses->size() == 0) return m_default;
+
+      TruthPtcls decayProds = getHyyStarSignalDecayProducts((*higgses)[0]);
+      TruthPtcls childleps = FilterLeptons(decayProds);
+
+      if (childleps.size() != 2) return m_default;
+
+      return (childleps[0]->p4() + childleps[1]->p4()).M();
+    }
+  };
+
+  //____________________________________________________________________________
 
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
                            double& return_mll,double closest_to=91188.);
@@ -279,6 +355,8 @@ namespace var {
   extern HG::m_ll m_ll;
   extern HG::pt_lly pt_lly;
   extern HG::pt_ll pt_ll;
+  extern HG::m_lly_track4mom m_lly_track4mom;
+  extern HG::m_ll_track4mom m_ll_track4mom;
   extern HG::pt_llyy pt_llyy;
   extern HG::m_llyy m_llyy;
   extern HG::pT_l1_h1 pT_l1_h1;
@@ -287,6 +365,7 @@ namespace var {
   extern HG::ystar_pdg_flavor ystar_pdg_flavor;
   extern HG::isNonHyyStarHiggs isNonHyyStarHiggs;
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
+  extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
 }
 
 

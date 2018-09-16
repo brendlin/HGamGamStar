@@ -1,15 +1,26 @@
 
 #-------------------------------------------------------------------------
-def SetOutputDatasetNames(samplehandler,tag) :
+def SetOutputDatasetNames(samplehandler,tag='') :
     import re
     for sample in samplehandler :
-        name = '%s.%s'%(tag,sample.name())
+        name = sample.name()
+        if tag :
+            name = '%s.%s'%(tag,name)
         
         # General
         name = name.replace('.deriv.'       ,'.')
-        name = name.replace('mc16_13TeV.'   ,'' )
         name = name.replace('.DAOD_HIGG1D2.','.')
         name = name.replace('.DAOD_HIGG1D1.','.')
+
+        # mc16a / mc16c / mc16d / mc16e
+        if 'r9364' in name :
+            name = name.replace('mc16_13TeV.','mc16a.')
+        elif 'r9781' in name :
+            name = name.replace('mc16_13TeV.','mc16c.')
+        elif 'r10201' in name :
+            name = name.replace('mc16_13TeV.','mc16d.')
+        else :
+            name = name.replace('mc16_13TeV.','mc16.')
 
         # Generator - Powheg
         name = name.replace('PowhegPythia8EvtGen_NNLOPS'  ,'PowhegPy8_NNLOPS')

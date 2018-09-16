@@ -3,9 +3,11 @@
 
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
 #include "HGamGamStar/MxAODTool.h"
-#include "FsrUtils/FsrPhotonTool.h"
+/* #include "FsrUtils/FsrPhotonTool.h" */
 #include "AsgTools/ToolHandle.h"
-#include "ZMassConstraint/IConstraintFit.h"
+/* #include "ZMassConstraint/IConstraintFit.h" */
+#include "HGamGamStar/HggStarVariables.h"
+#include "HGamGamStar/TrackHandler.h"
 
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
@@ -17,23 +19,23 @@ private:
     // Covered in MxAODTool: NxAOD=0, NDxAOD=1, ALLEVTS=2
     HIGGS_LEP_DALITZ=3, DUPLICATE=4, GRL=5, TRIGGER=6, DQ=7, VERTEX=8,
     TWO_SF_LEPTONS=9,ONE_LOOSE_GAM=10, AMBIGUITY=11,
-    TWO_SF_LEPTONS_POSTOR=12,ONE_PHOTON_POSTOR=13,
-    TRIG_MATCH=14, GAM_TIGHTID=15, GAM_ISOLATION=16, MASSCUT=17, PASSALL=18
+    ZBOSON_ASSIGNMENT=12,TWO_SF_LEPTONS_POSTOR=13,BAD_MUON=14,ONE_PHOTON_POSTOR=15,
+    TRIG_MATCH=16, GAM_TIGHTID=17, GAM_ISOLATION=18, ZMASSCUT=19, LLGMASSCUT=20, PASSALL=21
   };
 
   // names of all cuts (do not includ "pass all")
   const std::vector<TString> s_cutDescs =
     {"Lepton Dalitz truth","No duplicates","GRL","Pass trigger","Detector DQ","Has PV",
-     "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity",
-     "2 same-flavor leptons (post-OR)","1 loose photon (post-OR)",
-     "Trigger match","tight ID","isolation",
-     "#it{m}_{#gamma#gamma} #in [105,160] GeV"};
+     "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity","Z-boson assignment",
+     "2 same-flavor leptons (post-OR)","Bad muon","1 loose photon (post-OR)",
+     "Trigger match","tight ID","isolation","#it{m}_{ll} < 45 GeV",
+     "#it{m}_{ll#gamma} #in [105,160] GeV"};
 
   /// value of cut that fail selection: PASSALL if all cuts passed
   CutEnum m_cutFlow;
 
   // names of the output containers
-  TString m_photonContainerName, m_jetContainerName, m_elecContainerName, m_muonContainerName;
+  TString m_photonContainerName, m_jetContainerName, m_elecContainerName, m_muonContainerName, m_trackContainerName;
   TString m_photonTruthContainerName, m_jetTruthContainerName, m_elecTruthContainerName, m_muonTruthContainerName;
   TString m_evtInfoName, m_truthEvtsName;
 
@@ -43,23 +45,14 @@ private:
   // whether it's a Dalitz event
   bool m_isNonHyyStarHiggs;
 
+  // store the crossSectionBRfilterEff value once per file
+  float m_crossSectionBRfilterEff;
+
   // whether to apply systematics, save the differential variables and the truth
   bool m_applySystematics, m_saveObjects, m_saveTruthObjects, m_saveTruthVars;
-  bool m_allowMoreThanTwoPhotons;
-
-  // whether to save fake photon combinations
-  bool m_enableFakePhotons;
-  //If we have two good fakes then we need to pass the slimming
-  bool m_goodFakeComb;
-
-  //Whether we are running yybb-tool in detailed mode
-  bool m_detailedHHyybb;
 
   // Temporary flag for photon all sys
   bool m_photonAllSys;
-
-  // Tools
-  ToolHandle<ZMassConstraint::IConstraintFit> m_massConstraint;
 
   // Containers
   xAOD::PhotonContainer m_allPhotons; //!
@@ -72,7 +65,11 @@ private:
 
   xAOD::ElectronContainer m_allElectrons; //!
   xAOD::ElectronContainer m_selElectrons; //!
-  xAOD::ElectronContainer m_preSelElectrons; //!
+  // xAOD::ElectronContainer m_preSelElectrons; //!
+
+  xAOD::TrackParticleContainer m_allTracks; //!
+  xAOD::TrackParticleContainer m_preSelTracks; //!
+  xAOD::TrackParticleContainer m_selTracks; //!
 
   xAOD::MuonContainer m_allMuons; //!
   xAOD::MuonContainer m_selMuons; //!
@@ -108,6 +105,14 @@ private:
   EL::StatusCode doReco(bool isSys = false);
   EL::StatusCode doTruth();
 
+private:
+#ifndef __CINT__
+  HG::TrackHandler *m_trackHandler; //!
+#endif // __CINT__
+
+protected:
+  inline virtual HG::TrackHandler *trackHandler() { return m_trackHandler; }
+
 public:
 
   // this is a standard constructor
@@ -117,21 +122,30 @@ public:
 
   // these are the functions inherited from HgammaAnalysis
   virtual EL::StatusCode createOutput();
+  virtual EL::StatusCode initialize();
   virtual EL::StatusCode execute();
   virtual EL::StatusCode finalize();
   virtual EL::StatusCode fileExecute();
 
-  // Functions for saving information
+  // Variables to write when using FULL_v1 photon systematics
+  // (separated from the other systs due to file size)
   void writePhotonAllSys(bool isSys);
-  void writeNominalAndSystematic(bool isSys);
+
+  // Variables to write to nominal file and (non-photon) systematics file
+  void writeNominalAndSystematic();
+
+  // Variables to write only to the nominal file
   void writeNominalOnly();
+
+  // Detailed variables to write if "SaveDetailedVariables" is set (only called for nominal case)
   void writeDetailed();
 
-  // Functions for writting variables
+  // Functions for writing variables (E.g. "writeBlahVars" is called by "writeBlah")
   void writePhotonAllSysVars(bool truth = false);
   void writeNominalAndSystematicVars(bool truth = false);
   void writeNominalOnlyVars(bool truth = false);
   void writeDetailedVars(bool truth = false);
+  void writeTruthOnlyVars();
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(HiggsGamGamStarCutflowAndMxAOD, 1);
