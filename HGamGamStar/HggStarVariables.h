@@ -343,7 +343,7 @@ namespace HG {
   //____________________________________________________________________________
 
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
-                           double& return_mll,double closest_to=91188.);
+                           double& return_mll,bool sortby_pt,double closest_to); // Z = 91188
 
   bool eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
   bool isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl);

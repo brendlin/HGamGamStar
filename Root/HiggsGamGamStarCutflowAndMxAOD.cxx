@@ -269,8 +269,16 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // Electron applySelection applies PID, IP and Iso cuts
   //m_preSelElectrons = electronHandler()->applySelection(m_allElectrons);
 
+  // Apply muon preselection.
+  // HGamCore does not have a muon preselection step, so we make our own here:
   m_allMuons = muonHandler()->getCorrectedContainer();
-  xAOD::MuonContainer m_preSelMuons = muonHandler()->applySelection(m_allMuons);
+  xAOD::MuonContainer m_preSelMuons(SG::VIEW_ELEMENTS);
+
+  for (auto muon : m_allMuons) {
+    if (!muonHandler()->passPtCuts(muon)) { continue; }
+    if (!muonHandler()->passPIDCut(muon)) { continue; } // This includes MaxEta cut
+    m_preSelMuons.push_back(muon);
+  }
 
   // //==== CUTs on leptons
   // if (m_preSelElectrons.size() < 2 && m_preSelMuons.size() < 2) {
@@ -333,18 +341,18 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // m_preSelMuons = muonHandler()->applyCleaningSelection(dirtyMuons);
 
   // Select Z candidate after overlap removal.
-  // Find the highest-mll pair closest to (13 TeV)
+  // Find the highest-pt pair closest to (13 TeV)
   int sel_muon1 = -1, sel_muon2 = -1;
   double return_mmumu = -1;
-  HG::AssignZbosonIndices(m_preSelMuons,sel_muon1,sel_muon2,return_mmumu,13000.*HG::GeV);
+  HG::AssignZbosonIndices(m_preSelMuons,sel_muon1,sel_muon2,return_mmumu,/*sortby_pt*/ true,13000.*HG::GeV);
 
   // int sel_ele1 = -1, sel_ele2 = -1;
   // double return_mee = -1;
-  // HG::AssignZbosonIndices(m_preSelElectrons,sel_ele1,sel_ele2,return_mee,13000.*HG::GeV);
+  // HG::AssignZbosonIndices(m_preSelElectrons,sel_ele1,sel_ele2,return_mee,/*sortby_pt*/ true,13000.*HG::GeV);
 
   int sel_trk1 = -1, sel_trk2 = -1;
   double return_mtrktrk = -1;
-  HG::AssignZbosonIndices(m_preSelTracks,sel_trk1,sel_trk2,return_mtrktrk,13000.*HG::GeV);
+  HG::AssignZbosonIndices(m_preSelTracks,sel_trk1,sel_trk2,return_mtrktrk,/*sortby_pt*/ true,13000.*HG::GeV);
 
   // std::cout << "trk mass: " << return_mtrktrk << std::endl;
   // if (return_mtrktrk > 0)
