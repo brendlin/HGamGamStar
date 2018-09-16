@@ -261,13 +261,19 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 8 : Require a vertex ====
   if ( !eventHandler()->passVertex(eventInfo()) ) return VERTEX;
 
-  // retrieve electrons, muons
+  // Apply electron preselection.
+  // HGamCore does not have an electron preselection step, so we make our own here:
   m_allElectrons = electronHandler()->getCorrectedContainer();
-  m_allTracks = trackHandler()->getCorrectedContainer();
-  m_preSelTracks = trackHandler()->findTracksFromElectrons(m_allTracks,m_allElectrons);
+  xAOD::ElectronContainer m_preSelElectrons(SG::VIEW_ELEMENTS);
+  for (auto electron : m_allElectrons) {
+    if (!electronHandler()->passOQCut(electron)) { continue; }
+    if (!electronHandler()->passPtEtaCuts(electron)) { continue; }
+    if (!electronHandler()->passHVCut(electron)) { continue; }
+    m_preSelElectrons.push_back(electron);
+  }
 
-  // Electron applySelection applies PID, IP and Iso cuts
-  //m_preSelElectrons = electronHandler()->applySelection(m_allElectrons);
+  m_allTracks = trackHandler()->getCorrectedContainer();
+  m_preSelTracks = trackHandler()->findTracksFromElectrons(m_allTracks,m_preSelElectrons);
 
   // Apply muon preselection.
   // HGamCore does not have a muon preselection step, so we make our own here:
@@ -376,7 +382,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_selTracks.push_back(m_preSelTracks[sel_trk2]);
 
     m_selElectrons = m_trackHandler->GetElecsAssociatedToTracks(*m_selTracks[0],
-                                                                *m_selTracks[1],m_allElectrons);
+                                                                *m_selTracks[1],m_preSelElectrons);
 
     m_ll = return_mtrktrk;
     m_lly = (m_selTracks[0]->p4() + m_selTracks[1]->p4() + m_selPhotons[0]->p4()).M();

@@ -17,10 +17,6 @@ namespace HG {
     double  m_etaCut;
     double  m_ptCut;
 
-    // pt, eta cuts on underlying electron
-    double  m_eleEtaCut;
-    double  m_elePtCut;
-
   public:
 
     /// constructor

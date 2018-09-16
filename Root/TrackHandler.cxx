@@ -30,9 +30,6 @@ EL::StatusCode HG::TrackHandler::initialize(Config &config)
   m_etaCut     = config.getNum(m_name + ".Selection.MaxAbsEta", 2.47);
   m_ptCut      = config.getNum(m_name + ".Selection.PtPreCutGeV", 0.3) * GeV;
 
-  m_eleEtaCut  = config.getNum("ElectronHandler.Selection.MaxAbsEta", 2.47);
-  m_elePtCut   = config.getNum("ElectronHandler.Selection.PtPreCutGeV", 25.0) * GeV;
-
   return EL::StatusCode::SUCCESS;
 }
 
@@ -79,9 +76,6 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
   // std::cout << "~~~~~~" << std::endl;
   for (auto electron : elecs) {
-
-    if ( std::abs( electron->caloCluster()->etaBE(2) ) > m_eleEtaCut ) continue;
-    if ( electron->pt() < m_elePtCut ) continue;
 
     // std::cout << Form("Electron pt: %.0f eta: %.3f has %lu tracks",
     //                   electron->pt(),
@@ -157,9 +151,6 @@ HG::TrackHandler::GetElecsAssociatedToTracks(const xAOD::TrackParticle& trk1,
   xAOD::ElectronContainer selected(SG::VIEW_ELEMENTS);
 
   for (auto electron : preSelElecs) {
-
-    if ( std::abs( electron->caloCluster()->etaBE(2) ) > m_eleEtaCut ) continue;
-    if ( electron->pt() < m_elePtCut ) continue;
 
     bool matches = false;
 
