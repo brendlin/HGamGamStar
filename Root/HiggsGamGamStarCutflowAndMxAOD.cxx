@@ -174,6 +174,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
     var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
   }
 
+  // Set this for every event, just in case.
+  var::yyStarChannel.setValue(CHANNELUNKNOWN);
+
   // apply cuts. Returned value will be the last passed cut
   m_cutFlow = cutflow();
 
@@ -377,6 +380,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_selMuons.push_back(m_preSelMuons[sel_muon2]);
     m_ll = return_mmumu;
     m_lly = (m_selMuons[0]->p4() + m_selMuons[1]->p4() + m_selPhotons[0]->p4()).M();
+    var::yyStarChannel.setValue(DIMUON);
   } else {
     m_selTracks.push_back(m_preSelTracks[sel_trk1]);
     m_selTracks.push_back(m_preSelTracks[sel_trk2]);
@@ -386,6 +390,25 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
     m_ll = return_mtrktrk;
     m_lly = (m_selTracks[0]->p4() + m_selTracks[1]->p4() + m_selPhotons[0]->p4()).M();
+
+    // Electron channel assignment.
+    // Impossible to have missed a matching electron, since
+    // it is the same collection of electons as before.
+    if (m_selElectrons.size() == 1)
+    {
+      var::yyStarChannel.setValue(MERGED_DIELECTRON);
+    }
+    else if (m_trackHandler->nMatchedElectrons(*m_selTracks[0]) > 1 ||
+             m_trackHandler->nMatchedElectrons(*m_selTracks[1]) > 1)
+    {
+      var::yyStarChannel.setValue(AMBIGUOUS_DIELECTRON);
+    }
+    else if (m_selElectrons.size() == 2) {
+      var::yyStarChannel.setValue(RESOLVED_DIELECTRON);
+    }
+    else {
+      HG::fatal("Something went wrong in channel categorization - please check!");
+    }
   }
 
   m_allJets = jetHandler()->getCorrectedContainer();

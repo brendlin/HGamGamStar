@@ -19,6 +19,7 @@ namespace var {
   HG::isNonHyyStarHiggs isNonHyyStarHiggs;
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
+  HG::yyStarChannel yyStarChannel;
 }
 
 void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,

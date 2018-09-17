@@ -14,6 +14,14 @@ class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 
 private:
 
+  enum ChannelEnum {
+    CHANNELUNKNOWN=0,
+    DIMUON=1,
+    RESOLVED_DIELECTRON=2,
+    MERGED_DIELECTRON=3,
+    AMBIGUOUS_DIELECTRON=4
+  };
+
   // Cut-flow - need to keep the same order!
   enum CutEnum {
     // Covered in MxAODTool: NxAOD=0, NDxAOD=1, ALLEVTS=2
