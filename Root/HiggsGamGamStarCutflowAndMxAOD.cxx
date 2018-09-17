@@ -562,9 +562,12 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic()
   var::cutFlow.setValue(m_cutFlow);
   passJetEventCleaning();
 
-  // Basic event weights
-  eventHandler()->pileupWeight();
-  eventHandler()->vertexWeight();
+  if (HG::isMC()) {
+
+    // Basic event weights
+    eventHandler()->pileupWeight();
+    eventHandler()->vertexWeight();
+  }
 
   // Additional variables useful for non-framework analysis
   int Nloose = m_preSelPhotons.size();
