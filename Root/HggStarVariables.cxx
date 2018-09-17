@@ -19,13 +19,13 @@ namespace var {
   HG::isNonHyyStarHiggs isNonHyyStarHiggs;
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
+  HG::yyStarChannel yyStarChannel;
 }
 
 void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
-                             double& return_mll,double closest_to){
+                             double& return_mll,bool sortby_pt,double closest_to){
 
   double min_delta = DBL_MAX;
-  bool sortby_pt = true;
 
   for (unsigned int i=0;i<leps.size();++i) {
     const xAOD::IParticle* lepi = leps[i];

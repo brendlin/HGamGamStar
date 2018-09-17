@@ -174,6 +174,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
     var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
   }
 
+  // Set this for every event, just in case.
+  var::yyStarChannel.setValue(CHANNELUNKNOWN);
+
   // apply cuts. Returned value will be the last passed cut
   m_cutFlow = cutflow();
 
@@ -261,16 +264,30 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 8 : Require a vertex ====
   if ( !eventHandler()->passVertex(eventInfo()) ) return VERTEX;
 
-  // retrieve electrons, muons
+  // Apply electron preselection.
+  // HGamCore does not have an electron preselection step, so we make our own here:
   m_allElectrons = electronHandler()->getCorrectedContainer();
+  xAOD::ElectronContainer m_preSelElectrons(SG::VIEW_ELEMENTS);
+  for (auto electron : m_allElectrons) {
+    if (!electronHandler()->passOQCut(electron)) { continue; }
+    if (!electronHandler()->passPtEtaCuts(electron)) { continue; }
+    if (!electronHandler()->passHVCut(electron)) { continue; }
+    m_preSelElectrons.push_back(electron);
+  }
+
   m_allTracks = trackHandler()->getCorrectedContainer();
-  m_preSelTracks = trackHandler()->findTracksFromElectrons(m_allTracks,m_allElectrons);
+  m_preSelTracks = trackHandler()->findTracksFromElectrons(m_allTracks,m_preSelElectrons);
 
-  // Electron applySelection applies PID, IP and Iso cuts
-  //m_preSelElectrons = electronHandler()->applySelection(m_allElectrons);
-
+  // Apply muon preselection.
+  // HGamCore does not have a muon preselection step, so we make our own here:
   m_allMuons = muonHandler()->getCorrectedContainer();
-  xAOD::MuonContainer m_preSelMuons = muonHandler()->applySelection(m_allMuons);
+  xAOD::MuonContainer m_preSelMuons(SG::VIEW_ELEMENTS);
+
+  for (auto muon : m_allMuons) {
+    if (!muonHandler()->passPtCuts(muon)) { continue; }
+    if (!muonHandler()->passPIDCut(muon)) { continue; } // This includes MaxEta cut
+    m_preSelMuons.push_back(muon);
+  }
 
   // //==== CUTs on leptons
   // if (m_preSelElectrons.size() < 2 && m_preSelMuons.size() < 2) {
@@ -333,18 +350,18 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // m_preSelMuons = muonHandler()->applyCleaningSelection(dirtyMuons);
 
   // Select Z candidate after overlap removal.
-  // Find the highest-mll pair closest to (13 TeV)
+  // Find the highest-pt pair closest to (13 TeV)
   int sel_muon1 = -1, sel_muon2 = -1;
   double return_mmumu = -1;
-  HG::AssignZbosonIndices(m_preSelMuons,sel_muon1,sel_muon2,return_mmumu,13000.*HG::GeV);
+  HG::AssignZbosonIndices(m_preSelMuons,sel_muon1,sel_muon2,return_mmumu,/*sortby_pt*/ true,13000.*HG::GeV);
 
   // int sel_ele1 = -1, sel_ele2 = -1;
   // double return_mee = -1;
-  // HG::AssignZbosonIndices(m_preSelElectrons,sel_ele1,sel_ele2,return_mee,13000.*HG::GeV);
+  // HG::AssignZbosonIndices(m_preSelElectrons,sel_ele1,sel_ele2,return_mee,/*sortby_pt*/ true,13000.*HG::GeV);
 
   int sel_trk1 = -1, sel_trk2 = -1;
   double return_mtrktrk = -1;
-  HG::AssignZbosonIndices(m_preSelTracks,sel_trk1,sel_trk2,return_mtrktrk,13000.*HG::GeV);
+  HG::AssignZbosonIndices(m_preSelTracks,sel_trk1,sel_trk2,return_mtrktrk,/*sortby_pt*/ true,13000.*HG::GeV);
 
   // std::cout << "trk mass: " << return_mtrktrk << std::endl;
   // if (return_mtrktrk > 0)
@@ -363,15 +380,35 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_selMuons.push_back(m_preSelMuons[sel_muon2]);
     m_ll = return_mmumu;
     m_lly = (m_selMuons[0]->p4() + m_selMuons[1]->p4() + m_selPhotons[0]->p4()).M();
+    var::yyStarChannel.setValue(DIMUON);
   } else {
     m_selTracks.push_back(m_preSelTracks[sel_trk1]);
     m_selTracks.push_back(m_preSelTracks[sel_trk2]);
 
     m_selElectrons = m_trackHandler->GetElecsAssociatedToTracks(*m_selTracks[0],
-                                                                *m_selTracks[1],m_allElectrons);
+                                                                *m_selTracks[1],m_preSelElectrons);
 
     m_ll = return_mtrktrk;
     m_lly = (m_selTracks[0]->p4() + m_selTracks[1]->p4() + m_selPhotons[0]->p4()).M();
+
+    // Electron channel assignment.
+    // Impossible to have missed a matching electron, since
+    // it is the same collection of electons as before.
+    if (m_selElectrons.size() == 1)
+    {
+      var::yyStarChannel.setValue(MERGED_DIELECTRON);
+    }
+    else if (m_trackHandler->nMatchedElectrons(*m_selTracks[0]) > 1 ||
+             m_trackHandler->nMatchedElectrons(*m_selTracks[1]) > 1)
+    {
+      var::yyStarChannel.setValue(AMBIGUOUS_DIELECTRON);
+    }
+    else if (m_selElectrons.size() == 2) {
+      var::yyStarChannel.setValue(RESOLVED_DIELECTRON);
+    }
+    else {
+      HG::fatal("Something went wrong in channel categorization - please check!");
+    }
   }
 
   m_allJets = jetHandler()->getCorrectedContainer();

@@ -17,10 +17,6 @@ namespace HG {
     double  m_etaCut;
     double  m_ptCut;
 
-    // pt, eta cuts on underlying electron
-    double  m_eleEtaCut;
-    double  m_elePtCut;
-
   public:
 
     /// constructor
@@ -38,9 +34,13 @@ namespace HG {
     xAOD::TrackParticleContainer findTracksFromElectrons(xAOD::TrackParticleContainer& container,
                                                          const xAOD::ElectronContainer& elecs);
 
-    xAOD::ElectronContainer GetElecsAssociatedToTracks(const xAOD::TrackParticle& trk1,
-                                                       const xAOD::TrackParticle& trk2,
+    xAOD::ElectronContainer GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
+                                                       xAOD::TrackParticle& trk2,
                                                        xAOD::ElectronContainer& preSelElecs);
+
+    static SG::AuxElement::Accessor< std::vector<int> > MatchedElectrons;
+
+    size_t nMatchedElectrons(const xAOD::TrackParticle& trk) const;
 
   };
 

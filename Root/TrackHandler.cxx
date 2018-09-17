@@ -1,6 +1,8 @@
 #include "HGamGamStar/TrackHandler.h"
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 
+SG::AuxElement::Accessor< std::vector<int> > HG::TrackHandler::MatchedElectrons("MatchedElectrons");
+
 //______________________________________________________________________________
 HG::TrackHandler::TrackHandler(const char *name, xAOD::TEvent *event, xAOD::TStore *store)
   : HgammaHandler(name, event, store)
@@ -29,9 +31,6 @@ EL::StatusCode HG::TrackHandler::initialize(Config &config)
 
   m_etaCut     = config.getNum(m_name + ".Selection.MaxAbsEta", 2.47);
   m_ptCut      = config.getNum(m_name + ".Selection.PtPreCutGeV", 0.3) * GeV;
-
-  m_eleEtaCut  = config.getNum("ElectronHandler.Selection.MaxAbsEta", 2.47);
-  m_elePtCut   = config.getNum("ElectronHandler.Selection.PtPreCutGeV", 25.0) * GeV;
 
   return EL::StatusCode::SUCCESS;
 }
@@ -80,9 +79,6 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
   // std::cout << "~~~~~~" << std::endl;
   for (auto electron : elecs) {
 
-    if ( std::abs( electron->caloCluster()->etaBE(2) ) > m_eleEtaCut ) continue;
-    if ( electron->pt() < m_elePtCut ) continue;
-
     // std::cout << Form("Electron pt: %.0f eta: %.3f has %lu tracks",
     //                   electron->pt(),
     //                   electron->caloCluster()->etaBE(2),
@@ -127,6 +123,7 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
         //           << (ele_tp->p4() == track->p4()) << std::endl;
         if (ele_tp->p4() == track->p4())
         {
+          // Push the track into the "selected" container
           selected.push_back(track);
           found = true;
           break;
@@ -149,28 +146,51 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
 //______________________________________________________________________________
 xAOD::ElectronContainer
-HG::TrackHandler::GetElecsAssociatedToTracks(const xAOD::TrackParticle& trk1,
-                                             const xAOD::TrackParticle& trk2,
+HG::TrackHandler::GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
+                                             xAOD::TrackParticle& trk2,
                                              xAOD::ElectronContainer& preSelElecs)
 {
+  // The electron container outputted here should be
+  // the _final selected electrons_ that you will write out, otherwise
+  // the indices linking the electrons and the tracks will not be correct.
 
   xAOD::ElectronContainer selected(SG::VIEW_ELEMENTS);
 
-  for (auto electron : preSelElecs) {
+  MatchedElectrons(trk1).clear();
+  MatchedElectrons(trk2).clear();
 
-    if ( std::abs( electron->caloCluster()->etaBE(2) ) > m_eleEtaCut ) continue;
-    if ( electron->pt() < m_elePtCut ) continue;
+  unsigned int index_selected = 0;
+
+  for (auto electron : preSelElecs) {
 
     bool matches = false;
 
     for (unsigned int i=0; i<electron->nTrackParticles(); ++i) {
       const xAOD::TrackParticle* ele_tp = electron->trackParticle(i);
-      matches = matches || ele_tp->p4() == trk1.p4() || ele_tp->p4() == trk2.p4();
+      bool matches_trk1 = ele_tp->p4() == trk1.p4();
+      bool matches_trk2 = ele_tp->p4() == trk2.p4();
+
+      if (matches_trk1) MatchedElectrons(trk1).push_back(index_selected);
+      if (matches_trk2) MatchedElectrons(trk2).push_back(index_selected);
+
+      matches = matches || matches_trk1 || matches_trk2;
     }
 
-    if (matches) selected.push_back(electron);
+    if (matches){
+      selected.push_back(electron);
+      index_selected++;
+    }
 
   }
 
+  if (MatchedElectrons(trk1).size() == 0 || MatchedElectrons(trk2).size() == 0)
+    HG::fatal("Something went wrong - did not find the matching electrons that we should have.");
+
   return selected;
+}
+
+//______________________________________________________________________________
+size_t HG::TrackHandler::nMatchedElectrons(const xAOD::TrackParticle& trk) const
+{
+  return MatchedElectrons(trk).size();
 }
