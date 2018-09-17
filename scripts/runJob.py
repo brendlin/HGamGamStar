@@ -335,6 +335,10 @@ def main (options,args) :
             
         griddsets = getFilesFromCommandLine(options.Input,options.InputList)
 
+        print 'SH::makeGridDirect GRIDDIRECT_FROM: \"%s\"'%(griddirect_from)
+        print 'SH::makeGridDirect GRIDDIRECT_TO: \"%s\"'%(griddirect_to)
+        print 'SH::makeGridDirect LOCALGROUPDISK: \"%s\"'%(localgroupdisk)
+
         for ds in griddsets :
             
             if 'TeV' not in ds :
@@ -345,16 +349,15 @@ def main (options,args) :
                 # we just added it.
                 continue
 
+            # Convert SampleGrid to SampleLocal
             ROOT.SH.scanRucio(myhandler,ds)
 
             # last argument is whether to allow partial datasets:
-            print 'SH::makeGridDirect GRIDDIRECT_FROM: \"%s\"'%(griddirect_from)
-            print 'SH::makeGridDirect GRIDDIRECT_TO: \"%s\"'%(griddirect_to)
-            print 'SH::makeGridDirect LOCALGROUPDISK: \"%s\"'%(localgroupdisk)
+            # (Don't worry, local samples get skipped in makeGridDirect)
             ROOT.SH.makeGridDirect(myhandler,localgroupdisk,griddirect_from,griddirect_to,False)
 
-        # Save these results to a file
-        SaveSamplesInGridDirectFile(myhandler)
+            # Save these results to a file (already-saved datasets get skipped)
+            SaveSamplesInGridDirectFile(myhandler)
 
         # Set output dataset names
         HelperTools.SetOutputDatasetNames(myhandler,conf.getStr('ProdTag','').Data())
