@@ -39,3 +39,12 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |19, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> m<sub>trktrk</sub> < 45 GeV for MERGED | " " | " " |
 |20, LLGMASSCUT            | 105 < m<sub>ll&gamma;</sub> && m<sub>ll&gamma;</sub> < 160 GeV | " " | " " |
 |21, PASSALL               | Everything above passes | " " | " " |
+
+MxAOD Production
+=================
+
+To run all MxAOD production on HGam, do:
+
+    for DS in data15_13TeV data16_13TeV data17_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2; do
+    runJob.py --InputList HGamGamStar/input/$DS.txt --OutputDir $DS --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000;
+    done;
