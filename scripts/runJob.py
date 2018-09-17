@@ -110,7 +110,9 @@ def SaveSamplesInGridDirectFile(sh) :
 
     for sample in sh :
 
-        gd_name = 'GridDirect_%s.txt'%(sample.name())
+        gd_name = 'GridDirect_%s.txt'%(sample.name().rstrip('/'))
+
+        # If the file already exists, continue.
         if os.path.exists(gd_name) :
             continue
 
@@ -131,11 +133,11 @@ def SaveSamplesInGridDirectFile(sh) :
 def GetGridDirectResultFromFile(sh,ds) :
     # If a file was saved with the results from the previous GridDirect call, take it from that file.
 
-    gd_name = 'GridDirect_%s.txt'%(ds)
+    gd_name = 'GridDirect_%s.txt'%(ds.rstrip('/'))
     if os.path.exists(gd_name) :
 
         localfiles = getFilesFromCommandLine(None,gd_name)
-        sample = ROOT.SH.SampleLocal(ds)
+        sample = ROOT.SH.SampleLocal(ds.rstrip('/'))
 
         for localfile in localfiles :
             sample.add(localfile)
@@ -345,11 +347,11 @@ def main (options,args) :
 
             ROOT.SH.scanRucio(myhandler,ds)
 
-        # last argument is whether to allow partial datasets:
-        print 'SH::makeGridDirect GRIDDIRECT_FROM: \"%s\"'%(griddirect_from)
-        print 'SH::makeGridDirect GRIDDIRECT_TO: \"%s\"'%(griddirect_to)
-        print 'SH::makeGridDirect LOCALGROUPDISK: \"%s\"'%(localgroupdisk)
-        ROOT.SH.makeGridDirect(myhandler,localgroupdisk,griddirect_from,griddirect_to,False)
+            # last argument is whether to allow partial datasets:
+            print 'SH::makeGridDirect GRIDDIRECT_FROM: \"%s\"'%(griddirect_from)
+            print 'SH::makeGridDirect GRIDDIRECT_TO: \"%s\"'%(griddirect_to)
+            print 'SH::makeGridDirect LOCALGROUPDISK: \"%s\"'%(localgroupdisk)
+            ROOT.SH.makeGridDirect(myhandler,localgroupdisk,griddirect_from,griddirect_to,False)
 
         # Save these results to a file
         SaveSamplesInGridDirectFile(myhandler)
