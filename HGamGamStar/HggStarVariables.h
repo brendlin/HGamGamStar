@@ -31,10 +31,19 @@ namespace HG {
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
       const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+
+      // >= 2 muons and >= 1 photon
       if (mus->size() >= 2 && gams->size() >= 1)
         return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4()).M();
+
+      // >= 2 electrons and >= 1 photon
       if (eles->size() >= 2 && gams->size() >= 1)
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).M();
+
+      // If the electron container size is 1, then take the (cluster) e-gamma mass (yystar)
+      if (eles->size() == 1 && gams->size() >= 1)
+        return ((*eles)[0]->p4() + (*gams)[0]->p4()).M();
+
       return m_default;
     }
   };
