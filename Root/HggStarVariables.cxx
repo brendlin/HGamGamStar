@@ -180,6 +180,7 @@ void HG::DecorateLeptonDressing(const xAOD::IParticleContainer& leps, const xAOD
           phi_dressed(*lep)=phi_dressed(*truthLep);
           e_dressed(*lep)=e_dressed(*truthLep);
           nPhotons_dressed(*lep)=nPhotons_dressed(*truthLep);
+          break;
         }
       }
     }
