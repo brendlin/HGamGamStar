@@ -8,6 +8,7 @@
 /* #include "ZMassConstraint/IConstraintFit.h" */
 #include "HGamGamStar/HggStarVariables.h"
 #include "HGamGamStar/TrackHandler.h"
+#include "HGamGamStar/MergedElectronID.h"
 
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
@@ -28,7 +29,7 @@ private:
     HIGGS_LEP_DALITZ=3, DUPLICATE=4, GRL=5, TRIGGER=6, DQ=7, VERTEX=8,
     TWO_SF_LEPTONS=9,ONE_LOOSE_GAM=10, AMBIGUITY=11,
     ZBOSON_ASSIGNMENT=12,TWO_SF_LEPTONS_POSTOR=13,BAD_MUON=14,ONE_PHOTON_POSTOR=15,
-    TRIG_MATCH=16, GAM_TIGHTID=17, GAM_ISOLATION=18, ZMASSCUT=19, LLGMASSCUT=20, PASSALL=21
+    TRIG_MATCH=16, LEP_MEDID=17, LEP_IP=18, LEP_ISO=19, GAM_TIGHTID=20, GAM_ISOLATION=21, ZMASSCUT=22, LLGMASSCUT=23, PASSALL=24
   };
 
   // names of all cuts (do not includ "pass all")
@@ -116,6 +117,7 @@ private:
 private:
 #ifndef __CINT__
   HG::TrackHandler *m_trackHandler; //!
+  HG::MergedElectronID * m_mergedElectronID; //!
 #endif // __CINT__
 
 protected:
