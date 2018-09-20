@@ -275,7 +275,12 @@ def main (options,args) :
     # Grid running: Check for a GridTag
     if options.Grid and not conf.isDefined('GridTag') :
         msg = 'To submit to the grid, you MUST define a GridTag of the form: '
-        msg += 'user.<UserName>.<UniqueTag>'
+        msg += 'user.<UserName>'
+        Error(msg)
+
+    if options.Grid and not conf.isDefined('ProdTag') :
+        msg = 'To submit to the grid, you MUST define a ProdTag of the form: '
+        msg += 'ysy001'
         Error(msg)
 
     # Add output directory name.
@@ -360,7 +365,7 @@ def main (options,args) :
             SaveSamplesInGridDirectFile(myhandler)
 
         # Set output dataset names
-        HelperTools.SetOutputDatasetNames(myhandler,conf.getStr('ProdTag','').Data())
+        HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data())
 
     # Grid samples
     elif options.Grid :
@@ -378,7 +383,7 @@ def main (options,args) :
         for ds in griddsets :
             ROOT.SH.addGrid(myhandler, ds)
 
-        HelperTools.SetOutputDatasetNames(myhandler,conf.getStr('GridTag').Data())
+        HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data(),gridtag=conf.getStr('GridTag'))
 
     # Local file(s), via Input or InputList (file or list of files)
     else :
@@ -475,7 +480,7 @@ if __name__ == "__main__":
         p.add_option('--%s'%(opt),type='string',default=None,dest=opt,help=opt)
 
     # Grid Output grid tag / local prod tag:
-    p.add_option('--GridTag',type='string',default=None,dest='GridTag',help='GridTag (user.<UserName>.<Tag>)' )
+    p.add_option('--GridTag',type='string',default=None,dest='GridTag',help='GridTag (user.<UserName>)' )
     p.add_option('--ProdTag',type='string',default=None,dest='ProdTag',help='Production Tag (e.g. h016) (only used with GridDirect)' )
 
     options,args = p.parse_args()
