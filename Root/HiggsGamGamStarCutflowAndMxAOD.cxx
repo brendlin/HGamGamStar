@@ -25,7 +25,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
   ANA_CHECK(m_trackHandler->initialize(*config()));
   
   m_mergedElectronID = new HG::MergedElectronID();
-//   ANA_CHECK(m_mergedElectronID->initialize(*config()));
+  ANA_CHECK(m_mergedElectronID->initialize(*config()));
 
   return EL::StatusCode::SUCCESS;
 }

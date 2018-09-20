@@ -2,6 +2,7 @@
 #define HGamGamStar_MergedElectronID
 
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
+#include "HGamAnalysisFramework/Config.h"
 #include "HGamGamStar/HggStarVariables.h"
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 #include "xAODTracking/TrackParticle.h"
@@ -29,7 +30,7 @@ namespace HG {
     /// destructor
     virtual ~MergedElectronID();
 
-//     virtual EL::StatusCode initialize(Config &config);
+    virtual EL::StatusCode initialize(Config &config);
     
     bool passPIDCut(xAOD::Electron *ele,xAOD::TrackParticle *trk1,xAOD::TrackParticle *trk2);
 
