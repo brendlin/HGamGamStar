@@ -34,11 +34,14 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |14, BAD_MUON              | Reject events with presel BadMuons | " " | " " |
 |15, ONE_PHOTON_POSTOR     | Selected photon survives OR | " " | " " |
 |16, TRIG_MATCH            | Need to remember details | " " | " " |
-|17, GAM_TIGHTID           | Photon passes Tight | " " | " " |
-|18, GAM_ISOLATION         | Photon passes Isolation | " " | " " |
-|19, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> m<sub>trktrk</sub> < 45 GeV for MERGED | " " | " " |
-|20, LLGMASSCUT            | 105 < m<sub>ll&gamma;</sub> && m<sub>ll&gamma;</sub> < 160 GeV | " " | " " |
-|21, PASSALL               | Everything above passes | " " | " " |
+|17, LEP_MEDID             | Lepton passes Medium | " " | " " |
+|18, LEP_IP                | Lepton passes IP cuts | " " | " " |
+|19, LEP_ISO               | Lepton passes Iso cut | " " | " " |
+|20, GAM_TIGHTID           | Photon passes Tight | " " | " " |
+|21, GAM_ISOLATION         | Photon passes Isolation | " " | " " |
+|22, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> m<sub>trktrk</sub> < 45 GeV for MERGED | " " | " " |
+|23, LLGMASSCUT            | 105 < m<sub>ll&gamma;</sub> && m<sub>ll&gamma;</sub> < 160 GeV | " " | " " |
+|24, PASSALL               | Everything above passes | " " | " " |
 
 MxAOD Production
 =================

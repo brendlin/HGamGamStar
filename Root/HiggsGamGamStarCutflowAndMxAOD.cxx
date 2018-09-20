@@ -23,6 +23,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 
   m_trackHandler = new HG::TrackHandler("TrackHandler", event(), store());
   ANA_CHECK(m_trackHandler->initialize(*config()));
+  
+  m_mergedElectronID = new HG::MergedElectronID();
+  ANA_CHECK(m_mergedElectronID->initialize(*config()));
 
   return EL::StatusCode::SUCCESS;
 }
@@ -447,20 +450,61 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     }
     if (itrigmatch==0) return TRIG_MATCH;
   }
+  
 
-  //==== CUT 17 : Require both photons to pass photon ID (isEM) ====
+  if(var::yyStarChannel()==DIMUON){
+  //==== CUT 17: Require muons to pass medium PID
+    static bool requireMedium = config()->getBool("MuonHandler.Selection.ApplyPIDCut", true);
+    if (requireMedium && (!muonHandler()->passPIDCut(m_selMuons[0]) || !muonHandler()->passPIDCut(m_selMuons[1])) ) return LEP_MEDID;
+  //==== CUT 18: Require muons to pass IP    
+    static bool requireIP = config()->getBool("MuonHandler.Selection.ApplyIPCuts", true);
+    if (requireIP && (!muonHandler()->passIPCuts(m_selMuons[0]) || !muonHandler()->passIPCuts(m_selMuons[1])) ) return LEP_IP;
+  //==== CUT 19: Require muons to pass isolation
+    static bool requireIso = config()->getBool("MuonHandler.Selection.ApplyIsoCut", true);
+    if (requireIso && (!muonHandler()->passIsoCut(m_selMuons[0]) || !muonHandler()->passIsoCut(m_selMuons[1])) ) return LEP_ISO;
+  }
+  else if(var::yyStarChannel()==RESOLVED_DIELECTRON){
+  //==== CUT 17: Require electrons to pass medium PID
+    static bool requireMedium = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
+    if (requireMedium && (!electronHandler()->passPIDCut(m_selElectrons[0]) || !electronHandler()->passPIDCut(m_selElectrons[1])) ) return LEP_MEDID;
+  //==== CUT 18: Require muons to pass IP    
+    static bool requireIP = config()->getBool("ElectronHandler.Selection.ApplyIPCuts", true);
+    if (requireIP && (!electronHandler()->passIPCuts(m_selElectrons[0]) || !electronHandler()->passIPCuts(m_selElectrons[1])) ) return LEP_IP;
+  //==== CUT 19: Require muons to pass isolation
+    static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
+    if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0]) || !electronHandler()->passIsoCut(m_selElectrons[1])) ) return LEP_ISO;
+  }
+  else if(var::yyStarChannel()==MERGED_DIELECTRON){
+  //==== CUT 17: Require electrons to pass merged PID
+    static bool requireMerged = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
+    if (requireMerged && (!m_mergedElectronID->passPIDCut(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1])) ) return LEP_MEDID;
+  //==== CUT 18: Require muons to pass IP
+    static bool requireIP = config()->getBool("ElectronHandler.Selection.ApplyIPCuts", true);
+    if (requireIP && (!electronHandler()->passIPCuts(m_selElectrons[0])) ) return LEP_IP;
+  //==== CUT 19: Require muons to pass isolation
+    static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
+    if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0])) ) return LEP_ISO;	  
+  }
+  else if(var::yyStarChannel()==AMBIGUOUS_DIELECTRON){
+  //TODO: fill in the ambiguous case; currently they get a "pass" for all cuts above
+  }
+  else {
+      HG::fatal("Unknown channel categorization - please check!");
+  }
+
+  //==== CUT 20 : Require both photons to pass photon ID (isEM) ====
   // Do we really want to require the highest-pt photon to pass tight ID? Can we ask for lower-pt gam?
   static bool requireTight = config()->getBool("PhotonHandler.Selection.ApplyPIDCut", true);
   if (requireTight && (!photonHandler()->passPIDCut(m_selPhotons[0])) ) return GAM_TIGHTID;
 
-  //==== CUT 18 : Require both photons to fulfill the isolation criteria ===
+  //==== CUT 21 : Require both photons to fulfill the isolation criteria ===
   static bool requireIso = config()->getBool("PhotonHandler.Selection.ApplyIsoCut", true);
   if (requireIso && (!photonHandler()->passIsoCut(m_selPhotons[0]))) return GAM_ISOLATION;
 
-  //==== CUT 19 : Z Mass window cut ====
+  //==== CUT 22 : Z Mass window cut ====
   if ( m_ll > 45.*HG::GeV ) return ZMASSCUT;
 
-  //==== CUT 20 : lly window cut ====
+  //==== CUT 23 : lly window cut ====
   if ( 105.*HG::GeV > m_lly || m_lly > 160.*HG::GeV ) return LLGMASSCUT;
 
   return PASSALL;
