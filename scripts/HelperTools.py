@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------
-def SetSampleNames(samplehandler,tag='') :
+def SetSampleNames(samplehandler,tag='',gridtag='') :
     #
     # This sets the sample name, including the name of the output files.
     # Works best with GridDirect.
@@ -22,7 +22,10 @@ def SetSampleNames(samplehandler,tag='') :
     for sample in samplehandler :
         name = sample.name()
         if tag :
-            name = '%s.%s'%(tag,name)
+            name = '%s.%s'%(name,tag)
+
+        if gridtag and issubclass(type(sample),ROOT.SH.SampleGrid) :
+            name = '%s.%s'%(gridtag,name)
         
         # General
         name = name.replace('.deriv.'       ,'.')
@@ -72,9 +75,17 @@ def SetSampleNames(samplehandler,tag='') :
         name = name.replace('Zy_Zll' ,'Zllgam')
         name = name.replace('_gamgam',''      )
 
-        map_newnames[sample.name()] = name
+        if issubclass(type(sample),ROOT.SH.SampleGrid) :
+            sample.setMetaString("nc_outputSampleName",name)
+        else :
+            map_newnames[sample.name()] = name
+
 
     for k in map_newnames.keys() :
+
+        # Do not rename if it's a grid sample
+        if issubclass(type(samplehandler.get(k)),ROOT.SH.SampleGrid) :
+            continue
 
         # Trick to rename samples: "merge" them into themselves
         # (This is because they cannot be renamed if they already belong to a SampleHandler)

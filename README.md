@@ -111,6 +111,13 @@ automatically convert the DSIDs in your localgroupdisk to a list of files.
     runJob.py --InputList Samples.txt --OutputDir MyOutputDir --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000
     ```
 
+### Running on the Grid
+
+To run on the grid, you must specify a **GridTag** as well as a **ProdTag** via the command-line (or config). An example is below (you can use
+**--Input** or **--InputList** to specify the samples):
+
+    runJob.py --Input mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_e5984_s3126_r10201_r10210_p3415 --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --Grid --GridTag user.brendlin --ProdTag ysy001
+
 Updating the HGamCore Tag
 ---------
 If you are a *user* who is trying to update the HGamGamStar package, including an update to submodule tags, first make sure your
