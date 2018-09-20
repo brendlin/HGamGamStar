@@ -198,6 +198,13 @@ EL::StatusCode ZyCutflowAndMxAOD::execute()
 // Returns value of the last cut passed in the cut sequence
 ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
 {
+  m_preSelPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
+  m_selPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
+  m_selElectrons = xAOD::ElectronContainer(SG::VIEW_ELEMENTS);
+  m_selMuons = xAOD::MuonContainer(SG::VIEW_ELEMENTS);
+  m_allJets = xAOD::JetContainer(SG::VIEW_ELEMENTS);
+  m_selJets = xAOD::JetContainer(SG::VIEW_ELEMENTS);
+
   //Check if there are two good fakes. Needed so we dont slim the event at trigger.
   m_goodFakeComb = false;
   if(HG::isMC() && m_enableFakePhotons){
@@ -241,7 +248,6 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   // Get object containers
   m_allPhotons = photonHandler()->getCorrectedContainer();
   m_preSelPhotons = photonHandler()->applyPreSelection(m_allPhotons);
-  m_selPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
   if (m_preSelPhotons.size()  ) m_selPhotons.push_back(m_preSelPhotons[0]);
   if (m_preSelPhotons.size() > 1) { m_selPhotons.push_back(m_preSelPhotons[1]); }
 
@@ -289,6 +295,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   //above doesn't have option to remove photon overlapping with lepton
   overlapHandler()->removeOverlap(m_selPhotons, m_preSelElectrons, 0.4);
   overlapHandler()->removeOverlap(m_selPhotons, dirtyMuons, 0.4);
+  overlapHandler()->removeOverlap(m_preSelElectrons, dirtyMuons, 0.2);
 
   // Muon cleaning should be done after overlap removal
   m_preSelMuons = muonHandler()->applyCleaningSelection(dirtyMuons);
@@ -296,8 +303,6 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   // Select Z candidate after overlap removal.
   // choose leading OSSF pair
   int nOSSFpair=0;
-  m_selElectrons = xAOD::ElectronContainer(SG::VIEW_ELEMENTS);
-  m_selMuons = xAOD::MuonContainer(SG::VIEW_ELEMENTS);
   if(m_preSelElectrons.size()>=2){
     for(int ilepton1=0; ilepton1<((int)m_preSelElectrons.size()-1); ilepton1++){
       for(int ilepton2=ilepton1+1; ilepton2< (int)m_preSelElectrons.size(); ilepton2++){
@@ -457,7 +462,7 @@ void ZyCutflowAndMxAOD::writePhotonAllSysVars(bool /*truth*/)
 void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
 {
   // Basic event selection flags
-  // var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
+   var::isPassedBasic.setValue(m_goodFakeComb ? true : eventHandler()->pass());
   // var::isPassed.setValue(m_goodFakeComb ? true : var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
 
@@ -475,9 +480,10 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   // Additional variables useful for non-framework analysis
   int Nloose = m_preSelPhotons.size();
   eventHandler()->storeVar<int>("NLoosePhotons",Nloose);
+  eventHandler()->storeVar<float>("met_hardVertexTST", m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->met() : m_selMET["TST"]->met());
 
   //store passAll flag
-  bool passPt = false, passPID = false, passIso = false, passMll = false, passLPt = false, passAll = false;
+  bool passPt = false, passPID = false, passIso = false, passMll = false, passLPt = false, passPre = false, passAll = false;
   if (m_selPhotons.size()>0){
     xAOD::Photon *y1 = m_selPhotons[0];
     passPt  = y1->pt() >= 15.0 * HG::GeV;
@@ -487,9 +493,11 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   passMll = var::m_ll()>=40.0 * HG::GeV;
   if ( m_selElectrons.size()>0 ) passLPt = m_selElectrons[0]->pt() >= 30.0 * HG::GeV && m_selElectrons[1]->pt() >= 25.0 * HG::GeV ;
   else if (m_selMuons.size()>0 ) passLPt = m_selMuons[0]->pt() >= 30.0 * HG::GeV && m_selMuons[1]->pt() >= 25.0 * HG::GeV;
-  passAll = passPt && passPID && passIso && passMll && var::cutFlow()>14 && passLPt;
+  passPre = passPt && passMll && var::cutFlow()>14 && passLPt; //all except ID and iso
+  passAll = passPre && passPID && passIso;
+  eventHandler()->storeVar<char>("isPassedZyPreSel", passPre);
   eventHandler()->storeVar<char>("isPassedZy", passAll);
-
+  var::isPassed.setValue(passAll);
 
   writeNominalAndSystematicVars();
 }
@@ -497,15 +505,20 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
 void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 {
   var::m_yy.addToStore(truth);
+  var::pT_y1.addToStore(truth);
   var::m_lly.addToStore(truth);
   var::m_ll.addToStore(truth);
   var::pt_lly.addToStore(truth);
   var::pt_ll.addToStore(truth);
   var::pt_llyy.addToStore(truth);
   var::m_llyy.addToStore(truth);
-
+  var::deltaPhi_ll_y.addToStore(truth);
+  var::eta_y1.addToStore(truth);
   var::N_mu   .addToStore(truth);
   var::N_e    .addToStore(truth);
+  if (!truth) {
+    var::met_TST  .addToStore(truth);
+  }
 }
 
 
@@ -513,6 +526,7 @@ void ZyCutflowAndMxAOD::writeNominalOnly()
 {
   eventHandler()->mu();
   eventHandler()->runNumber();
+  eventHandler()->storeVar<unsigned long long>("eventNumber", eventInfo()->eventNumber());
   eventHandler()->centralEventShapeDensity();
   eventHandler()->forwardEventShapeDensity();
 
@@ -623,6 +637,17 @@ EL::StatusCode  ZyCutflowAndMxAOD::doTruth()
   // remove truth jets that are from electrons or photons
   truthHandler()->removeOverlap(photons, jets, electrons, muons);
 
+  const xAOD::TruthParticleContainer *truthMuons = nullptr;
+  if (event()->retrieve(truthMuons, "TruthMuons").isFailure()) {
+    HG::fatal("Can't access TruthMuons Container");
+  }
+  const xAOD::TruthParticleContainer *truthElectrons = nullptr;
+  if (event()->retrieve(truthElectrons, "TruthElectrons").isFailure()) {
+    HG::fatal("Can't access TruthElectrons Container");
+  }
+  HG::DecorateLeptonDressing(all_muons, *truthMuons);
+  HG::DecorateLeptonDressing(all_electrons, *truthElectrons);
+
   // Save truth containers, if configured
   if (m_saveTruthObjects) {
     truthHandler()->writePhotons    (all_photons  );
@@ -655,9 +680,9 @@ EL::StatusCode  ZyCutflowAndMxAOD::doTruth()
     if (m_saveDetailed)
       writeDetailedVars(truth);
 
-    var::pT_h1.addToStore(truth);
-    var::y_h1.addToStore(truth);
-    var::m_h1.addToStore(truth);
+    //var::pT_h1.addToStore(truth);
+    //var::y_h1.addToStore(truth);
+    //var::m_h1.addToStore(truth);
 
     // High mass fiducial variables
     static SG::AuxElement::Accessor<float> etcone40("etcone40");

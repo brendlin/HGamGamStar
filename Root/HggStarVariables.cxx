@@ -10,6 +10,8 @@ namespace var {
   HG::pt_ll pt_ll;
   HG::m_lly_track4mom m_lly_track4mom;
   HG::m_ll_track4mom m_ll_track4mom;
+  HG::deltaPhi_ll_y deltaPhi_ll_y;
+  HG::eta_y1 eta_y1;
   HG::pt_llyy pt_llyy;
   HG::m_llyy m_llyy;
   HG::pT_l1_h1 pT_l1_h1;
@@ -158,4 +160,30 @@ bool HG::eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer * allParticle
   if (directphots.size() != 1) return true;
 
   return false;
+}
+
+void HG::DecorateLeptonDressing(const xAOD::IParticleContainer& leps, const xAOD::TruthParticleContainer& truthLeps){
+
+  //leps from truthHandler(), truthLeps from TruthMuons or TruthElectrons Container which contains dressed quantities
+  static SG::AuxElement::Accessor<float> pt_dressed("pt_dressed");
+  static SG::AuxElement::Accessor<float> eta_dressed("eta_dressed");
+  static SG::AuxElement::Accessor<float> phi_dressed("phi_dressed");
+  static SG::AuxElement::Accessor<float> e_dressed("e_dressed");
+  static SG::AuxElement::Accessor<int> nPhotons_dressed("nPhotons_dressed");
+
+  if (leps.size() >0){
+    for (auto lep: leps){
+      for(auto truthLep: truthLeps){
+        if (lep->auxdata<int>("barcode") == truthLep->barcode()) {
+          pt_dressed(*lep)=pt_dressed(*truthLep);
+          eta_dressed(*lep)=eta_dressed(*truthLep);
+          phi_dressed(*lep)=phi_dressed(*truthLep);
+          e_dressed(*lep)=e_dressed(*truthLep);
+          nPhotons_dressed(*lep)=nPhotons_dressed(*truthLep);
+          break;
+        }
+      }
+    }
+  }
+  return;
 }

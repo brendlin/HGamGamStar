@@ -191,6 +191,43 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class deltaPhi_ll_y : public VarBase<float> {
+  public:
+  deltaPhi_ll_y() : VarBase("deltaPhi_ll_y") { m_default = -99; }
+    ~deltaPhi_ll_y() { }
+
+    float calculateValue(bool truth)
+    {
+      (void)truth;
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      if (mus->size() >= 2 && gams->size() >= 1)
+        return ((*mus)[0]->p4() + (*mus)[1]->p4()).DeltaPhi( (*gams)[0]->p4() );
+      if (eles->size() >= 2 && gams->size() >= 1)
+        return ((*eles)[0]->p4() + (*eles)[1]->p4()).DeltaPhi( (*gams)[0]->p4() );
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class eta_y1 : public VarBase<float> {
+  public:
+    eta_y1() : VarBase("eta_y1") { m_default = -99; }
+    ~eta_y1() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+
+      if (gams->size() < 1)
+      { return m_default; }
+
+      return (*gams)[0]->eta();
+    }
+  };
+
+  //____________________________________________________________________________
   class pT_l1_h1 : public VarBase<float> {
   public:
   pT_l1_h1() : VarBase("pT_l1_h1") { m_default = -99; m_truthOnly = true; }
@@ -366,6 +403,8 @@ namespace HG {
   bool eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
   bool isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl);
 
+  void DecorateLeptonDressing(const xAOD::IParticleContainer& leps, const xAOD::TruthParticleContainer& truthLeps);
+
 }
 
 namespace var {
@@ -375,6 +414,8 @@ namespace var {
   extern HG::pt_ll pt_ll;
   extern HG::m_lly_track4mom m_lly_track4mom;
   extern HG::m_ll_track4mom m_ll_track4mom;
+  extern HG::deltaPhi_ll_y deltaPhi_ll_y;
+  extern HG::eta_y1 eta_y1;
   extern HG::pt_llyy pt_llyy;
   extern HG::m_llyy m_llyy;
   extern HG::pT_l1_h1 pT_l1_h1;
