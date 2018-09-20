@@ -174,7 +174,7 @@ void HG::DecorateLeptonDressing(const xAOD::IParticleContainer& leps, const xAOD
   if (leps.size() >0){
     for (auto lep: leps){
       for(auto truthLep: truthLeps){
-        if (lep->p4().DeltaR(truthLep->p4())<0.00001){ //matching
+        if (lep->auxdata<int>("barcode") == truthLep->barcode()) {
           pt_dressed(*lep)=pt_dressed(*truthLep);
           eta_dressed(*lep)=eta_dressed(*truthLep);
           phi_dressed(*lep)=phi_dressed(*truthLep);
