@@ -216,6 +216,9 @@ def SetGridOpts(driver,conf) :
         if (conf.isDefined(opt)) :
             driver.options().setString(opt, conf.getStr(opt).Data())
 
+    # This used to be "OutputDS"
+    driver.options().setString("nc_outputSampleName", conf.getStr('GridTag').Data());
+
     if conf.getBool('UsexAODMerge', False) :
 
         if conf.isDefined('nc_EventLoop_SubmitFlags') :
@@ -360,7 +363,7 @@ def main (options,args) :
             SaveSamplesInGridDirectFile(myhandler)
 
         # Set output dataset names
-        HelperTools.SetOutputDatasetNames(myhandler,conf.getStr('ProdTag','').Data())
+        HelperTools.SetSampleNames(myhandler,conf.getStr('ProdTag','').Data())
 
     # Grid samples
     elif options.Grid :
@@ -377,8 +380,6 @@ def main (options,args) :
         # Construct sample to run on
         for ds in griddsets :
             ROOT.SH.addGrid(myhandler, ds)
-
-        HelperTools.SetOutputDatasetNames(myhandler,conf.getStr('GridTag').Data())
 
     # Local file(s), via Input or InputList (file or list of files)
     else :
