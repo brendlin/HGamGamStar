@@ -20,7 +20,7 @@ EL::StatusCode HG::MergedElectronID::initialize(Config &config)
 }
 
 //______________________________________________________________________________
-bool HG::MergedElectronID::passPIDCut(xAOD::Electron *ele,xAOD::TrackParticle *trk1,xAOD::TrackParticle *trk2){
+bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &trk1,xAOD::TrackParticle &trk2){
   //TODO: electron ID calculations to be added here
   //std::cout<<"MRGDELID call"<<std::endl;
   return true;

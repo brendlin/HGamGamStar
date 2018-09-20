@@ -477,7 +477,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   else if(var::yyStarChannel()==MERGED_DIELECTRON){
   //==== CUT 17: Require electrons to pass merged PID
     static bool requireMerged = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
-    if (requireMerged && (!m_mergedElectronID->passPIDCut(m_selElectrons[0],m_selTracks[0],m_selTracks[1])) ) return LEP_MEDID;
+    if (requireMerged && (!m_mergedElectronID->passPIDCut(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1])) ) return LEP_MEDID;
   //==== CUT 18: Require muons to pass IP
     static bool requireIP = config()->getBool("ElectronHandler.Selection.ApplyIPCuts", true);
     if (requireIP && (!electronHandler()->passIPCuts(m_selElectrons[0])) ) return LEP_IP;

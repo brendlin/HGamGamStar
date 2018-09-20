@@ -15,13 +15,6 @@ namespace HG {
 
   private:
 
-    bool m_doTrqCuts;
-    int m_nSiMin;
-    int m_nPixMin;
-
-    double  m_etaCut;
-    double  m_ptCut;
-
   public:
 
     /// constructor
@@ -32,11 +25,7 @@ namespace HG {
 
     virtual EL::StatusCode initialize(Config &config);
     
-    bool passPIDCut(xAOD::Electron *ele,xAOD::TrackParticle *trk1,xAOD::TrackParticle *trk2);
-
-    xAOD::TrackParticle m_trk1;
-    xAOD::TrackParticle m_trk2;
-    xAOD::Electron m_ele;
+    bool passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &trk1,xAOD::TrackParticle &trk2);
 
   };
 
