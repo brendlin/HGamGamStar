@@ -5,7 +5,7 @@ This is a description of how to run the MxAOD code for the H&rarr;&gamma;&gamma;
 Initial setup
 --------
 
-To set up the ATLAS environment, run (or put in your `.bash_profile` startup file):
+To set up the ATLAS environment, run or put in your `.bash_profile` (sometimes called `.profile`) startup file:
     
     export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
     alias 'setupATLAS=source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh'
