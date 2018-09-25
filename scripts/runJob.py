@@ -349,7 +349,10 @@ def main (options,args) :
             if 'TeV' not in ds :
                 print 'The dataset ' + ds + ' is in the wrong format, or there\'s an empty line(s) in your input file. Skipping it.'
                 continue
-
+            
+            #remove white spaces and other bad things from the beginning of string
+            ds = ds.lstrip()
+            
             if GetGridDirectResultFromFile(myhandler,ds) :
                 # we just added it.
                 continue
