@@ -15,13 +15,387 @@ HG::MergedElectronID::~MergedElectronID()
 
 EL::StatusCode HG::MergedElectronID::initialize(Config &config)
 {
-  //TODO: add initialization with cuts
+  m_electron_trk_ex_origin     = (extrapolationStartPositionEnum)(config.getInt ("ElectronHandler.TrackExtrapolation.Origin",0));
+  
   return EL::StatusCode::SUCCESS;
 }
 
 //______________________________________________________________________________
 bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &trk1,xAOD::TrackParticle &trk2){
-  //TODO: electron ID calculations to be added here
-  //std::cout<<"MRGDELID call"<<std::endl;
-  return true;
+
+    // calculate shower shapes and other discriminating variables
+
+    float t1_TRT_PID(0.0), t1_TRT_PID_trans(0.0);
+    float t2_TRT_PID(0.0), t2_TRT_PID_trans(0.0);
+    trk1.summaryValue(t1_TRT_PID, xAOD::eProbabilityHT);
+    trk2.summaryValue(t2_TRT_PID, xAOD::eProbabilityHT);
+    const double tau = 15.0;
+    if (t1_TRT_PID >= 1.0) t1_TRT_PID = 1.0 - 1.0e-15;
+    if (t2_TRT_PID >= 1.0) t2_TRT_PID = 1.0 - 1.0e-15;
+    if (t1_TRT_PID < 1.0e-30) t1_TRT_PID = 1.0e-30;
+    if (t2_TRT_PID < 1.0e-30) t2_TRT_PID = 1.0e-30;
+    t1_TRT_PID_trans = - log(1.0/t1_TRT_PID - 1.0) / tau;
+    t2_TRT_PID_trans = - log(1.0/t2_TRT_PID - 1.0) / tau;
+
+    float deltaEta1 = ele.trackCaloMatchValue(xAOD::EgammaParameters::TrackCaloMatchType::deltaEta1);
+
+    double f1 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f1);
+//     double fSide = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::fracs1);
+    double Eratio = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Eratio);
+    double wTotS1 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::wtots1);
+
+    double rEta = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Reta);
+    double rPhi = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rphi);
+    double wEta2 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::weta2);
+
+    double f3 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f3);
+
+    double RHad;
+    double feta = fabs(ele.eta());
+    if (0.8 < feta && feta < 1.37){
+      RHad = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad);
+    } else {
+      RHad = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+    }
+
+    double pTrk1 = trk1.p4().Rho(); // same as p4().P()
+    double pTrk2 = trk2.p4().Rho(); // same as p4().P()
+    double EOverP = ele.e() / (pTrk1 + pTrk2);
+
+    double d0Trk1 = trk1.d0();
+    double d0Trk2 = trk2.d0();
+    float d0VarTrk1 = trk1.definingParametersCovMatrix()(0,0);
+    float d0VarTrk2 = trk2.definingParametersCovMatrix()(0,0);
+    double d0SigmaTrk1 = fabs(d0Trk1 / sqrtf(d0VarTrk1));
+    double d0SigmaTrk2 = fabs(d0Trk2 / sqrtf(d0VarTrk2));
+
+
+    // get pt and eta bins
+    unsigned iPt = getPtBin(&ele);
+    unsigned iEta = getEtaBin(&ele);
+
+
+    // now apply the cuts
+
+    // first cut: RHad
+    // const std::vector<std::string> cutRHad({"<0.03", "<0.03", "<0.03", "<0.03", "<0.03", "<0.03", "<0.03", "<0.03", "<0.03", ""});
+    const std::vector<std::vector<std::string>> cutRHad({
+      {"", "", "", "", "", "", "", "", "", ""}, // pT < 20 GeV
+      {"<0.0490", "<0.0470", "<0.0450", "<0.0400", "<0.01980", "<0.0500", "<0.0500", "<0.0500", "<0.0450", ""}, // pT [20, 25] GeV
+      {"<0.0490", "<0.0470", "<0.0450", "<0.0400", "<0.01980", "<0.0500", "<0.0500", "<0.0500", "<0.0450", ""}, // pT [25, 30] GeV
+      {"<0.0440", "<0.0420", "<0.0400", "<0.0350", "<0.01820", "<0.0450", "<0.0450", "<0.0450", "<0.0400", ""}, // pT [30, 35] GeV
+      {"<0.0440", "<0.0420", "<0.0400", "<0.0350", "<0.01820", "<0.0450", "<0.0450", "<0.0450", "<0.0400", ""}, // pT [35, 40] GeV
+      {"<0.0365", "<0.0345", "<0.0325", "<0.0300", "<0.01680", "<0.0375", "<0.0375", "<0.0375", "<0.0325", ""}, // pT [40, 45] GeV
+      {"<0.0365", "<0.0345", "<0.0325", "<0.0300", "<0.01680", "<0.0375", "<0.0375", "<0.0375", "<0.0325", ""}, // pT [45, 50] GeV
+      {"<0.0340", "<0.0320", "<0.0300", "<0.0275", "<0.01680", "<0.0350", "<0.0350", "<0.0350", "<0.0300", ""}, // pT [50, 60] GeV
+      {"<0.0290", "<0.0270", "<0.0250", "<0.0240", "<0.01680", "<0.0300", "<0.0300", "<0.0300", "<0.0260", ""}, // pT [60, 80] GeV
+      {"<0.0270", "<0.0250", "<0.0230", "<0.0220", "<0.01680", "<0.0280", "<0.0280", "<0.0280", "<0.0250", ""}, // pT > 80 GeV
+    });
+    if (!passCut(RHad, cutRHad[iPt][iEta])) return(false);
+
+    // second cut: f3
+    // const std::vector<std::string> cutF3({"", "", "", "", "", ">0.0005", ">0.0005", ">0.0005", ">0.0005", ">0.0005", ">0.0005"});
+    // if (!passCut(f3, cutF3[iPt])) return(false);
+    const std::vector<std::vector<std::string>> cutF3({
+      {"", "", "", "", "", "", "", "", "", ""}, // pT < 20 GeV
+      {"<0.01800", "<0.01750", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [20, 25] GeV
+      {"<0.01800", "<0.01750", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [25, 30] GeV
+      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [30, 35] GeV
+      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [35, 40] GeV
+      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [40, 45] GeV
+      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [45, 50] GeV
+      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [50, 60] GeV
+      {"", "", "", "", "", "", "", "", "", ""}, // pT [60, 80] GeV
+      {"", "", "", "", "", "", "", "", "", ""}, // pT > 80 GeV
+    });
+    if (!passCut(f3, cutF3[iPt][iEta])) return(false);
+
+    // // seventh cut: f1
+    // // const std::vector<std::string> cutF1({"", "", "", "", "", ">0.1", ">0.1", ">0.1", "", "", ""});
+    // const std::string cutF1(">0.005");
+    // if (!passCut(f1, cutF1)) return(false);
+
+    // third cut: REta / eta
+    const std::vector<std::string> cutREtaInEta({">0.920", ">0.915", ">0.910", ">0.905", ">0.85", ">0.90", ">0.90", ">0.90", ">0.90", ""});
+    if (!passCut(rEta, cutREtaInEta[iEta])) return(false);
+
+    // // fourth cut: REta / pT
+    // // const std::vector<std::string> cutREtaInPt({"", ">0.70", ">0.75", ">0.80", ">0.85", ">0.85", ">0.85", ">0.90", ">0.90", ">0.90"});
+    // const std::vector<std::string> cutREtaInPt({"", ">0.90", ">0.90", ">0.90", ">0.90", ">0.90", ">0.90", ">0.90", ">0.90", ">0.90"});
+    // if (!passCut(rEta, cutREtaInPt[iPt])){
+    //   return(false);
+    // }
+
+    AngularPosition trk1AngPos = getExtrapolatedTrackPosition(&trk1, m_electron_trk_ex_origin, false, false, false);
+    AngularPosition trk2AngPos = getExtrapolatedTrackPosition(&trk2, m_electron_trk_ex_origin, false, false, false);
+    double dRTrk12 = trk1AngPos.deltaR(trk2AngPos);
+
+    // fourth cut: ERatio / eta
+    const std::vector<std::string> cutERatioInEta({">0.90", ">0.90", ">0.85", ">0.80", "", ">0.90", ">0.90", ">0.90", "", ""});
+    if (f1 > 0.005 && !passCut(Eratio, cutERatioInEta[iEta])){
+      if (dRTrk12 > 0.1) return(false);
+    }
+
+    // fifth cut: wTotS1 / eta
+    const std::vector<std::string> cutWTotS1InEta({"<3.0", "<3.1", "<3.2", "<3.3", "<3.5", "<3.5", "<2.5", "<1.8", "<1.8", ""});
+    if (f1 > 0.005 && !passCut(wTotS1, cutWTotS1InEta[iEta])){
+      return(false);
+    }
+
+    // sixth cut: wEtaS2 / eta
+    const std::vector<std::string> cutWEtaS2InEta({"<0.0115", "<0.0120", "<0.0125", "<0.0130", "", "<0.0130", "<0.0130", "<0.0140", "<0.0140", ""});
+    if (!passCut(wEta2, cutWEtaS2InEta[iEta])) return(false);
+
+    // seventh cut: deltaEta1 / pT
+    // const std::vector<std::string> cutDeltaEta1InPt({"", "", "", "", "", ">-0.003&<0.003", ">-0.003&<0.003", ">-0.003&<0.003", ">-0.003&<0.003", ">-0.003&<0.003", ">-0.003&<0.003"});
+    // const std::vector<std::string> cutDeltaEta1InPt({">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002"});
+    const std::vector<std::string> cutDeltaEta1InPt({">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025"});
+    if (f1 > 0.005 && !passCut(deltaEta1, cutDeltaEta1InPt[iPt])) return(false);
+
+    // eigth cut: RHad / eta
+    const std::vector<std::string> cutRHadInEta({"<0.02", "<0.02", "<0.02", "<0.02", "", "<0.02", "<0.02", "<0.02", "<0.02", ""});
+    if (!passCut(RHad, cutRHadInEta[iEta])) return(false);
+
+    // ninth cut: FHT2 / eta
+    const std::vector<std::string> cutFHT2InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
+    if (!passCut(t2_TRT_PID_trans, cutFHT2InEta[iEta])) return(false);
+
+    // tenth cut: FHT1 / eta
+    const std::vector<std::string> cutFHT1InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
+    if (!passCut(t1_TRT_PID_trans, cutFHT1InEta[iEta])) return(false);
+
+    // eleventh cut: EOverP / eta
+    // const std::vector<std::string> cutEOverPInPt({"", ">0.2", ">0.2", ">0.2", ">0.2", ">0.2", ">0.25", "", "", ""});
+    const std::vector<std::string> cutEOverPInEta({">0.8", ">0.8", ">0.8", ">0.8", "", "", "", "", "", ""});
+    if (!passCut(EOverP, cutEOverPInEta[iEta])) return(false);
+
+    // twelvth cut: rPhi / eta
+    const std::vector<std::string> cutRPhiInEta({">0.84", ">0.84", "", "", "", "", ">0.80", ">0.84", ">0.84", ""});
+    if (!passCut(rPhi, cutRPhiInEta[iEta])) return(false);
+
+    // // thirteenth cut: fSide / eta
+    // const std::vector<std::string> cutFSideInEta({">0.15", ">0.175", ">0.2", ">0.25", "", ">0.2", "", "<0.3", "", ""});
+    // if (!passCut(fSide, cutFSideInEta[iEta])) return(false);
+
+    // thirteenth cut: d0SigmaTrk1
+    const std::vector<std::string> cutD0SigmaTrk1({"<5.0"});
+    if (!passCut(d0SigmaTrk1, cutD0SigmaTrk1[0])) return(false);
+
+    // fourteenth cut: d0SigmaTrk2
+    const std::vector<std::string> cutD0SigmaTrk2({"<5.0"});
+    if (!passCut(d0SigmaTrk2, cutD0SigmaTrk2[0])) return(false);
+
+
+    // fSide: if (f1 > 0.005 && )
+
+    // congrats - this event survived all the cuts
+    return(true);
 }
+bool HG::MergedElectronID::passCut(const float obsValue, const std::string cutString){
+    if (cutString == "") return(true);
+
+    // split cutString by '&'
+    std::vector<std::string> cuts;
+    std::stringstream ss(cutString);
+    std::string token;
+    char delim='&';
+    while (std::getline(ss, token, delim)) {
+        cuts.push_back(token);
+    }
+
+    // apply the individual cuts
+    bool pass = true;
+    for (const auto cut : cuts){
+
+      std::string cutSign;
+      if (cut.find("==")!=std::string::npos){cutSign = "==";}
+      else if (cut.find("<=")!=std::string::npos){cutSign = "<=";}
+      else if (cut.find(">=")!=std::string::npos){cutSign = ">=";}
+      else if (cut.find("<")!=std::string::npos){cutSign = "<";}
+      else if (cut.find(">")!=std::string::npos){cutSign = ">";}
+
+      double cutValue = std::stod(cut.substr(cutSign.size(),cut.size()));
+
+      if (cutSign == "<"){pass = pass && (obsValue < cutValue);}
+      else if (cutSign == "<="){pass = pass && (obsValue <= cutValue);}
+      else if (cutSign == "=="){pass = pass && (obsValue == cutValue);}
+      else if (cutSign == ">="){pass = pass && (obsValue >= cutValue);}
+      else if (cutSign == ">"){pass = pass && (obsValue > cutValue);}
+      
+    }
+
+    return(pass);
+
+}
+unsigned HG::MergedElectronID::getPtBin(const xAOD::Electron * const el) const {
+    
+    double pt = el->pt() / 1000.0;
+
+    if (pt < 20.0){return(0);}
+    else if (pt < 25.0){return(1);}
+    else if (pt < 30.0){return(2);}
+    else if (pt < 35.0){return(3);}
+    else if (pt < 40.0){return(4);}
+    else if (pt < 45.0){return(5);}
+    else if (pt < 50.0){return(6);}
+    else if (pt < 60.0){return(7);}
+    else if (pt < 80.0){return(8);}
+    else {return(9);}
+
+}
+
+unsigned HG::MergedElectronID::getEtaBin(const xAOD::Electron * const el) const {
+
+    double eta = fabs(el->eta());
+
+    if (eta < 0.6){return(0);}
+    else if (eta < 0.8){return(1);}
+    else if (eta < 1.15){return(2);}
+    else if (eta < 1.37){return(3);}
+    else if (eta < 1.52){return(4);}
+    else if (eta < 1.81){return(5);}
+    else if (eta < 2.01){return(6);}
+    else if (eta < 2.37){return(7);}
+    else if (eta < 2.47){return(8);}
+    else {return(9);}
+    
+}
+AngularPosition HG::MergedElectronID::getExtrapolatedTrackPosition(
+    const xAOD::TrackParticle * track,
+    const HG::MergedElectronID::extrapolationStartPositionEnum extrapolationStartPosition,
+    const bool kalmanUpdate,
+    const bool verbose = false,
+    const bool printTrajectory = false){
+
+    TrackModel::HelixParameters startParameters;
+    // std::cout << "-------------------------------\n";
+
+    if (extrapolationStartPosition == extrapolationStartPositionEnum::FirstMeasurement
+        || extrapolationStartPosition == extrapolationStartPositionEnum::LastMeasurement){
+
+      xAOD::ParameterPosition pos;
+
+      // parameters at
+      // - xAOD::BeamLine
+      // - xAOD::CalorimeterEntrance
+      // - xAOD::CalorimeterExit
+      // are not available
+      if (extrapolationStartPosition == extrapolationStartPositionEnum::FirstMeasurement)
+        pos = xAOD::FirstMeasurement; // innermost ID layer with hit belonging to the track -> index = 0
+      else if (extrapolationStartPosition == extrapolationStartPositionEnum::LastMeasurement)
+        pos = xAOD::LastMeasurement;  // outermost ID layer with hit belonging to the track -> index = 1
+
+      unsigned int index = 0;
+      bool found = track->indexOfParameterAtPosition(index, pos);
+      if (!found){
+        Error("getTrackPosition()", "Could not find the track parameters");
+        assert(false);
+      }
+
+      xAOD::CurvilinearParameters_t params = track->trackParameters(index);
+
+      double x = params(0) / 1000.0; double px = params(3) / 1000.0;
+      double y = params(1) / 1000.0; double py = params(4) / 1000.0;
+      double z = params(2) / 1000.0; double pz = params(5) / 1000.0;
+
+      if (verbose){
+        std::cout << "track position: (x,  y,  z)  = " << Form("(%f, %f, %f)", x, y, z) << std::endl;
+        std::cout << "track momentum: (px, py, pz) = " << Form("(%f, %f, %f)", px, py, pz) << std::endl;
+      }
+
+      double pT = sqrt(px*px + py*py);
+      double qOverPt = track->charge() / pT;
+      double cotTheta = pz / pT;
+      double phi = atan2(py, px);
+      // std::cout << "qOverPt = " << qOverPt << std::endl;
+      // std::cout << "phi     = " << phi << std::endl;
+      // std::cout << "cotTheta = " << cotTheta << std::endl;
+
+      startParameters = TrackModel::HelixParameters(x, y, z, phi, cotTheta, qOverPt);
+
+
+    } else if (extrapolationStartPosition == extrapolationStartPositionEnum::Perigee){
+
+      xAOD::DefiningParameters_t trkPar = track->definingParameters();
+
+      // old parameters
+      double d0 = trkPar(0) / 1000.0;      // std::cout << "d0      = " << d0 << std::endl;
+      double z0 = trkPar(1) / 1000.0;      // std::cout << "z0      = " << z0 << std::endl;
+      double phi = trkPar(2);              // std::cout << "phi     = " << phi << std::endl;
+      double theta = trkPar(3);            // std::cout << "theta   = " << theta << std::endl;
+      double qOverPt = trkPar(4) * 1000.0; // std::cout << "qOverPt = " << qOverPt << std::endl;
+
+
+      if (kalmanUpdate){
+
+        assert(false);
+
+        // std::cout << "beamPosX = " << eventInfo->beamPosX() << std::endl;
+        // std::cout << "beamPosY = " << eventInfo->beamPosY() << std::endl;
+        // std::cout << "beamPosZ = " << eventInfo->beamPosZ() << std::endl;
+        // std::cout << "beamPosSigmaX = " << eventInfo->beamPosSigmaX() << std::endl;
+        // std::cout << "beamPosSigmaY = " << eventInfo->beamPosSigmaY() << std::endl;
+        // std::cout << "beamPosSigmaZ = " << eventInfo->beamPosSigmaZ() << std::endl;
+
+//lines below commented out since kalmanUpdate is not used -- to enable it, should also pass (a pointer to) xAOD::eventInfo here
+//         double sx = eventInfo->beamPosSigmaX();
+//         double sy = eventInfo->beamPosSigmaY();
+// 
+//         const double measPar = 0.0;             // Constrain d0 to 0
+//         // const double measCov = 1e-12;        // Uncertainty on d0 1 nm -- something small
+//         const double measCov = 0.5 * (sx + sy);
+// 
+//         const int mk = 0; // d0 is the first entry in the track parameter matrix
+//         double r = measPar - trkPar(mk);
+//         double R = measCov + trkCov(mk,mk); R = 1./R;
+// 
+//         // compute updated state, here = TP + K * r = TP + TCov*H.T*R * r
+//         AmgVector(5) trkParNew = trkPar + trkCov.col(mk) * R * r;
+// 
+//         d0 = trkParNew(0) / 1000.0;      // std::cout << "d0      = " << d0 << std::endl;
+//         z0 = trkParNew(1) / 1000.0;      // std::cout << "z0      = " << z0 << std::endl;
+//         phi = trkParNew(2);              // std::cout << "phi     = " << phi << std::endl;
+//         theta = trkParNew(3);            // std::cout << "theta   = " << theta << std::endl;
+//         qOverPt = trkParNew(4) * 1000.0; // std::cout << "qOverPt = " << qOverPt << std::endl;
+//         pt = track->charge() / qOverPt;
+
+      }
+
+      double x =   d0 * cos(phi);
+      double y = - d0 * sin(phi);
+      double cotTheta = cos(theta) / sin(theta);
+
+      if (verbose){
+        std::cout << "x        = " << x << std::endl;
+        std::cout << "y        = " << y << std::endl;
+        std::cout << "cotTheta = " << cotTheta << std::endl;
+      }
+
+      startParameters = TrackModel::HelixParameters(x, y, z0, phi, cotTheta, qOverPt);
+
+    }
+
+    TrackModel model(startParameters);
+    TrackModel::HelixState startState = model.determineInitialHelixState(startParameters);
+
+    // set extrapolation targets
+    double targetR, targetZ;
+    // targetR  = 1.150; //Solenoid R (in m)
+    targetR  = 1.500; //ECalStripLayer R (in m)
+    targetZ  = 3.512; //ID endplate (in m)
+
+    TrackModel::HelixState endState = model.stateAtBoundaryRZ(targetR, targetZ, printTrajectory);
+
+    if (verbose){
+      std::cout << Form("Position   (%2.2f,%2.2f,%2.2f) -> (%2.2f,%2.2f,%2.2f)",
+                        startState.position.x, startState.position.y, startState.position.z,
+                        endState.position.x, endState.position.y, endState.position.z ) << std::endl;
+      std::cout << Form("Momentum   (%2.2f,%2.2f,%2.2f) -> (%2.2f,%2.2f,%2.2f)",
+                        startState.momentum.x, startState.momentum.y, startState.momentum.z,
+                        endState.momentum.x, endState.momentum.y, endState.momentum.z ) << std::endl;
+    }
+
+    return(AngularPosition(endState.position.eta, endState.position.phi));
+}
+
+

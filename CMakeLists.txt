@@ -23,6 +23,8 @@ atlas_add_root_dictionary ( HGamGamStarLib HGamGamStarCintDict
                             HGamGamStar/TrackHandler.h
                             HGamGamStar/ExtraHggStarObjects.h
                             HGamGamStar/MergedElectronID.h
+                            HGamGamStar/AngularPosition.h
+                            HGamGamStar/TrackModel.h
                             HGamGamStar/MxAODTool.h Root/LinkDef.h
                             EXTERNAL_PACKAGES ROOT
                             )
