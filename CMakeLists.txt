@@ -11,6 +11,7 @@ atlas_depends_on_subdirs( PUBLIC
                           Event/xAOD/xAODCutFlow
                           PhysicsAnalysis/AnalysisCommon/FsrUtils
                           PhysicsAnalysis/HiggsPhys/Run2/HZZ/Tools/ZMassConstraint
+                          PhysicsAnalysis/AnalysisCommon/IsolationSelection/IsolationSelection
                           )
 
 # Find the needed external(s):
@@ -39,6 +40,7 @@ atlas_add_library( HGamGamStarLib
                    xAODCutFlow
                    FsrUtilsLib
                    ZMassConstraintLib
+                   IsolationSelectionLib
                    )
 
 # Install files from the package:

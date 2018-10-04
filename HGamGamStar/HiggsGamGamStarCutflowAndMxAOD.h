@@ -10,6 +10,9 @@
 #include "HGamGamStar/TrackHandler.h"
 #include "HGamGamStar/MergedElectronID.h"
 
+#include "IsolationSelection/IsolationCloseByCorrectionTool.h"
+#include "IsolationSelection/IsolationSelectionTool.h"
+
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
 
@@ -86,6 +89,9 @@ private:
 
   xAOD::MissingETContainer m_allMET; //!
   xAOD::MissingETContainer m_selMET; //!
+  
+  CP::IsolationCloseByCorrectionTool* m_isoCloseByTool_Electron; //!
+  CP::IsolationSelectionTool* m_isoSelTool_Electron; //!
 
 private:
   /// helper methods to create, fill and print the cut flow
