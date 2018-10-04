@@ -11,6 +11,7 @@ atlas_depends_on_subdirs( PUBLIC
                           Event/xAOD/xAODCutFlow
                           PhysicsAnalysis/AnalysisCommon/FsrUtils
                           PhysicsAnalysis/HiggsPhys/Run2/HZZ/Tools/ZMassConstraint
+                          PhysicsAnalysis/AnalysisCommon/IsolationSelection/IsolationSelection
                           )
 
 # Find the needed external(s):
@@ -23,6 +24,8 @@ atlas_add_root_dictionary ( HGamGamStarLib HGamGamStarCintDict
                             HGamGamStar/TrackHandler.h
                             HGamGamStar/ExtraHggStarObjects.h
                             HGamGamStar/MergedElectronID.h
+                            HGamGamStar/AngularPosition.h
+                            HGamGamStar/TrackModel.h
                             HGamGamStar/MxAODTool.h Root/LinkDef.h
                             EXTERNAL_PACKAGES ROOT
                             )
@@ -37,6 +40,7 @@ atlas_add_library( HGamGamStarLib
                    xAODCutFlow
                    FsrUtilsLib
                    ZMassConstraintLib
+                   IsolationSelectionLib
                    )
 
 # Install files from the package:

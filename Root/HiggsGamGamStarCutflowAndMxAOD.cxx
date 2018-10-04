@@ -26,6 +26,16 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
   
   m_mergedElectronID = new HG::MergedElectronID();
   ANA_CHECK(m_mergedElectronID->initialize(*config()));
+  
+  m_isoCloseByTool_Electron = new CP::IsolationCloseByCorrectionTool("isoCloseByTool_Electron"); 
+    
+  m_isoSelTool_Electron = new CP::IsolationSelectionTool("isoSelTool_Electron");
+  m_isoSelTool_Electron->setProperty("ElectronWP", "Loose");
+  m_isoSelTool_Electron->initialize();
+    
+  ToolHandle<CP::IIsolationSelectionTool> iIsoSelTool_Electron = m_isoSelTool_Electron;
+  m_isoCloseByTool_Electron->setProperty("IsolationSelectionTool", iIsoSelTool_Electron); 
+  m_isoCloseByTool_Electron->initialize();
 
   return EL::StatusCode::SUCCESS;
 }
@@ -467,22 +477,30 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 17: Require electrons to pass medium PID
     static bool requireMedium = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
     if (requireMedium && (!electronHandler()->passPIDCut(m_selElectrons[0]) || !electronHandler()->passPIDCut(m_selElectrons[1])) ) return LEP_MEDID;
-  //==== CUT 18: Require muons to pass IP    
+  //==== CUT 18: Require electrons to pass IP    
     static bool requireIP = config()->getBool("ElectronHandler.Selection.ApplyIPCuts", true);
     if (requireIP && (!electronHandler()->passIPCuts(m_selElectrons[0]) || !electronHandler()->passIPCuts(m_selElectrons[1])) ) return LEP_IP;
-  //==== CUT 19: Require muons to pass isolation
+  //==== CUT 19: Require electrons to pass isolation
     static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
-    if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0]) || !electronHandler()->passIsoCut(m_selElectrons[1])) ) return LEP_ISO;
+//     if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0]) || !electronHandler()->passIsoCut(m_selElectrons[1])) ) return LEP_ISO;
+    //more sophisticated isolation cut taking into account close-by objects
+    if(requireIso){
+        std::vector<const xAOD::IParticle*> electronsVec; 
+        for(auto electron: m_selElectrons) electronsVec.push_back((const xAOD::IParticle*) electron); //regard all (two) electrons as close-by objects for next calculation
+        for(auto electron: m_selElectrons) if (!m_isoCloseByTool_Electron->acceptCorrected(*electron, electronsVec)) return LEP_ISO;
+    }
   }
   else if(var::yyStarChannel()==MERGED_DIELECTRON){
   //==== CUT 17: Require electrons to pass merged PID
     static bool requireMerged = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
     if (requireMerged && (!m_mergedElectronID->passPIDCut(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1])) ) return LEP_MEDID;
-  //==== CUT 18: Require muons to pass IP
+  //==== CUT 18: Require electrons to pass IP
     static bool requireIP = config()->getBool("ElectronHandler.Selection.ApplyIPCuts", true);
     if (requireIP && (!electronHandler()->passIPCuts(m_selElectrons[0])) ) return LEP_IP;
-  //==== CUT 19: Require muons to pass isolation
-    static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
+  //==== CUT 19: Require melectrons to pass isolation
+//     static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
+    //for now won't require merged electrons to pass isolation
+    static bool requireIso = false;
     if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0])) ) return LEP_ISO;	  
   }
   else if(var::yyStarChannel()==AMBIGUOUS_DIELECTRON){
