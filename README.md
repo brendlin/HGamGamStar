@@ -38,8 +38,10 @@ To be able to run executables, run (only once per login session):
 
     source $TestArea/../build/$CMTCONFIG/setup.sh    
 
-Running
+Running - "The Old Way"
 ---------
+(Note: if you are new to the code, we suggest using the new tools! The "old way" is mentioned here for those who are already used to it, and don't want to change.)
+
 To see more details on how to run, look at `HGamCore/HGamAnalysisFramework/Root/RunUtils.cxx`. Make a list of files you want to run, and specify `InputFileList`. If you have a single file, specify `InputFile`:
 
     cd $TestArea/../run
@@ -110,6 +112,41 @@ automatically convert the DSIDs in your localgroupdisk to a list of files.
     cd $TestArea/../run
     runJob.py --InputList Samples.txt --OutputDir MyOutputDir --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000
     ```
+
+### Merging the files of an EventLoop job
+
+Once the jobs above are complete, you can merge the files using the `EL::Driver::wait` command.
+The easiest way to do this is to launch this via command line, with:
+
+    cd MyOutputDir/..
+    python -c 'import ROOT; import sys; ROOT.EL.Driver.wait("MyOutputDir") and sys.exit()'
+
+Note that this will wait for all jobs to finish, and then merge the root files. The resulting MxAODs will be in the directory `MyOutputDir/data-MxAOD`.
+If a job failed at any point, an error will be thrown and the merging will be paused. See below for how to re-run the jobs that failed.
+(You can simply re-run the above command after your jobs finish successfully, and the merging should start back up where it left off.)
+
+### Rerunning failed jobs
+
+Did any of your jobs fail? You can check by running:
+
+    find MyOutputDir/. | grep fail
+
+In the event that a few jobs failed for "transient regions" (e.g. there is no inherent bug in the code), you can restart the individual jobs.
+To do this, move to your `MyOutputDir`, and make a file `rerun.sh` with the following contents:
+
+    #!/bin/bash
+    for i in $(ls status | grep fail); do 
+        job=${i/fail-/}; 
+        sed "s/\$(Process)/${job}/g" submit/submit >& submit/submit-$job \
+        && sed -i 's/queue.*/queue/g' submit/submit-$job \
+        && condor_submit submit-$job \
+        && rm status/fail-$job \
+        && rm status/done-$job \
+        && rm submit/log-$job.err \
+        && rm submit/log-$job.out;
+    done
+
+Running `source rerun.sh` will rerun the specific jobs that failed. If they fail again, then you can rerun this script.
 
 ### Running on the Grid
 
