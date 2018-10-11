@@ -127,6 +127,10 @@ If a job failed at any point, an error will be thrown and the merging will be pa
 
 ### Rerunning failed jobs
 
+Did any of your jobs fail? You can check by running:
+
+    find MyOutputDir/. | grep fail
+
 In the event that a few jobs failed for "transient regions" (e.g. there is no inherent bug in the code), you can restart the individual jobs.
 To do this, move to your `MyOutputDir`, and make a file `rerun.sh` with the following contents:
 
