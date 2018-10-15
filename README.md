@@ -139,7 +139,7 @@ To do this, move to your `MyOutputDir`, and make a file `rerun.sh` with the foll
         job=${i/fail-/}; 
         sed "s/\$(Process)/${job}/g" submit/submit >& submit/submit-$job \
         && sed -i 's/queue.*/queue/g' submit/submit-$job \
-        && condor_submit submit-$job \
+        && condor_submit submit/submit-$job \
         && rm status/fail-$job \
         && rm status/done-$job \
         && rm submit/log-$job.err \
