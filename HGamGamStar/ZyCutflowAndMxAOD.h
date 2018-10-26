@@ -18,15 +18,14 @@ private:
     DUPLICATE=3, GRL=4, TRIGGER=5, DQ=6, VERTEX=7,
     TWO_SF_LEPTONS=8,ONE_LOOSE_GAM=9, AMBIGUITY=10,
     TWO_SF_LEPTONS_POSTOR=11,ONE_PHOTON_POSTOR=12,
-    TRIG_MATCH=13, GAM_TIGHTID=14, GAM_ISOLATION=15, RELPTCUTS=16, MASSCUT=17, PASSALL=18 };
+    TRIG_MATCH=13, LEADLEPTON_PT=14, MASSCUT=15, GAM_TIGHTID=16, GAM_ISOLATION=17, PASSALL=18 };
 
   // names of all cuts (do not includ "pass all")
   const std::vector<TString> s_cutDescs =
     {"No duplicates","GRL","Pass trigger","Detector DQ","Has PV",
      "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity",
      "2 same-flavor leptons (post-OR)","1 loose photon (post-OR)",
-     "Trigger match","tight ID","isolation","rel. #it{p}_{T} cuts",
-     "#it{m}_{#gamma#gamma} #in [105,160] GeV"};
+     "Trigger match","leading lepton #it{p}_{T}>30 GeV", "#it{m}_{ll}>40 GeV", "tight ID","isolation"};
 
   /// value of cut that fail selection: PASSALL if all cuts passed
   CutEnum m_cutFlow;
