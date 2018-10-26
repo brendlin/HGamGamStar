@@ -242,7 +242,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   m_allMuons = muonHandler()->getCorrectedContainer();
   xAOD::MuonContainer dirtyMuons = muonHandler()->applySelection(m_allMuons);
 
-  //==== CUT 4 : 2 SF leptons (before OR) ====
+  //==== CUT 5 : 2 SF leptons (before OR) ====
   if (m_preSelElectrons.size() < 2 && dirtyMuons.size() < 2) return TWO_SF_LEPTONS;
 
   // Get object containers
@@ -275,10 +275,10 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
       ++nHV;
   }
 
-  //==== CUT 5 : Require two loose photons, pT>25 GeV ====
+  //==== CUT 6 : Require one loose photons, pT>15 GeV ====
   if (nloose<1) return ONE_LOOSE_GAM;
 
-  //==== CUT 6 : Preselection
+  //==== CUT 7 : Ambiguity
   // - Require two loose photons that also pass e-gamma ambiguity ====
   static bool requireAmbiguity = config()->getBool("PhotonHandler.Selection.ApplyAmbiguityCut", false);
   if (requireAmbiguity && namb<1) return AMBIGUITY;
@@ -286,6 +286,8 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   // static bool requireHV = config()->getBool("PhotonHandler.Selection.ApplyHVCut", false);
   // if (requireHV && nHV<1) return AMBIGUITY;
 
+
+  //==== CUT 8 : Two OSSF leptons (after OR) ====
   m_allJets = jetHandler()->getCorrectedContainer();
   m_selJets = jetHandler()->applySelection(m_allJets);
 
@@ -327,8 +329,10 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   }
   if (nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
 
+  //==== CUT 9 : 1 photon after OR ====
   if (m_selPhotons.size()==0) return ONE_PHOTON_POSTOR;
 
+  //==== CUT 10 : Trigger matching ====
   //trigger matching
   static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
   //if ( requireTriggerMatch && !passTriggerMatch(NULL, &m_selElectrons, &m_selMuons, NULL) ) return TRIG_MATCH; //doesn't work
@@ -341,6 +345,22 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
     if (itrigmatch==0) return TRIG_MATCH;
   }
 
+  //==== CUT 11 : 30 GeV cut on leading lepton ====
+  if (!((m_selElectrons.size()>0 && m_selElectrons[0]->pt()>30*HG::GeV) || (m_selMuons.size()>0 && m_selMuons[0]->pt()>30*HG::GeV))) return LEADLEPTON_PT;
+
+  //==== CUT 12 : MLL>40 GeV ====
+  double m_ll=-99;
+  if ( m_selElectrons.size()>=2 ) m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
+  else if ( m_selMuons.size()>=2 ) m_ll = (m_selMuons[0]->p4() + m_selMuons[1]->p4()).M();
+  if ( m_ll<40*HG::GeV ) return MASSCUT;
+
+  //==== CUT 13 : tight ID for photon ====
+
+  if (!photonHandler()->passPIDCut(m_selPhotons[0])) return GAM_TIGHTID;
+
+  //==== CUT 14 : pass FixedCutLoose isolation for photon ====
+
+  if (!photonHandler()->passIsoCut(m_selPhotons[0], HG::Iso::FixedCutLoose)) return GAM_ISOLATION;
 
   //==== CUT 7 : Require two loose photons to pass trigger matching
   // static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
@@ -470,7 +490,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
 
   // Basic event weights
   eventHandler()->pileupWeight();
-  eventHandler()->vertexWeight();
+  if (HG::isMC()) eventHandler()->vertexWeight();
 
   if (!isSys) {
     // Make sure every trigger is checked, and decorated to EventInfo
@@ -483,17 +503,13 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   eventHandler()->storeVar<float>("met_hardVertexTST", m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->met() : m_selMET["TST"]->met());
 
   //store passAll flag
-  bool passPt = false, passPID = false, passIso = false, passMll = false, passLPt = false, passPre = false, passAll = false;
+  bool passPID = false, passIso = false, passPre = false, passAll = false;
   if (m_selPhotons.size()>0){
     xAOD::Photon *y1 = m_selPhotons[0];
-    passPt  = y1->pt() >= 15.0 * HG::GeV;
     passPID = photonHandler()->passPIDCut(y1);
     passIso = photonHandler()->passIsoCut(y1, HG::Iso::FixedCutLoose);
   }
-  passMll = var::m_ll()>=40.0 * HG::GeV;
-  if ( m_selElectrons.size()>0 ) passLPt = m_selElectrons[0]->pt() >= 30.0 * HG::GeV && m_selElectrons[1]->pt() >= 25.0 * HG::GeV ;
-  else if (m_selMuons.size()>0 ) passLPt = m_selMuons[0]->pt() >= 30.0 * HG::GeV && m_selMuons[1]->pt() >= 25.0 * HG::GeV;
-  passPre = passPt && passMll && var::cutFlow()>14 && passLPt; //all except ID and iso
+  passPre = var::cutFlow()>15; //all except ID and iso
   passAll = passPre && passPID && passIso;
   eventHandler()->storeVar<char>("isPassedZyPreSel", passPre);
   eventHandler()->storeVar<char>("isPassedZy", passAll);
@@ -516,8 +532,10 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::eta_y1.addToStore(truth);
   var::N_mu   .addToStore(truth);
   var::N_e    .addToStore(truth);
+  var::N_j_central  .addToStore(truth);
   if (!truth) {
     var::met_TST  .addToStore(truth);
+    var::sumet_TST.addToStore(truth);
   }
 }
 
