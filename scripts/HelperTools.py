@@ -19,8 +19,23 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
         nm = re.sub(r'r[0-9][0-9][0-9][0-9][0-9]_','',nm)
         return nm
 
+    has_data16,has_data17 = False,False
+
     for sample in samplehandler :
+
         name = sample.name()
+
+        if 'data15_13TeV' in name :
+            continue
+
+        if 'data16_13TeV' in name :
+            has_data16 = True
+            continue
+
+        if 'data17_13TeV' in name :
+            has_data17 = True
+            continue
+
         if tag :
             name = '%s.%s'%(name,tag)
 
@@ -46,10 +61,6 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
             else :
                 name = name.replace('mc16_13TeV.','mc16.')
 
-        # shorten data name:
-        name = name.replace('data15_13TeV','data15')
-        name = name.replace('data16_13TeV','data16')
-        name = name.replace('data17_13TeV','data17')
         name = name.replace('.physics_Main.','.')
 
         # Generator - Powheg
@@ -91,5 +102,27 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
         # (This is because they cannot be renamed if they already belong to a SampleHandler)
         print 'Renaming \"%s\" to \"%s\"'%(k,map_newnames[k])
         ROOT.SH.mergeSamples(samplehandler,map_newnames[k],k)
+
+    # Quick function to merge the data runs using run ranges
+    def mergeDataRuns(year_tag,firstrun,lastrun,periodName) :
+
+        name = '%s.%s'%(year_tag,periodName)
+        if tag :
+            name = '%s.%s'%(name,tag)
+
+        for i in range(firstrun,lastrun+1) :
+            ROOT.SH.mergeSamples(samplehandler,'tmp_merge%d'%(i),'%s.%08d.*'%(year_tag,i))
+        ROOT.SH.mergeSamples(samplehandler,name,'tmp_merge.*')
+
+        return
+
+    # Merge data runs into separate periods (for file sizes that fit on eos)
+    if has_data16 :
+        mergeDataRuns('data16_13TeV',297730,306714,'periodAtoG')
+        mergeDataRuns('data16_13TeV',307124,311481,'periodItoL')
+
+    if has_data17 :
+        mergeDataRuns('data17_13TeV',324320,334779,'periodAtoE')
+        mergeDataRuns('data17_13TeV',334842,340453,'periodFtoK')
 
     return
