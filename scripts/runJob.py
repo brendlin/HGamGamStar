@@ -386,7 +386,7 @@ def main (options,args) :
         for ds in griddsets :
             ROOT.SH.addGrid(myhandler, ds)
 
-        HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data(),gridtag=conf.getStr('GridTag'))
+        HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data(),gridtag=conf.getStr('GridTag').Data())
 
     # Local file(s), via Input or InputList (file or list of files)
     else :
