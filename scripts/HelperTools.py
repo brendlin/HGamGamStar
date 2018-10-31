@@ -11,6 +11,12 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
     import re
     import ROOT
 
+    if tag :
+        tag = '.'+tag
+
+    if gridtag :
+        gridtag = gridtag + '.'
+
     map_newnames = dict()
 
     # Only remove the R-tag if we figured out the MC campaign (see below)
@@ -19,13 +25,25 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
         nm = re.sub(r'r[0-9][0-9][0-9][0-9][0-9]_','',nm)
         return nm
 
+    merge_data15,merge_data16,merge_data17 = False,False,False
+
     for sample in samplehandler :
+
         name = sample.name()
-        if tag :
-            name = '%s.%s'%(name,tag)
+        name = name + tag
+
+        # non-Grid data merging is treated below, not here
+        if not issubclass(type(sample),ROOT.SH.SampleGrid) :
+
+            merge_data15 = ('data15_13TeV' in name)
+            merge_data16 = ('data16_13TeV' in name)
+            merge_data17 = ('data17_13TeV' in name)
+
+            if merge_data15 or merge_data16 or merge_data17 :
+                continue
 
         if gridtag and issubclass(type(sample),ROOT.SH.SampleGrid) :
-            name = '%s.%s'%(gridtag,name)
+            name = gridtag + name
         
         # General
         name = name.replace('.deriv.'       ,'.')
@@ -46,10 +64,6 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
             else :
                 name = name.replace('mc16_13TeV.','mc16.')
 
-        # shorten data name:
-        name = name.replace('data15_13TeV','data15')
-        name = name.replace('data16_13TeV','data16')
-        name = name.replace('data17_13TeV','data17')
         name = name.replace('.physics_Main.','.')
 
         # Generator - Powheg
@@ -91,5 +105,31 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
         # (This is because they cannot be renamed if they already belong to a SampleHandler)
         print 'Renaming \"%s\" to \"%s\"'%(k,map_newnames[k])
         ROOT.SH.mergeSamples(samplehandler,map_newnames[k],k)
+
+
+    # Quick function to merge the data runs using run ranges
+    def mergeDataRuns(year_tag,firstrun,lastrun,periodName) :
+
+        name = '%s%s.%s%s'%(gridtag,year_tag,periodName,tag)
+
+        for i in range(firstrun,lastrun+1) :
+            ROOT.SH.mergeSamples(samplehandler,'tmp_merge%d'%(i),'%s.%08d.*'%(year_tag,i))
+        ROOT.SH.mergeSamples(samplehandler,name,'tmp_merge.*')
+
+        return
+
+    # Merge data runs into separate periods (for file sizes that fit on eos).
+    # Not possible for grid datasets.
+    if merge_data15 :
+        name = '%sdata15_13TeV.periodAllYear%s'%(gridtag,tag)
+        ROOT.SH.mergeSamples(samplehandler,name,'data15_13TeV.*')
+
+    if merge_data16 :
+        mergeDataRuns('data16_13TeV',297730,306714,'periodAtoG')
+        mergeDataRuns('data16_13TeV',307124,311481,'periodItoL')
+
+    if merge_data17 :
+        mergeDataRuns('data17_13TeV',324320,334779,'periodAtoE')
+        mergeDataRuns('data17_13TeV',334842,340453,'periodFtoK')
 
     return

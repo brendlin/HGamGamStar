@@ -69,9 +69,9 @@ def PrintSampleSummary(sh) :
 
         nentries = sample.meta().castDouble(ROOT.SH.MetaFields.numEvents,-1)
         if nentries > 0 :
-            print 'Sample \"%s\" has %d entries'%(sample.name(),nentries)
+            print 'Sample \"%s\" (%d files) has %d entries'%(sample.name(),sample.numFiles(),nentries)
         else :
-            print 'Sample \"%s\":'%(sample.name())
+            print 'Sample \"%s\" (%d files):'%(sample.name(),sample.numFiles())
 
         # print first 5 files
         for i in range(min(5,sample.numFiles())) :
@@ -386,7 +386,7 @@ def main (options,args) :
         for ds in griddsets :
             ROOT.SH.addGrid(myhandler, ds)
 
-        HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data(),gridtag=conf.getStr('GridTag'))
+        HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data(),gridtag=conf.getStr('GridTag').Data())
 
     # Local file(s), via Input or InputList (file or list of files)
     else :
