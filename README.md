@@ -155,8 +155,43 @@ To run on the grid, you must specify a **GridTag** as well as a **ProdTag** via 
 
     runJob.py --Input mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_e5984_s3126_r10201_r10210_p3415 --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --Grid --GridTag user.brendlin --ProdTag ysy001
 
+MxAOD Production
+=================
+
+Where is the data? There is a script [getSamplesFromGRL.py](https://gitlab.cern.ch/atlas-hgam-sw/HGamCore/blob/master/HGamTools/scripts/getSamplesFromGRL.py)
+in HGamCore that creates a list of data DSIDs from some input GRLs. The resulting files are saved in the 
+`HGamTools/data/input` directory. We copy the data DSIDs from those files (HIGG1D2), but save them ourselves in [HGamGamStar/data/input](https://gitlab.cern.ch/brendlin/HGamGamStar/tree/master/data/input).
+
+To run all MxAOD production on Condor, 
+first **make sure the code is fully committed, tagged in git, and that the event selection description 
+[HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/master/HggStarEventSelection.md) is fully up-to-date.**
+Then do (specifying an appropriate ProdTag):
+
+    prodtag=ysy00X
+    for DS in data15_13TeV data16_13TeV data17_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2; do
+    runJob.py --InputList HGamGamStar/input/$DS.txt --OutputDir ${DS}_${prodtag} --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000 --ProdTag $prodtag;
+    done;
+
+Wait for all jobs to complete. Then merge using the following commands (it is recommended to run these one-by-one; in case a job failed, follow the rerun procedure outlined above):
+
+    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data15_13TeV_${prodtag}\") and sys.exit()"
+    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data16_13TeV_${prodtag}\") and sys.exit()"
+    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data17_13TeV_${prodtag}\") and sys.exit()"
+    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"mc16a_HIGG1D2_${prodtag}\") and sys.exit()"
+    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"mc16a_HIGG1D2_${prodtag}\") and sys.exit()"
+
+When all jobs have merged, put the MxAOD output files (located in the directory `data-MxAOD`) into a directory on EOS and the DESY dust (if applicable),
+and add the production details to the section below.
+
+Information on MxAOD Productions
+----------------
+| **MxAOD tag** | **HGamGamStar tag** | **Base Release** | **Event selection** | **Location** |
+| ------------- | ----------------- | -------------- | ----------------- | ---------- |
+| ysy001 | [ysy001](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy001) | 21.2.25 | [ysy001 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/0bf0779154ff38eade37b64e611707cfd77989a6/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy001<br>EOS: /eos/user/b/brendlin/ysy/ysy001  |
+| ysy002 | [ysy002](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy002) | 21.2.25 | Not fully documented yet | TBD |
+
 Updating the HGamCore Tag
----------
+================
 If you are a *user* who is trying to update the HGamGamStar package, including an update to submodule tags, first make sure your
 submodules have no local edits. Then do:
 
