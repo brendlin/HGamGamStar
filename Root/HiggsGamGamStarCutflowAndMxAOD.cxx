@@ -1,7 +1,8 @@
 #include "HGamGamStar/HiggsGamGamStarCutflowAndMxAOD.h"
 #include "HGamAnalysisFramework/HGamVariables.h"
 #include <EventLoop/Worker.h>
-
+#include "HGamAnalysisFramework/TruthUtils.h"
+ 
 #include "HGamGamStar/ExtraHggStarObjects.h"
 
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
@@ -240,6 +241,200 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 
   return EL::StatusCode::SUCCESS;
 }
+
+//Truth Classes
+//Unknown Decay
+//Muon Decay
+//Other Decay
+//Resolved Electron Decay
+//Merged Electron Decay
+//Ambigious Electron Decay
+//Tracking Failed Electron Decay
+
+
+float HiggsGamGamStarCutflowAndMxAOD::getTruthMatchProbability(const xAOD::TrackParticle* trackParticle)
+{ 
+  float truthProb = 0.;
+  if (trackParticle->isAvailable<float>("truthMatchProbability")) {
+    truthProb = trackParticle->auxdata<float>("truthMatchProbability");
+  }
+  return truthProb;
+}
+
+
+
+HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truthClass()
+{
+  // Get Higgs Final State Decay Products
+
+  if (!HG::isMC()) 
+    return TruthClass::Unknown;
+
+  const xAOD::TruthParticleContainer *truthParticles = nullptr;
+  TString truthPartContName = config()->getStr("TruthParticles.ContainerName", "TruthParticle");
+  if(event()->retrieve(truthParticles, truthPartContName.Data()).isFailure())
+    { HG::fatal("Can't access TruthParticleContainer"); }
+
+
+  ConstDataVector<xAOD::TruthParticleContainer> higgses = HG::getFinalHiggsBosons(truthParticles);
+
+  if (higgses.size() == 0) 
+    return TruthClass::Unknown; // E.g. Background events
+
+  ConstDataVector<xAOD::TruthParticleContainer> decayProds = HG::getHyyStarSignalDecayProducts(higgses[0]);
+
+  ConstDataVector<xAOD::TruthParticleContainer> childleps = HG::FilterLeptons(decayProds);
+  if (childleps.size() != 2) 
+    return TruthClass::Other;
+
+  bool isElectron = true;
+  bool isMuon =  false;
+  for(const auto& lepton: childleps){
+    if( fabs(lepton->pdgId()) != 11 )
+      isElectron =  false;  
+    if( fabs(lepton->pdgId()) == 13 ) 
+      isMuon  = true;   
+  }
+  
+  if(isMuon)
+    return TruthClass::Muon; 
+
+  if(!isElectron)
+    return TruthClass::Other;
+
+  std::map<const xAOD::TruthParticle*, const xAOD::TrackParticle*> truthTrackMap;  
+  std::multimap<const xAOD::TrackParticle*, const xAOD::Electron*> trackElectronMap;
+
+  auto AllElectrons = electronHandler()->getCorrectedContainer();
+  for( const xAOD::Electron* electron: AllElectrons ){
+    for( unsigned int trk_i(0); trk_i < electron->nTrackParticles(); ++trk_i){
+      auto trkParticle = electron->trackParticle(trk_i);
+      trackElectronMap.insert( std::pair<const xAOD::TrackParticle*,const xAOD::Electron*>( trkParticle, electron) );
+       
+      const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*trkParticle);
+      auto truthPair =  truthTrackMap.find( truthPart );
+      if( truthPair != truthTrackMap.end()){
+        if( getTruthMatchProbability(trkParticle) >  getTruthMatchProbability(truthPair->second) ) 
+          truthTrackMap[truthPart] = trkParticle;
+      } else {
+        truthTrackMap.insert( std::pair<const xAOD::TruthParticle*, const xAOD::TrackParticle*>(truthPart,trkParticle) );   
+      }
+    } 
+  }
+
+  std::vector<const xAOD::TrackParticle*> leptonTracks;
+
+  for(const auto& lepton: childleps){
+    auto truthPair =  truthTrackMap.find( lepton );
+    if( truthPair != truthTrackMap.end()){
+      leptonTracks.push_back( truthPair->second );
+    } else {
+      std::cout << "Lepton was not reconstructed" << std::endl;
+    }
+  }
+
+  if(leptonTracks.size()!=2)
+    return TruthClass::FailedTrkElectron;
+
+  auto Trk0_Electrons = trackElectronMap.equal_range( leptonTracks[0] );
+  auto Trk1_Electrons = trackElectronMap.equal_range( leptonTracks[1] );
+ 
+  //Count the number of electrons a track matches to
+  int Trk0_nElectron = std::distance( Trk0_Electrons.first, Trk0_Electrons.second );
+  int Trk1_nElectron = std::distance( Trk1_Electrons.first, Trk1_Electrons.second );
+
+  if( Trk0_nElectron == 1 &&  Trk1_nElectron == 1){
+    if( Trk0_Electrons.second == Trk1_Electrons.second )
+      return TruthClass::MergedElectron; 
+    else
+      return TruthClass::ResolvedElectron;
+  }
+
+  
+  // Determine the match ranking for the track to each electron 
+  std::vector<int> Trk0_TrackNo;
+  for( auto mapIt = Trk0_Electrons.first; mapIt != Trk0_Electrons.second; ++mapIt){
+    for( unsigned int trk_i(0); trk_i < mapIt->second->nTrackParticles(); ++trk_i){
+      if( mapIt->second->trackParticle(trk_i) == mapIt->first )
+      {   
+        Trk0_TrackNo.push_back(trk_i);
+        break;
+      }
+    }
+    Trk0_TrackNo.push_back(-1);
+  }
+
+  //Check if the track is ever the primary track
+  int Trk0_PrimaryE(-1);
+  for( unsigned int i(0); i < Trk0_TrackNo.size(); ++i){
+    if( Trk0_TrackNo[i] == 0 )
+      Trk0_PrimaryE = i;
+  }
+
+  std::vector<int> Trk1_TrackNo;
+  for( auto mapIt = Trk1_Electrons.first; mapIt != Trk1_Electrons.second; ++mapIt){
+    for( unsigned int trk_i(0); trk_i < mapIt->second->nTrackParticles(); ++trk_i){
+      if( mapIt->second->trackParticle(trk_i) == mapIt->first )
+      {   
+        Trk1_TrackNo.push_back(trk_i);
+        break;
+      }
+    }
+    Trk1_TrackNo.push_back(-1);
+  }
+ 
+  int Trk1_PrimaryE(-1);
+  for( unsigned int i(0); i < Trk1_TrackNo.size(); ++i){
+    if( Trk1_TrackNo[i] == 0 )
+      Trk1_PrimaryE = i;
+  }
+
+  if( Trk0_PrimaryE > -1 && Trk1_PrimaryE > -1 ){
+    auto el0 = Trk0_Electrons.first;
+    std::advance( el0, Trk0_PrimaryE );
+    auto el1 = Trk1_Electrons.first;
+    std::advance( el1, Trk1_PrimaryE );
+
+    if( el0->second == el1->second ) 
+    {  
+      std::cout << "This should never happen -- truth error" <<  std::endl;
+      return TruthClass::AmbiguousElectron;     
+    }
+    return TruthClass::ResolvedElectron;
+  }
+
+  if( Trk0_PrimaryE > -1 || Trk1_PrimaryE > -1 ){
+    const xAOD::Electron*  el = nullptr;
+    const xAOD::TrackParticle* otherTrack = nullptr;
+    if( Trk0_PrimaryE > 0 ){
+      auto el0 = Trk0_Electrons.first;
+      std::advance( el0, Trk0_PrimaryE );
+      el = el0->second;
+      otherTrack = Trk1_Electrons.first->first;
+    }else{
+      auto el1 = Trk1_Electrons.first;
+      std::advance( el1, Trk1_PrimaryE );
+      el = el1->second;
+      otherTrack = Trk0_Electrons.first->first;
+    }
+
+    for( unsigned int trk_i(0); trk_i < el->nTrackParticles(); ++trk_i){
+      if( el->trackParticle(trk_i) == otherTrack )
+      {
+        return TruthClass::MergedElectron; 
+      }
+    }
+    return TruthClass::ResolvedElectron;
+  }
+
+  //Tracks are not primary for any electron candidate.
+  // Might want to keep looking for candidates
+
+  
+  return TruthClass::AmbiguousElectron;
+  
+}
+
 
 // Returns value of the last cut passed in the cut sequence
 HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow()

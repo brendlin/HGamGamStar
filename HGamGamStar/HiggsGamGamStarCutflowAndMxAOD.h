@@ -35,6 +35,19 @@ private:
     TRIG_MATCH=16, LEP_MEDID=17, LEP_IP=18, LEP_ISO=19, GAM_TIGHTID=20, GAM_ISOLATION=21, ZMASSCUT=22, LLGMASSCUT=23, PASSALL=24
   };
 
+  enum class TruthClass{
+    //Truth Classes
+    Unknown = 0,////Unknown Decay
+    Muon,////Muon Decay
+    Other, ////Other Decay
+    ResolvedElectron,////Resolved Electron Decay
+    MergedElectron,////Merged Electron Decay
+    AmbiguousElectron,////Ambigious Electron Decay
+    FailedTrkElectron////Tracking Failed Electron Decay
+  };
+
+
+
   // names of all cuts (do not includ "pass all")
   const std::vector<TString> s_cutDescs =
     {"Lepton Dalitz truth","No duplicates","GRL","Pass trigger","Detector DQ","Has PV",
@@ -119,6 +132,10 @@ private:
   CutEnum cutflow();
   EL::StatusCode doReco(bool isSys = false);
   EL::StatusCode doTruth();
+  float getTruthMatchProbability(const xAOD::TrackParticle* trackParticle);
+  HiggsGamGamStarCutflowAndMxAOD::TruthClass truthClass();
+
+
 
 private:
 #ifndef __CINT__
