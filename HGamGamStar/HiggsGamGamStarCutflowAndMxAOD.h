@@ -86,9 +86,6 @@ private:
   xAOD::MuonContainer m_allMuons; //!
   xAOD::MuonContainer m_selMuons; //!
   xAOD::MuonContainer m_preSelMuons; //!
-
-  xAOD::MissingETContainer m_allMET; //!
-  xAOD::MissingETContainer m_selMET; //!
   
   CP::IsolationCloseByCorrectionTool* m_isoCloseByTool_Electron; //!
   CP::IsolationSelectionTool* m_isoSelTool_Electron; //!

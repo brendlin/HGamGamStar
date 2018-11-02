@@ -528,13 +528,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
   // Do anything you missed in cutflow, and save the objects.
 
-  // Rebuild MET using selected objects
-  m_allMET = etmissHandler()->getCorrectedContainer(&m_selPhotons    ,
-                                                    &m_allJets     ,
-                                                    &m_selElectrons,
-                                                    &m_selMuons    );
-  m_selMET = etmissHandler()->applySelection(m_allMET);
-
   // Save JVT weight (needs special overlap removal)
   m_jvtJets = jetHandler()->applySelectionNoJvt(m_allJets);
   xAOD::ElectronContainer jvtElecs = m_selElectrons;
@@ -543,7 +536,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
 
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
-  setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, &m_selMET, &m_jvtJets);
+  setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, nullptr, &m_jvtJets);
   HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&m_selTracks);
 
   // Adds event-level variables to TStore
@@ -568,7 +561,6 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
       CP_CHECK("execute()", trackHandler   ()->writeContainer(m_selTracks   ));
       CP_CHECK("execute()", jetHandler     ()->writeContainer(m_selJets     ));
       CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
-      CP_CHECK("execute()", etmissHandler  ()->writeContainer(m_selMET      ));
     }
   }
 
@@ -723,7 +715,6 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   xAOD::TruthParticleContainer all_electrons = truthHandler()->getElectrons();
   xAOD::TruthParticleContainer all_muons     = truthHandler()->getMuons();
   xAOD::JetContainer           all_jets      = truthHandler()->getJets();
-  xAOD::MissingETContainer     all_met       = truthHandler()->getMissingET();
   xAOD::TruthParticleContainer all_higgs     = truthHandler()->getHiggsBosons();
 
   // Apply fiducial selections to all containers
@@ -732,7 +723,6 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   xAOD::TruthParticleContainer muons     = truthHandler()->applyMuonSelection     (all_muons);
   xAOD::JetContainer           jets      = truthHandler()->applyJetSelection      (all_jets);
   xAOD::JetContainer           bjets     = truthHandler()->applyBJetSelection     (jets);
-  xAOD::MissingETContainer     met       = truthHandler()->applyMissingETSelection(all_met);
 
   // remove truth jets that are from electrons or photons
   truthHandler()->removeOverlap(photons, jets, electrons, muons);
@@ -743,7 +733,6 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
     truthHandler()->writeElectrons  (all_electrons);
     truthHandler()->writeMuons      (all_muons    );
     truthHandler()->writeJets       (all_jets     );
-    truthHandler()->writeMissingET  (met          );
     truthHandler()->writeHiggsBosons(all_higgs    );
     truthHandler()->writeTruthEvents(             );
 
