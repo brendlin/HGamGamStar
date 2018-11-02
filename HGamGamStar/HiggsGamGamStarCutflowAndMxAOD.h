@@ -39,11 +39,11 @@ private:
     //Truth Classes
     Unknown = 0,////Unknown Decay
     Muon,////Muon Decay
-    Other, ////Other Decay
     ResolvedElectron,////Resolved Electron Decay
     MergedElectron,////Merged Electron Decay
     AmbiguousElectron,////Ambigious Electron Decay
-    FailedTrkElectron////Tracking Failed Electron Decay
+    FailedTrkElectron,////Tracking Failed Electron Decay
+    Other ////Other Decay
   };
 
 
