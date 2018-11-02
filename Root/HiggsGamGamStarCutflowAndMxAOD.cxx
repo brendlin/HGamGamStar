@@ -73,9 +73,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   m_saveTruthObjects = HG::isMC() && config()->getBool("SaveTruthObjects",false);
   m_saveTruthVars    = HG::isMC() && config()->getBool("SaveTruthVariables",false);
 
-  // Temporary hack for large PhotonAllSys samples
-  m_photonAllSys = config()->getStr("PhotonHandler.Calibration.decorrelationModel") == "FULL_v1";
-
   // a. Event variables
   StrV ignore = {};
   if (HG::isData()) ignore = {".mcChannelNumber", ".mcEventWeights", ".RandomRunNumber", ".truthCentralEventShapeDensity", ".truthForwardEventShapeDensity"};
@@ -432,9 +429,9 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // Removes overlap with candidate photon, and any additional tight photons (if option set)
   overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_selElectrons, m_selMuons);
 
-  //above doesn't have option to remove photon overlapping with lepton
-  overlapHandler()->removeOverlap(m_selPhotons, m_selElectrons, 0.4);
-  overlapHandler()->removeOverlap(m_selPhotons, m_selMuons, 0.4);
+  // These do not have any effect I think, since photons are already preferred above.
+  // overlapHandler()->removeOverlap(m_selPhotons, m_selElectrons, 0.4);
+  // overlapHandler()->removeOverlap(m_selPhotons, m_selMuons, 0.4);
 
   //==== CUT 13 : Whether SF leptons survive OR
   if (m_selElectrons.size() == 0 && m_selMuons.size() < 2) return TWO_SF_LEPTONS_POSTOR;
@@ -550,31 +547,28 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
   HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&m_selTracks);
 
   // Adds event-level variables to TStore
-  if (m_photonAllSys)
+  // Write in the nominal and systematics loops
+  writeNominalAndSystematic();
+  writeNominalAndSystematicVars();
+
+  // Write only in the nominal loop
+  if (not isSys)
   {
-    // Write when using FULL_v1 photon systematics (separated from the other systs)
-    writePhotonAllSys(isSys);
-  }
-  else
-  {
-    // Write in the nominal and systematics loops
-    writeNominalAndSystematic();
+    writeNominalOnly();
+    writeNominalOnlyVars();
 
-    // Write only in the nominal loop
-    if (not isSys)
-    {
-      writeNominalOnly();
+    if (m_saveDetailed) {
+      writeDetailed();
+      writeDetailedVars();
+    }
 
-      if (m_saveDetailed) { writeDetailed(); }
-
-      if (m_saveObjects) {
-        CP_CHECK("execute()", photonHandler  ()->writeContainer(m_selPhotons  ));
-        CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
-        CP_CHECK("execute()", trackHandler   ()->writeContainer(m_selTracks   ));
-        CP_CHECK("execute()", jetHandler     ()->writeContainer(m_selJets     ));
-        CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
-        CP_CHECK("execute()", etmissHandler  ()->writeContainer(m_selMET      ));
-      }
+    if (m_saveObjects) {
+      CP_CHECK("execute()", photonHandler  ()->writeContainer(m_selPhotons  ));
+      CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
+      CP_CHECK("execute()", trackHandler   ()->writeContainer(m_selTracks   ));
+      CP_CHECK("execute()", jetHandler     ()->writeContainer(m_selJets     ));
+      CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
+      CP_CHECK("execute()", etmissHandler  ()->writeContainer(m_selMET      ));
     }
   }
 
@@ -594,21 +588,13 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
 void HiggsGamGamStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
 {
   // Basic event selection flags
-  var::isPassedBasic.setValue(eventHandler()->pass());
-  var::isPassed.setValue(eventHandler()->pass() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
-
-  if (!isSys) {
-    int Nloose = m_preSelPhotons.size();
-    eventHandler()->storeVar<char>("isPassedPreselection",Nloose>=1);
-  }
 
   // Add MC only variables
   if (HG::isMC()) {
     eventHandler()->storeVar<float>("crossSectionBRfilterEff", m_crossSectionBRfilterEff);
   }
 
-  writePhotonAllSysVars();
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::writePhotonAllSysVars(bool /*truth*/)
@@ -619,10 +605,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writePhotonAllSysVars(bool /*truth*/)
 void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic()
 {
   // Basic event selection flags
-  var::isPassedBasic.setValue(eventHandler()->pass());
-  var::isPassed.setValue(var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
-  passJetEventCleaning();
 
   if (HG::isMC()) {
 
@@ -632,10 +615,8 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic()
   }
 
   // Additional variables useful for non-framework analysis
-  int Nloose = m_preSelPhotons.size();
-  eventHandler()->storeVar<int>("NLoosePhotons",Nloose);
+  eventHandler()->storeVar<char>("isPassedEventSelection",m_cutFlow >= PASSALL);
 
-  writeNominalAndSystematicVars();
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
@@ -682,8 +663,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeTruthOnlyVars()
 
 void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
 {
-  // Put here the things that you want to save only in the nominal loop (not
-  // the systematics loops).
+  // Put here the things that you want to save only in the nominal loop (not the systematics loops).
 
   eventHandler()->mu();
   eventHandler()->runNumber();
@@ -691,20 +671,9 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
   // Make sure every trigger is checked, and decorated to EventInfo
   eventHandler()->getPassedTriggers();
 
-  // Additional cut flow granularity
-  int Nloose = m_preSelPhotons.size();
-  bool passTrigMatch = passTriggerMatch(&m_preSelPhotons);
-  bool passIso = false, passPID = false;
-  if (Nloose>=1) {
-    xAOD::Photon* y1 = m_preSelPhotons[0];
-    passIso = photonHandler()->passIsoCut(y1);
-    passPID = photonHandler()->passPIDCut(y1);
-  }
-  eventHandler()->storeVar<char>("isPassedPreselection",Nloose>=1);
-  eventHandler()->storeVar<char>("isPassedTriggerMatch",passTrigMatch);
-  eventHandler()->storeVar<char>("isPassedPID",passPID);
-  eventHandler()->storeVar<char>("isPassedIsolation",passIso);
-  eventHandler()->storeVar<char>("isPassedMassCut",passMyyWindowCut(m_preSelPhotons));
+  // Add some convenience variables
+  eventHandler()->storeVar<char>("isPassedObjPreselection",m_cutFlow > TRIG_MATCH);
+  eventHandler()->storeVar<char>("isPassedObjSelection",m_cutFlow > GAM_ISOLATION);
 
   // Vertex information
   eventHandler()->numberOfPrimaryVertices();
@@ -724,8 +693,6 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
     eventHandler()->storeVar<float>("crossSectionBRfilterEff", m_crossSectionBRfilterEff);
   }
 
-  writeNominalOnlyVars();
-
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool /*truth*/)
@@ -740,7 +707,6 @@ void HiggsGamGamStarCutflowAndMxAOD::writeDetailed()
   // Put here all of the things that you want to save in the case where
   // "SaveDetailedVariables" is set to TRUE in the config file.
 
-  writeDetailedVars();
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::writeDetailedVars(bool /*truth*/)
