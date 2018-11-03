@@ -242,15 +242,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   return EL::StatusCode::SUCCESS;
 }
 
-//Truth Classes
-//Unknown Decay
-//Muon Decay
-//Other Decay
-//Resolved Electron Decay
-//Merged Electron Decay
-//Ambigious Electron Decay
-//Tracking Failed Electron Decay
-
 
 float HiggsGamGamStarCutflowAndMxAOD::getTruthMatchProbability(const xAOD::TrackParticle* trackParticle)
 { 
@@ -270,23 +261,27 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   if (!HG::isMC()) 
     return TruthClass::Unknown;
 
+  // Get truth particles
   const xAOD::TruthParticleContainer *truthParticles = nullptr;
   TString truthPartContName = config()->getStr("TruthParticles.ContainerName", "TruthParticle");
   if(event()->retrieve(truthParticles, truthPartContName.Data()).isFailure())
     { HG::fatal("Can't access TruthParticleContainer"); }
 
-
+  // Get Higgs boson from truth record
   ConstDataVector<xAOD::TruthParticleContainer> higgses = HG::getFinalHiggsBosons(truthParticles);
 
   if (higgses.size() == 0) 
     return TruthClass::Unknown; // E.g. Background events
-
+  
+  // Get Higgs decay products
   ConstDataVector<xAOD::TruthParticleContainer> decayProds = HG::getHyyStarSignalDecayProducts(higgses[0]);
 
+  // Get Leptons from decay products
   ConstDataVector<xAOD::TruthParticleContainer> childleps = HG::FilterLeptons(decayProds);
   if (childleps.size() != 2) 
     return TruthClass::Other;
 
+  // Check if there are electrons in the decay
   bool isElectron = true;
   bool isMuon =  false;
   for(const auto& lepton: childleps){
@@ -302,6 +297,8 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   if(!isElectron)
     return TruthClass::Other;
 
+  // Fill maps linking truth particle and track and track and electron
+  // To be used to work out how many times a truth particle matches an electron candidate
   std::map<const xAOD::TruthParticle*, const xAOD::TrackParticle*> truthTrackMap;  
   std::multimap<const xAOD::TrackParticle*, const xAOD::Electron*> trackElectronMap;
 
@@ -309,9 +306,27 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   for( const xAOD::Electron* electron: AllElectrons ){
     for( unsigned int trk_i(0); trk_i < electron->nTrackParticles(); ++trk_i){
       auto trkParticle = electron->trackParticle(trk_i);
-      trackElectronMap.insert( std::pair<const xAOD::TrackParticle*,const xAOD::Electron*>( trkParticle, electron) );
-       
+      if(!trkParticle)
+        continue;
+      // Ignore TRT only tracks 
+      int nSi(0);
+      uint8_t tmp;
+      if( trkParticle->summaryValue(tmp, xAOD::numberOfPixelHits) )
+        nSi += (int) tmp;
+      if( trkParticle->summaryValue(tmp, xAOD::numberOfSCTHits) )
+        nSi += (int) tmp;
+      if( nSi < 3)
+        continue;
+
+      //Get Truth
       const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*trkParticle);
+      if(!truthPart)
+        continue;
+
+      // Add track and electron to map
+      trackElectronMap.insert( std::pair<const xAOD::TrackParticle*,const xAOD::Electron*>( trkParticle, electron) );
+      // Add truth and track to map
+      // If truth particle is already in the map choose the track with the higher match probability
       auto truthPair =  truthTrackMap.find( truthPart );
       if( truthPair != truthTrackMap.end()){
         if( getTruthMatchProbability(trkParticle) >  getTruthMatchProbability(truthPair->second) ) 
@@ -322,8 +337,9 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
     } 
   }
 
-  std::vector<const xAOD::TrackParticle*> leptonTracks;
 
+  // Get the track assoicated to the two leptons
+  std::vector<const xAOD::TrackParticle*> leptonTracks;
   for(const auto& lepton: childleps){
     auto truthPair =  truthTrackMap.find( lepton );
     if( truthPair != truthTrackMap.end()){
@@ -333,9 +349,11 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
     }
   }
 
+  // If the the two tracks are not reconstructed then the truth matching has failed, exit
   if(leptonTracks.size()!=2)
     return TruthClass::FailedTrkElectron;
 
+  // Find the electrons associated to the tracks 
   auto Trk0_Electrons = trackElectronMap.equal_range( leptonTracks[0] );
   auto Trk1_Electrons = trackElectronMap.equal_range( leptonTracks[1] );
  
@@ -343,25 +361,36 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   int Trk0_nElectron = std::distance( Trk0_Electrons.first, Trk0_Electrons.second );
   int Trk1_nElectron = std::distance( Trk1_Electrons.first, Trk1_Electrons.second );
 
+  // If each track only matches to 1 electron each then it is quite simple
   if( Trk0_nElectron == 1 &&  Trk1_nElectron == 1){
+    // Match the same electron --  Merged
     if( Trk0_Electrons.second == Trk1_Electrons.second )
       return TruthClass::MergedElectron; 
+    //Match different electrons  -- Resolved
     else
       return TruthClass::ResolvedElectron;
   }
 
-  
+  // Tracks match more than one electron each - lets see if they are the best match for any electron 
   // Determine the match ranking for the track to each electron 
   std::vector<int> Trk0_TrackNo;
+  // Trk0_Electrons.first/second are the begin and end iterators of the range where Trk0 is the same thing  
   for( auto mapIt = Trk0_Electrons.first; mapIt != Trk0_Electrons.second; ++mapIt){
+    bool found(false);
+    // Loop over all tracks in the electron
     for( unsigned int trk_i(0); trk_i < mapIt->second->nTrackParticles(); ++trk_i){
+      // Check to see if the track in the electron is the track matching to the truth
       if( mapIt->second->trackParticle(trk_i) == mapIt->first )
       {   
+        //Save the index
         Trk0_TrackNo.push_back(trk_i);
+        found=true;
         break;
       }
     }
-    Trk0_TrackNo.push_back(-1);
+    //should not happen but just incase
+    if(!found)
+      Trk0_TrackNo.push_back(-1);
   }
 
   //Check if the track is ever the primary track
@@ -371,16 +400,20 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
       Trk0_PrimaryE = i;
   }
 
+  // Same again for the other electron
   std::vector<int> Trk1_TrackNo;
   for( auto mapIt = Trk1_Electrons.first; mapIt != Trk1_Electrons.second; ++mapIt){
+    bool found(false);
     for( unsigned int trk_i(0); trk_i < mapIt->second->nTrackParticles(); ++trk_i){
       if( mapIt->second->trackParticle(trk_i) == mapIt->first )
       {   
         Trk1_TrackNo.push_back(trk_i);
+        found = true;
         break;
       }
     }
-    Trk1_TrackNo.push_back(-1);
+    if(!found)
+      Trk1_TrackNo.push_back(-1);
   }
  
   int Trk1_PrimaryE(-1);
@@ -388,13 +421,17 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
     if( Trk1_TrackNo[i] == 0 )
       Trk1_PrimaryE = i;
   }
-
+  
+  // If both tracks are the primary track for an electron the it is resolved
   if( Trk0_PrimaryE > -1 && Trk1_PrimaryE > -1 ){
+    // Get to the correct pair iterator
+    // This is a pair of TrackParticle , Electron
     auto el0 = Trk0_Electrons.first;
     std::advance( el0, Trk0_PrimaryE );
     auto el1 = Trk1_Electrons.first;
     std::advance( el1, Trk1_PrimaryE );
 
+    // Compare if the electrons are the same
     if( el0->second == el1->second ) 
     {  
       std::cout << "This should never happen -- truth error" <<  std::endl;
@@ -403,6 +440,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
     return TruthClass::ResolvedElectron;
   }
 
+  // If either are primary  
   if( Trk0_PrimaryE > -1 || Trk1_PrimaryE > -1 ){
     const xAOD::Electron*  el = nullptr;
     const xAOD::TrackParticle* otherTrack = nullptr;
@@ -427,7 +465,8 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
     return TruthClass::ResolvedElectron;
   }
 
-  //Tracks are not primary for any electron candidate.
+  //Tracks are not primary for any electron candidate, tracks match to mutiple candiates  
+  // --  generally the reco has made a mess.
   // Might want to keep looking for candidates
 
   
