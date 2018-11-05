@@ -493,11 +493,9 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (requireMerged && (!m_mergedElectronID->passPIDCut(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1])) ) return LEP_MEDID;
   //==== CUT 18: Require electrons to pass IP
     static bool requireIP = config()->getBool("ElectronHandler.Selection.ApplyIPCuts", true);
-    if (requireIP && (!electronHandler()->passIPCuts(m_selElectrons[0])) ) return LEP_IP;
+    if (requireIP && (!trackHandler()->passIPCuts(*m_selTracks[0]) || !trackHandler()->passIPCuts(*m_selTracks[1])) ) return LEP_IP;
   //==== CUT 19: Require melectrons to pass isolation
-//     static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
-    //for now won't require merged electrons to pass isolation
-    static bool requireIso = false;
+    static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
     if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0])) ) return LEP_ISO;	  
   }
   else if(var::yyStarChannel()==AMBIGUOUS_DIELECTRON){
