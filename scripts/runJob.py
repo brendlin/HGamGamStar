@@ -46,6 +46,10 @@ def getFilesFromCommandLine(Input,InputList) :
             print 'Found file %s (specified using --InputList)'%(tmp_inputlist)
 
         for fileName in open(tmp_inputlist).readlines() :
+
+            if len(fileName.split()) >= 2 :
+                fileName = fileName.split()[0]
+
             fileName = fileName.replace('\n','')
             if fileName == '' :
                 continue
@@ -54,6 +58,44 @@ def getFilesFromCommandLine(Input,InputList) :
             files.append(fileName)
 
     return files
+
+#-------------------------------------------------------------------------
+def getNeventsFromInputList(sh_sample,InputList) :
+
+    if not InputList :
+        return
+
+    tmp_inputlist = ROOT.PathResolverFindCalibFile(InputList)
+    if not tmp_inputlist :
+        Error('Cannot find text file specified by --InputList')
+
+    # Typedef some c++ functions
+    MetaVector_Long64_t = ROOT.SH.MetaVector("Long64_t")
+    vector_Long64_t = ROOT.vector("Long64_t")
+
+    vec_file_nentries = vector_Long64_t()
+    for the_line in open(tmp_inputlist).readlines() :
+
+        the_line = the_line.replace('\n','')
+
+        if 'nentries:' in the_line :
+            tot_entries = int(float(the_line.split('nentries:')[1].lstrip()))
+            continue
+
+        if '#' in the_line or the_line == '' or len(the_line.split()) < 2 :
+            continue
+
+        file_nentries = int(the_line.split()[1].lstrip().replace('\n',''))
+        vec_file_nentries.push_back(file_nentries)
+
+    if vec_file_nentries.size() != sh_sample.makeFileList().size() :
+        Error("getNeventsFromInputList: the nentries vector and filename vector sizes are different.")
+
+    # Adapted this code from SampleHandler/Root/ToolsSplit.cxx
+    file_nentries_meta = MetaVector_Long64_t(ROOT.SH.MetaFields.numEventsPerFile,vec_file_nentries)
+    sh_sample.meta().addReplace(file_nentries_meta)
+    sh_sample.meta().setDouble(ROOT.SH.MetaFields.numEvents,tot_entries)
+    return
 
 #-------------------------------------------------------------------------
 def PrintSampleSummary(sh) :
@@ -90,7 +132,13 @@ def SetEventsPerWorker(sh,conf) :
     # for Condor or GridEngine
 
     print 'scanning number of events...'
-    ROOT.SH.scanNEvents(sh)
+    for sample in sh :
+        meta = sample.meta()
+        if meta.get(ROOT.SH.MetaFields.numEventsPerFile) and meta.get(ROOT.SH.MetaFields.numEvents) :
+            continue
+        print 'scanning',sample.name()
+        ROOT.SH.scanNEvents(sample)
+    print 'scanning number of events done.'
 
     maxEvents = conf.getNum('nc_EventLoop_EventsPerWorker')
     sh.setMetaDouble(ROOT.EL.Job.optEventsPerWorker,maxEvents)
@@ -110,7 +158,10 @@ def SaveSamplesInGridDirectFile(sh) :
 
     for sample in sh :
 
-        gd_name = 'GridDirect_%s.txt'%(sample.name().rstrip('/'))
+        gd_name = 'GridDirectFiles/GridDirect_%s.txt'%(sample.name().rstrip('/'))
+
+        if not os.path.exists('GridDirectFiles') :
+            os.makedirs('GridDirectFiles')
 
         # If the file already exists, continue.
         if os.path.exists(gd_name) :
@@ -118,11 +169,14 @@ def SaveSamplesInGridDirectFile(sh) :
 
         griddirect_file = open(gd_name,'w')
 
+        # number of entries in full dataset
         nentries = sample.meta().castDouble(ROOT.SH.MetaFields.numEvents,-1)
         griddirect_file.write('# nentries: %s\n'%(nentries))
 
+        # File names, and number of entries per file
+        file_events_metavec = sample.meta().get(ROOT.SH.MetaFields.numEventsPerFile)
         for i in range(sample.numFiles()) :
-            griddirect_file.write('%s\n'%(sample.fileName(i)))
+            griddirect_file.write('%s %d\n'%(sample.fileName(i),file_events_metavec.value[i]))
 
         griddirect_file.close()
         print 'GridDirect file saved to %s.'%(gd_name)
@@ -133,7 +187,7 @@ def SaveSamplesInGridDirectFile(sh) :
 def GetGridDirectResultFromFile(sh,ds) :
     # If a file was saved with the results from the previous GridDirect call, take it from that file.
 
-    gd_name = 'GridDirect_%s.txt'%(ds.rstrip('/'))
+    gd_name = 'GridDirectFiles/GridDirect_%s.txt'%(ds.rstrip('/'))
     if os.path.exists(gd_name) :
 
         localfiles = getFilesFromCommandLine(None,gd_name)
@@ -141,6 +195,8 @@ def GetGridDirectResultFromFile(sh,ds) :
 
         for localfile in localfiles :
             sample.add(localfile)
+
+        getNeventsFromInputList(sample,gd_name)
 
         print 'Adding files via previous call to GridDirect for',ds
         sh.add(sample)
@@ -350,8 +406,8 @@ def main (options,args) :
                 print 'The dataset ' + ds + ' is in the wrong format, or there\'s an empty line(s) in your input file. Skipping it.'
                 continue
             
-            #remove white spaces and other bad things from the beginning of string
-            ds = ds.lstrip()
+            #remove white spaces from the beginning of string, slash from end of string (SH convention)
+            ds = ds.lstrip().rstrip('/')
             
             if GetGridDirectResultFromFile(myhandler,ds) :
                 # we just added it.
@@ -364,11 +420,14 @@ def main (options,args) :
             # (Don't worry, local samples get skipped in makeGridDirect)
             ROOT.SH.makeGridDirect(myhandler,localgroupdisk,griddirect_from,griddirect_to,False)
 
+            # Scan Nevents here, sample by sample
+            ROOT.SH.scanNEvents(myhandler.get(ds))
+
             # Save these results to a file (already-saved datasets get skipped)
             SaveSamplesInGridDirectFile(myhandler)
 
         # Set output dataset names
-        HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data())
+        myhandler = HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data())
 
     # Grid samples
     elif options.Grid :
@@ -386,7 +445,9 @@ def main (options,args) :
         for ds in griddsets :
             ROOT.SH.addGrid(myhandler, ds)
 
-        HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data(),gridtag=conf.getStr('GridTag').Data())
+        tag     = conf.getStr('ProdTag','').Data()
+        gridtag = conf.getStr('GridTag').Data()
+        myhandler = HelperTools.SetSampleNames(myhandler,tag=tag,gridtag=gridtag)
 
     # Local file(s), via Input or InputList (file or list of files)
     else :
