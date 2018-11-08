@@ -745,12 +745,6 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   bool truth = true;
   if (m_saveTruthVars) {
 
-    if (m_photonAllSys) {
-      writePhotonAllSysVars(truth);
-      HG::VarHandler::getInstance()->writeTruth();
-      return EL::StatusCode::SUCCESS;
-    }
-
     writeNominalAndSystematicVars(truth);
     writeNominalOnlyVars(truth);
     writeTruthOnlyVars();
