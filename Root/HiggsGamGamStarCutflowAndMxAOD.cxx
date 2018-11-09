@@ -188,6 +188,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
     var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
   }
 
+  var::yyStarTruthChannel.setValue( (int) truthClass() );
+
   // Set this for every event, just in case.
   var::yyStarChannel.setValue(CHANNELUNKNOWN);
 
@@ -304,6 +306,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
 
   auto AllElectrons = electronHandler()->getCorrectedContainer();
   for( const xAOD::Electron* electron: AllElectrons ){
+    if(!electron) continue;
     for( unsigned int trk_i(0); trk_i < electron->nTrackParticles(); ++trk_i){
       auto trkParticle = electron->trackParticle(trk_i);
       if(!trkParticle)
@@ -345,7 +348,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
     if( truthPair != truthTrackMap.end()){
       leptonTracks.push_back( truthPair->second );
     } else {
-      std::cout << "Lepton was not reconstructed" << std::endl;
+      //std::cout << "Lepton was not reconstructed" << std::endl;
     }
   }
 
@@ -390,7 +393,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
     }
     //should not happen but just incase
     if(!found)
-      Trk0_TrackNo.push_back(-1);
+      Trk0_TrackNo.push_back(-99);
   }
 
   //Check if the track is ever the primary track
@@ -413,7 +416,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
       }
     }
     if(!found)
-      Trk1_TrackNo.push_back(-1);
+      Trk1_TrackNo.push_back(-99);
   }
  
   int Trk1_PrimaryE(-1);
@@ -444,7 +447,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   if( Trk0_PrimaryE > -1 || Trk1_PrimaryE > -1 ){
     const xAOD::Electron*  el = nullptr;
     const xAOD::TrackParticle* otherTrack = nullptr;
-    if( Trk0_PrimaryE > 0 ){
+    if( Trk0_PrimaryE >= 0 ){
       auto el0 = Trk0_Electrons.first;
       std::advance( el0, Trk0_PrimaryE );
       el = el0->second;
@@ -456,6 +459,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
       otherTrack = Trk0_Electrons.first->first;
     }
 
+    // Search for the other track in the electron
     for( unsigned int trk_i(0); trk_i < el->nTrackParticles(); ++trk_i){
       if( el->trackParticle(trk_i) == otherTrack )
       {
