@@ -42,3 +42,27 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |22, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> m<sub>trktrk</sub> < 45 GeV for MERGED | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |23, LLGMASSCUT            | 105 < m<sub>ll&gamma;</sub> && m<sub>ll&gamma;</sub> < 160 GeV | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |24, PASSALL               | Everything above passes | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+
+How to select events passing up to a certain cutflow point
+-----------------------
+
+Running on MxAODs, in order to provide a simple way to select events passing a certain stage of the event selection, one can require
+e.g. (if one wants all events passing the trigger matching step):
+
+    HGamEventInfoAuxDyn.cutFlow > TRIG_MATCH;
+
+**Warning**: Be careful that if you use `16` instead of `TRIG_MATCH` you are in danger of your code becoming outdated with updates to the event selection!
+
+Note also that the cutflow is **sequential**, so there is no way (using only the cutflow variable) to specify
+e.g. something that passses photon ID but fails lepton ID (because they are not assessed in that order).
+
+Convenience variables
+-----------------------
+
+For convenience, a few predefined booleans are also saved:
+
+| Variable (HGamEventInfoAuxDyn.*) | Definition | Reason |
+| -------- | ---------- | ------ |
+| isPassedObjPreselection | m_cutFlow > TRIG_MATCH    | For bkg CRs - basic event selection passes, but objects are still "Loose" |
+| isPassedObjSelection    | m_cutFlow > GAM_ISOLATION | All object selection passes at this point |
+| isPassedEventSelection  | m_cutFlow >= PASSALL      | All event selection passes (including m<sub>ll</sub> and m<sub>ll&gamma;</sub> cuts) |

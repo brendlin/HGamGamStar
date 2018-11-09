@@ -1,5 +1,101 @@
 
 #-------------------------------------------------------------------------
+def renameSample(sh,oldSampleName,newSampleName) :
+    # Trick to rename samples: "merge" them into themselves
+    # (This is because they cannot be renamed if they already belong to a SampleHandler)
+    # Written in a way that preserves the Nevents sample metadata
+
+    import ROOT
+
+    new_sh = ROOT.SH.SampleHandler()
+    renamedsample = ROOT.SH.SampleLocal(newSampleName) # the merged sample
+
+    # Typedef some c++ functions
+    MetaVector_Long64_t = ROOT.SH.MetaVector("Long64_t")
+    vector_Long64_t = ROOT.vector("Long64_t")
+
+    vec_file_nentries = vector_Long64_t()
+
+    for sample in sh :
+
+        if sample.name() == oldSampleName :
+            print 'Renaming \"%s\" to \"%s\"'%(oldSampleName,newSampleName)
+            meta = sample.meta()
+
+            for i in range(sample.numFiles()) :
+                renamedsample.add(sample.fileName(i))
+                vec_file_nentries.push_back(meta.get(ROOT.SH.MetaFields.numEventsPerFile).value[i])
+
+            tot_entries = meta.get(ROOT.SH.MetaFields.numEvents).value
+            renamedsample.meta().setDouble(ROOT.SH.MetaFields.numEvents,tot_entries)
+
+        else :
+            new_sh.add(sample)
+
+    if vec_file_nentries.size() != renamedsample.makeFileList().size() :
+        Error("mergeSamplesByRunRange: the nentries vector and filename vector sizes are different.")
+
+    if renamedsample.numFiles() == 0 :
+        Error("renameSample: There are no files in sample %s."%(renamedsample.name()))
+
+    file_nentries_meta = MetaVector_Long64_t(ROOT.SH.MetaFields.numEventsPerFile,vec_file_nentries)
+    renamedsample.meta().addReplace(file_nentries_meta)
+    new_sh.add(renamedsample)
+
+    return new_sh
+
+#-------------------------------------------------------------------------
+def mergeByRunRange(sh,year_tag,tag,periodName,firstRun,lastRun_inclusive) :
+    # Meant to re-implement mergeSamples in ToolsJoin.cxx, but in a way that preserves
+    # the Nevents sample metadata
+    import re
+    import ROOT
+
+    # Typedef some c++ functions
+    MetaVector_Long64_t = ROOT.SH.MetaVector("Long64_t")
+    vector_Long64_t = ROOT.vector("Long64_t")
+
+    sampleName = '%s.%s%s'%(year_tag,periodName,tag)
+
+    new_sh = ROOT.SH.SampleHandler()
+    mergedsample = ROOT.SH.SampleLocal(sampleName) # the merged sample
+    vec_file_nentries = vector_Long64_t()
+    tot_entries = 0
+
+    for sample in sh :
+
+        do_merge = True
+
+        try :
+            runNumber = int(sample.name().split('.')[1])
+        except ValueError :
+            do_merge = False
+
+        do_merge = do_merge and year_tag in sample.name() # e.g. 'data17_13TeV'
+        do_merge = do_merge and runNumber >= firstRun
+        do_merge = do_merge and runNumber <= lastRun_inclusive
+
+        if do_merge :
+            meta = sample.meta()
+            tot_entries += meta.get(ROOT.SH.MetaFields.numEvents).value
+            for i in range(sample.numFiles()) :
+                mergedsample.add(sample.fileName(i))
+                vec_file_nentries.push_back(meta.get(ROOT.SH.MetaFields.numEventsPerFile).value[i])
+
+        else :
+            new_sh.add(sample)
+
+    if vec_file_nentries.size() != mergedsample.makeFileList().size() :
+        Error("mergeSamplesByRunRange: the nentries vector and filename vector sizes are different.")
+
+    file_nentries_meta = MetaVector_Long64_t(ROOT.SH.MetaFields.numEventsPerFile,vec_file_nentries)
+    mergedsample.meta().addReplace(file_nentries_meta)
+    mergedsample.meta().setDouble(ROOT.SH.MetaFields.numEvents,tot_entries)
+    new_sh.add(mergedsample)
+
+    return new_sh
+
+#-------------------------------------------------------------------------
 def SetSampleNames(samplehandler,tag='',gridtag='') :
     #
     # This sets the sample name, including the name of the output files.
@@ -101,35 +197,19 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
         if issubclass(type(samplehandler.get(k)),ROOT.SH.SampleGrid) :
             continue
 
-        # Trick to rename samples: "merge" them into themselves
-        # (This is because they cannot be renamed if they already belong to a SampleHandler)
-        print 'Renaming \"%s\" to \"%s\"'%(k,map_newnames[k])
-        ROOT.SH.mergeSamples(samplehandler,map_newnames[k],k)
-
-
-    # Quick function to merge the data runs using run ranges
-    def mergeDataRuns(year_tag,firstrun,lastrun,periodName) :
-
-        name = '%s%s.%s%s'%(gridtag,year_tag,periodName,tag)
-
-        for i in range(firstrun,lastrun+1) :
-            ROOT.SH.mergeSamples(samplehandler,'tmp_merge%d'%(i),'%s.%08d.*'%(year_tag,i))
-        ROOT.SH.mergeSamples(samplehandler,name,'tmp_merge.*')
-
-        return
+        samplehandler = renameSample(samplehandler,k,map_newnames[k])
 
     # Merge data runs into separate periods (for file sizes that fit on eos).
     # Not possible for grid datasets.
     if merge_data15 :
-        name = '%sdata15_13TeV.periodAllYear%s'%(gridtag,tag)
-        ROOT.SH.mergeSamples(samplehandler,name,'data15_13TeV.*')
+        samplehandler = mergeByRunRange(samplehandler,'data15_13TeV',tag,'periodAllYear',0,9999999)
 
     if merge_data16 :
-        mergeDataRuns('data16_13TeV',297730,306714,'periodAtoG')
-        mergeDataRuns('data16_13TeV',307124,311481,'periodItoL')
+        samplehandler = mergeByRunRange(samplehandler,'data16_13TeV',tag,'periodAtoG',297730,306714)
+        samplehandler = mergeByRunRange(samplehandler,'data16_13TeV',tag,'periodItoL',307124,311481)
 
     if merge_data17 :
-        mergeDataRuns('data17_13TeV',324320,334779,'periodAtoE')
-        mergeDataRuns('data17_13TeV',334842,340453,'periodFtoK')
+        samplehandler = mergeByRunRange(samplehandler,'data17_13TeV',tag,'periodAtoE',324320,334779)
+        samplehandler = mergeByRunRange(samplehandler,'data17_13TeV',tag,'periodFtoK',334842,340453)
 
-    return
+    return samplehandler

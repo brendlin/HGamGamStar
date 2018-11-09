@@ -2,6 +2,9 @@
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 
 SG::AuxElement::Accessor< std::vector<int> > HG::TrackHandler::MatchedElectrons("MatchedElectrons");
+SG::AuxElement::Accessor<char>  HG::TrackHandler::passIPCut("passIPCut");
+SG::AuxElement::Accessor<float>  HG::TrackHandler::d0significance("d0significance");
+SG::AuxElement::Accessor<float>  HG::TrackHandler::z0sinTheta("z0sinTheta");
 
 //______________________________________________________________________________
 HG::TrackHandler::TrackHandler(const char *name, xAOD::TEvent *event, xAOD::TStore *store)
@@ -31,6 +34,9 @@ EL::StatusCode HG::TrackHandler::initialize(Config &config)
 
   m_etaCut     = config.getNum(m_name + ".Selection.MaxAbsEta", 2.47);
   m_ptCut      = config.getNum(m_name + ".Selection.PtPreCutGeV", 0.3) * GeV;
+  
+  m_d0BySigd0Cut = config.getNum("ElectronHandler.Selection.d0BySigd0Max", 5.0);
+  m_z0Cut = config.getNum("ElectronHandler.Selection.z0Max", 0.5);
 
   return EL::StatusCode::SUCCESS;
 }
@@ -43,6 +49,10 @@ xAOD::TrackParticleContainer HG::TrackHandler::getCorrectedContainer()
 
   // sort the tracks
   shallowContainer.sort(comparePt);
+  
+  for (auto trk : shallowContainer){
+    decorateIPCut(*trk);
+  }
 
   return shallowContainer;
 }
@@ -193,4 +203,44 @@ HG::TrackHandler::GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
 size_t HG::TrackHandler::nMatchedElectrons(const xAOD::TrackParticle& trk) const
 {
   return MatchedElectrons(trk).size();
+}
+
+//______________________________________________________________________________
+bool HG::TrackHandler::passIPCuts(xAOD::TrackParticle& trk)
+{
+    if (passIPCut.isAvailable(trk) && !passIPCut(trk)) { return false; }
+
+    return true;
+}
+
+//______________________________________________________________________________
+void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
+{
+  passIPCut(trk) = true;
+  const xAOD::EventInfo *eventInfo = 0;
+
+  if (m_event->retrieve(eventInfo, "EventInfo").isFailure()) {
+    fatal("Cannot access EventInfo");
+  }
+
+  double d0sig = xAOD::TrackingHelpers::d0significance(&trk, eventInfo->beamPosSigmaX(), eventInfo->beamPosSigmaY(), eventInfo->beamPosSigmaXY());
+  
+  d0significance(trk) = fabs(d0sig);
+
+  if (fabs(d0sig) > m_d0BySigd0Cut) { passIPCut(trk) = false; }
+
+  const xAOD::VertexContainer *vertexCont = 0;
+
+  if (m_event->retrieve(vertexCont, "PrimaryVertices").isFailure()) { passIPCut(trk) = false; return; }
+
+  const xAOD::Vertex *pvx = xAOD::PVHelpers::getHardestVertex(vertexCont);
+
+  if (pvx == nullptr) { passIPCut(trk) = false; return; }
+
+  double z0 = trk.z0() + trk.vz() - pvx->z();
+  z0 = z0 * sin(trk.theta());
+  
+  z0sinTheta(trk) = z0;
+
+  if (fabs(z0) > m_z0Cut) { passIPCut(trk) = false; }
 }

@@ -76,9 +76,6 @@ private:
   // whether to apply systematics, save the differential variables and the truth
   bool m_applySystematics, m_saveObjects, m_saveTruthObjects, m_saveTruthVars;
 
-  // Temporary flag for photon all sys
-  bool m_photonAllSys;
-
   // Containers
   xAOD::PhotonContainer m_allPhotons; //!
   xAOD::PhotonContainer m_preSelPhotons; //!
@@ -99,9 +96,6 @@ private:
   xAOD::MuonContainer m_allMuons; //!
   xAOD::MuonContainer m_selMuons; //!
   xAOD::MuonContainer m_preSelMuons; //!
-
-  xAOD::MissingETContainer m_allMET; //!
-  xAOD::MissingETContainer m_selMET; //!
   
   CP::IsolationCloseByCorrectionTool* m_isoCloseByTool_Electron; //!
   CP::IsolationSelectionTool* m_isoSelTool_Electron; //!
