@@ -309,12 +309,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
       if(!trkParticle)
         continue;
       // Ignore TRT only tracks 
-      int nSi(0);
-      uint8_t tmp;
-      if( trkParticle->summaryValue(tmp, xAOD::numberOfPixelHits) )
-        nSi += (int) tmp;
-      if( trkParticle->summaryValue(tmp, xAOD::numberOfSCTHits) )
-        nSi += (int) tmp;
+      int nSi  =  xAOD::EgammaHelpers::numberOfSiHits( trkParticle );
       if( nSi < 3)
         continue;
 
