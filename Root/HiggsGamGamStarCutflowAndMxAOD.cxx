@@ -439,16 +439,19 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   if( Trk0_PrimaryE > -1 || Trk1_PrimaryE > -1 ){
     const xAOD::Electron*  el = nullptr;
     const xAOD::TrackParticle* otherTrack = nullptr;
+    int nEleOther = 0;
     if( Trk0_PrimaryE >= 0 ){
       auto el0 = Trk0_Electrons.first;
       std::advance( el0, Trk0_PrimaryE );
       el = el0->second;
       otherTrack = Trk1_Electrons.first->first;
+      nEleOther = Trk1_nElectron;
     }else{
       auto el1 = Trk1_Electrons.first;
       std::advance( el1, Trk1_PrimaryE );
       el = el1->second;
       otherTrack = Trk0_Electrons.first->first;
+      nEleOther = Trk0_nElectron;
     }
 
     // Search for the other track in the electron
@@ -458,7 +461,10 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
         return TruthClass::MergedElectron; 
       }
     }
-    return TruthClass::ResolvedElectron;
+    //If the other track is only matched to one electron and its not the primary track
+    //We assume the reco has made a mistake so we will call it resolved
+    if(nEleOther == 1) 
+      return TruthClass::ResolvedElectron;
   }
 
   //Tracks are not primary for any electron candidate, tracks match to mutiple candiates  
