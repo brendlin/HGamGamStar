@@ -394,6 +394,16 @@ namespace HG {
 
     // Set by hand in CutflowAndMxAOD
   };
+  
+  //____________________________________________________________________________
+  class yyStarTruthChannel : public VarBase<int> {
+  public:
+  yyStarTruthChannel() : VarBase("yyStarTruthChannel") { m_default = -99; }
+    ~yyStarTruthChannel() { }
+
+    // Set by hand in CutflowAndMxAOD
+  };
+
 
   //____________________________________________________________________________
 
@@ -426,6 +436,7 @@ namespace var {
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
+  extern HG::yyStarTruthChannel yyStarTruthChannel;
 }
 
 

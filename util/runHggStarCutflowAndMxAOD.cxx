@@ -1,4 +1,4 @@
-#include "HGamGamStar/ZyCutflowAndMxAOD.h"
+#include "HGamGamStar/HiggsGamGamStarCutflowAndMxAOD.h"
 #include "HGamAnalysisFramework/RunUtils.h"
 
 int main(int argc, char *argv[])
@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
   xAOD::Init().ignore();
 
   // Create our algorithm
-  ZyCutflowAndMxAOD *alg = new ZyCutflowAndMxAOD("ZyCutflowAndMxAOD");
+  HiggsGamGamStarCutflowAndMxAOD *alg = new  HiggsGamGamStarCutflowAndMxAOD("HiggsGamGamStarCutflowAndMxAOD");
 
   // Use helper to start the job
   HG::runJob(alg, argc, argv);
