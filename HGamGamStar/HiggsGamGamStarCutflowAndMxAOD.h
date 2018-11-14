@@ -63,6 +63,9 @@ private:
   TString m_photonContainerName, m_jetContainerName, m_elecContainerName, m_muonContainerName, m_trackContainerName;
   TString m_photonTruthContainerName, m_jetTruthContainerName, m_elecTruthContainerName, m_muonTruthContainerName;
   TString m_evtInfoName, m_truthEvtsName;
+  
+  TString m_electronIsoWP;
+  TString m_muonIsoWP;
 
   // what skimming to apply
   int m_skimCut;
@@ -99,6 +102,9 @@ private:
   
   CP::IsolationCloseByCorrectionTool* m_isoCloseByTool_Electron; //!
   CP::IsolationSelectionTool* m_isoSelTool_Electron; //!
+  
+  CP::IsolationCloseByCorrectionTool* m_isoCloseByTool_Muon; //!
+  CP::IsolationSelectionTool* m_isoSelTool_Muon; //!
 
 private:
   /// helper methods to create, fill and print the cut flow
@@ -126,10 +132,11 @@ private:
   CutEnum cutflow();
   EL::StatusCode doReco(bool isSys = false);
   EL::StatusCode doTruth();
+  
+  void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
+
   float getTruthMatchProbability(const xAOD::TrackParticle* trackParticle);
   HiggsGamGamStarCutflowAndMxAOD::TruthClass truthClass();
-
-
 
 private:
 #ifndef __CINT__

@@ -33,12 +33,28 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
   m_isoCloseByTool_Electron = new CP::IsolationCloseByCorrectionTool("isoCloseByTool_Electron");
 
   m_isoSelTool_Electron = new CP::IsolationSelectionTool("isoSelTool_Electron");
-  m_isoSelTool_Electron->setProperty("ElectronWP", "Loose");
+  StrV eleIsoWPs = config()->getStrV("ElectronHandler.Selection.IsoCriteria");
+  m_electronIsoWP = eleIsoWPs[0]; //default WP is used for cut
+  m_isoSelTool_Electron->setProperty("ElectronWP", m_electronIsoWP);
   m_isoSelTool_Electron->initialize();
 
   ToolHandle<CP::IIsolationSelectionTool> iIsoSelTool_Electron = m_isoSelTool_Electron;
   m_isoCloseByTool_Electron->setProperty("IsolationSelectionTool", iIsoSelTool_Electron);
+  m_isoCloseByTool_Electron->setProperty("BackupPrefix", "original");   
   m_isoCloseByTool_Electron->initialize();
+  
+  m_isoCloseByTool_Muon = new CP::IsolationCloseByCorrectionTool("isoCloseByTool_Muon"); 
+    
+  m_isoSelTool_Muon = new CP::IsolationSelectionTool("isoSelTool_Muon");
+  StrV muIsoWPs = config()->getStrV("MuonHandler.Selection.IsoCriteria");
+  m_muonIsoWP = muIsoWPs[0]; //default WP is used for cut
+  m_isoSelTool_Muon->setProperty("MuonWP", m_muonIsoWP);
+  m_isoSelTool_Muon->initialize();
+    
+  ToolHandle<CP::IIsolationSelectionTool> iIsoSelTool_Muon = m_isoSelTool_Muon;
+  m_isoCloseByTool_Muon->setProperty("IsolationSelectionTool", iIsoSelTool_Muon); 
+  m_isoCloseByTool_Muon->setProperty("BackupPrefix", "original"); 
+  m_isoCloseByTool_Muon->initialize();
 
   return EL::StatusCode::SUCCESS;
 }
@@ -581,6 +597,8 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       HG::fatal("Something went wrong in channel categorization - please check!");
     }
   }
+  
+  decorateCorrectedIsoCut(m_selElectrons, m_selMuons);
 
   m_allJets = jetHandler()->getCorrectedContainer();
   m_selJets = jetHandler()->applySelection(m_allJets);
@@ -629,7 +647,14 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (requireIP && (!muonHandler()->passIPCuts(m_selMuons[0]) || !muonHandler()->passIPCuts(m_selMuons[1])) ) return LEP_IP;
   //==== CUT 19: Require muons to pass isolation
     static bool requireIso = config()->getBool("MuonHandler.Selection.ApplyIsoCut", true);
-    if (requireIso && (!muonHandler()->passIsoCut(m_selMuons[0]) || !muonHandler()->passIsoCut(m_selMuons[1])) ) return LEP_ISO;
+    if(requireIso){
+      static bool correctIsolation = config()->getBool("MuonHandler.Selection.UseCorrectedIso", false);
+      if(correctIsolation){ //isolation cut taking into account close-by objects
+          SG::AuxElement::Accessor<char> muIsoWithCorr(("isIsoWithCorr" + m_muonIsoWP).Data());
+          if(!muIsoWithCorr(*m_selMuons[0]) || !muIsoWithCorr(*m_selMuons[1])) return LEP_ISO;
+      }
+      else if (!muonHandler()->passIsoCut(m_selMuons[0]) || !muonHandler()->passIsoCut(m_selMuons[1])) return LEP_ISO;
+    }
   }
   else if(var::yyStarChannel()==RESOLVED_DIELECTRON){
   //==== CUT 17: Require electrons to pass medium PID
@@ -640,12 +665,13 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (requireIP && (!electronHandler()->passIPCuts(m_selElectrons[0]) || !electronHandler()->passIPCuts(m_selElectrons[1])) ) return LEP_IP;
   //==== CUT 19: Require electrons to pass isolation
     static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
-//     if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0]) || !electronHandler()->passIsoCut(m_selElectrons[1])) ) return LEP_ISO;
-    //more sophisticated isolation cut taking into account close-by objects
     if(requireIso){
-        std::vector<const xAOD::IParticle*> electronsVec;
-        for(auto electron: m_selElectrons) electronsVec.push_back((const xAOD::IParticle*) electron); //regard all (two) electrons as close-by objects for next calculation
-        for(auto electron: m_selElectrons) if (!m_isoCloseByTool_Electron->acceptCorrected(*electron, electronsVec)) return LEP_ISO;
+      static bool correctIsolation = config()->getBool("ElectronHandler.Selection.UseCorrectedIso", false);
+      if(correctIsolation){ //isolation cut taking into account close-by objects
+          SG::AuxElement::Accessor<char> eleIsoWithCorr(("isIsoWithCorr" + m_electronIsoWP).Data());
+          if(!eleIsoWithCorr(*m_selElectrons[0]) || !eleIsoWithCorr(*m_selElectrons[1])) return LEP_ISO;
+      }
+      else if(!electronHandler()->passIsoCut(m_selElectrons[0]) || !electronHandler()->passIsoCut(m_selElectrons[1])) return LEP_ISO;
     }
   }
   else if(var::yyStarChannel()==MERGED_DIELECTRON){
@@ -952,4 +978,28 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::fileExecute() {
   m_newFileMetaData = true;
 
   return EL::StatusCode::SUCCESS;
+}
+void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons){
+
+    SG::AuxElement::Accessor<char> muIso(("isIso" + m_muonIsoWP).Data());
+    SG::AuxElement::Accessor<char> eleIso(("isIso" + m_electronIsoWP).Data());
+    SG::AuxElement::Accessor<char> muIsoWithCorr(("isIsoWithCorr" + m_muonIsoWP).Data());
+    SG::AuxElement::Accessor<char> eleIsoWithCorr(("isIsoWithCorr" + m_electronIsoWP).Data());
+    
+    //set corrected iso decision same as non-corrected by default
+    for(auto muon: muons) muIsoWithCorr(*muon) = muIso(*muon);
+    for(auto electron: electrons) eleIsoWithCorr(*electron) = eleIso(*electron);
+    
+  if(var::yyStarChannel()==DIMUON){
+    std::vector<const xAOD::IParticle*> muonsVec; 
+    for(auto muon: muons) muonsVec.push_back((const xAOD::IParticle*) muon);
+    for(auto muon: muons) muIsoWithCorr(*muon) = m_isoCloseByTool_Muon->acceptCorrected(*muon, muonsVec);
+    m_isoCloseByTool_Muon->getCloseByIsoCorrection(nullptr, &muons); //this actually modifies isolation of individual objects (muons)
+  }
+  else if(var::yyStarChannel()==RESOLVED_DIELECTRON){
+    std::vector<const xAOD::IParticle*> electronsVec; 
+    for(auto electron: electrons) electronsVec.push_back((const xAOD::IParticle*) electron);
+    for(auto electron: electrons) eleIsoWithCorr(*electron) = m_isoCloseByTool_Electron->acceptCorrected(*electron, electronsVec);
+    m_isoCloseByTool_Electron->getCloseByIsoCorrection(&electrons); //this actually modifies isolation of individual objects (electrons)
+  }//don't care about merged ele channel, since correction would not do anything there
 }
