@@ -303,8 +303,6 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   if(!isElectron)
     return TruthClass::Other;
 
-
-
   // Fill maps linking truth particle and track and track and electron
   // To be used to work out how many times a truth particle matches an electron candidate
   HG::TrackElectronMap trackElectronMap( electronHandler()->getCorrectedContainer(), HG::isMC() );
@@ -325,7 +323,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   auto Trk0_Electrons = trackElectronMap.getElectronsMatchingTrack( leptonTracks[0] );
   auto Trk1_Electrons = trackElectronMap.getElectronsMatchingTrack( leptonTracks[1] );
 
-  //Count the number of electrons a track matches to
+  // Count the number of electrons a track matches to
   int Trk0_nElectron = Trk0_Electrons.size();
   int Trk1_nElectron = Trk1_Electrons.size();
 
@@ -334,7 +332,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
     // Match the same electron --  Merged
     if( Trk0_Electrons.front() == Trk1_Electrons.front() )
       return TruthClass::MergedElectron;
-    //Match different electrons  -- Resolved
+    // Match different electrons  -- Resolved
     else
       return TruthClass::ResolvedElectron;
   }
@@ -343,11 +341,19 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   // Determine the match ranking for the track to each electron
   std::vector<int> Trk0_TrackNo = trackElectronMap.getMatchingTrackIndex(Trk0_Electrons,leptonTracks[0]);
 
-  //Check if the track is ever the primary track
+  // Check if the track is ever the primary track
   int Trk0_PrimaryE(-1);
   for( unsigned int i(0); i < Trk0_TrackNo.size(); ++i){
-    if( Trk0_TrackNo[i] == 0 )
-      Trk0_PrimaryE = i;
+    if( Trk0_TrackNo[i] == 0 ){
+      // If the track is the primary track for multiple electrons 
+      // choose the one with higher pT
+      if( Trk0_PrimaryE > -1 ){
+        if( Trk0_Electrons[i]->pt() > Trk0_Electrons[Trk0_PrimaryE]->pt() )
+          Trk0_PrimaryE = i; 
+      }else{ 
+        Trk0_PrimaryE = i;
+      }
+    }
   }
 
   // Same again for the other electron
@@ -355,8 +361,16 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
 
   int Trk1_PrimaryE(-1);
   for( unsigned int i(0); i < Trk1_TrackNo.size(); ++i){
-    if( Trk1_TrackNo[i] == 0 )
-      Trk1_PrimaryE = i;
+    if( Trk1_TrackNo[i] == 0 ){
+      // If the track is the primary track for multiple electrons 
+      // choose the one with higher pT
+      if( Trk1_PrimaryE > -1 ){
+        if( Trk1_Electrons[i]->pt() > Trk1_Electrons[Trk1_PrimaryE]->pt() )
+          Trk1_PrimaryE = i; 
+      }else{ 
+        Trk1_PrimaryE = i;
+      }
+    }
   }
 
   // If both tracks are the primary track for an electron the it is resolved
