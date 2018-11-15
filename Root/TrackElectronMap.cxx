@@ -2,6 +2,7 @@
 #include "xAODEgamma/ElectronxAODHelpers.h"
 #include "xAODTruth/xAODTruthHelpers.h"
 
+#include "xAODBase/IParticleHelpers.h"
 
 ////______________________________________________________________________________
 HG::TrackElectronMap::TrackElectronMap( const xAOD::ElectronContainer& electrons, bool isMC )
@@ -68,7 +69,12 @@ float HG::TrackElectronMap::getTruthMatchProbability(const xAOD::TrackParticle* 
 
 const xAOD::TrackParticle* HG::TrackElectronMap::getTrackMatchingTruth( const xAOD::TruthParticle* truth) const
 {
-  auto truthPair =  m_truthTrackMap.find( truth );
+  // Find the original pointer (if any) -- in order to work with deep copies
+  const xAOD::TruthParticle* origPointer = truth;
+  if (xAOD::getOriginalObject(*truth))
+    origPointer = (xAOD::TruthParticle*)xAOD::getOriginalObject(*truth);
+
+  auto truthPair =  m_truthTrackMap.find( origPointer );
   if( truthPair != m_truthTrackMap.end()){
     return truthPair->second ;
   } else {

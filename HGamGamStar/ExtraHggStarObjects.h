@@ -8,6 +8,12 @@
 //
 
 #include "xAODBase/IParticleContainer.h"
+#include "xAODTruth/TruthParticleContainer.h"
+
+namespace xAOD {
+  class TEvent;
+  class TStore;
+}
 
 namespace HG {
 
@@ -15,8 +21,17 @@ namespace HG {
   private:
     static ExtraHggStarObjects *m_ptr;
 
+    xAOD::TEvent *m_event;
+    xAOD::TStore *m_store;
+
     xAOD::IParticleContainer m_tracks;
     bool m_tracksAvail;
+
+    xAOD::TruthParticleContainer m_higgsLeps;
+    bool m_higgsLepsAvail;
+
+    xAOD::TruthParticleContainer m_higgsPhotons;
+    bool m_higgsPhotonsAvail;
 
   public:
     /// Get instance of singleton class
@@ -24,11 +39,19 @@ namespace HG {
 
     void setElectronTrackContainer(const xAOD::IParticleContainer* tracks);
 
+    /// Run the code to find the photon and leptons from the Higgs
+    void setTruthHiggsDecayProducts(const xAOD::TruthParticleContainer* all_particles);
+
     /// Reset containers to null pointers to avoid carry-over from previous event
     void clearContainers();
 
     /// Get pointer to collection
     const xAOD::IParticleContainer *getElectronTracks(bool truth = false) const;
+    const xAOD::TruthParticleContainer *getTruthHiggsLeptons() const;
+    const xAOD::TruthParticleContainer *getTruthHiggsPhotons() const;
+
+    /// Set TEvent and TStore
+    void setEventAndStore(xAOD::TEvent *event, xAOD::TStore *store);
 
   private:
     /// Default constructor - note that it is private

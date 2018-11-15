@@ -24,6 +24,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 {
   HgammaAnalysis::initialize();
 
+  HG::ExtraHggStarObjects::getInstance()->setEventAndStore(event(), store());
+
   m_trackHandler = new HG::TrackHandler("TrackHandler", event(), store());
   ANA_CHECK(m_trackHandler->initialize(*config()));
 
@@ -187,8 +189,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
     var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
   }
 
-  var::yyStarTruthChannel.setValue( (int) truthClass() );
-
   // Set this for every event, just in case.
   var::yyStarChannel.setValue(CHANNELUNKNOWN);
 
@@ -251,30 +251,15 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   if (!HG::isMC())
     return TruthClass::Unknown;
 
-  // Get truth particles
-  const xAOD::TruthParticleContainer *truthParticles = nullptr;
-  TString truthPartContName = config()->getStr("TruthParticles.ContainerName", "TruthParticle");
-  if(event()->retrieve(truthParticles, truthPartContName.Data()).isFailure())
-    { HG::fatal("Can't access TruthParticleContainer"); }
-
-  // Get Higgs boson from truth record
-  ConstDataVector<xAOD::TruthParticleContainer> higgses = HG::getFinalHiggsBosons(truthParticles);
-
-  if (higgses.size() == 0)
-    return TruthClass::Unknown; // E.g. Background events
-
-  // Get Higgs decay products
-  ConstDataVector<xAOD::TruthParticleContainer> decayProds = HG::getHyyStarSignalDecayProducts(higgses[0]);
-
-  // Get Leptons from decay products
-  ConstDataVector<xAOD::TruthParticleContainer> childleps = HG::FilterLeptons(decayProds);
-  if (childleps.size() != 2)
+  // Get Leptons from Higgs decay products
+  const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+  if (childleps->size() != 2)
     return TruthClass::Other;
 
   // Check if there are electrons in the decay
   bool isElectron = true;
   bool isMuon =  false;
-  for(const auto& lepton: childleps){
+  for(const auto& lepton: *childleps){
     if( fabs(lepton->pdgId()) != 11 )
       isElectron =  false;
     if( fabs(lepton->pdgId()) == 13 )
@@ -295,7 +280,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
 
   // Get the track assoicated to the two leptons
   std::vector<const xAOD::TrackParticle*> leptonTracks;
-  for(const auto& lepton: childleps){
+  for(const auto& lepton: *childleps){
     auto leptonTrack  =  trackElectronMap.getTrackMatchingTruth( lepton );
     if(leptonTrack)
       leptonTracks.push_back(leptonTrack);
@@ -738,6 +723,8 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
 
 void HiggsGamGamStarCutflowAndMxAOD::writePhotonAllSys(bool isSys)
 {
+  (void)isSys;
+
   // Basic event selection flags
   var::cutFlow.setValue(m_cutFlow);
 
@@ -901,6 +888,12 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
 
   HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, &jets);
   HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);
+
+  // Set the truth decay product containers in ExtraHggStarObjects
+  const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
+  HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(all_particles);
+
+  var::yyStarTruthChannel.setTruthValue( (int) truthClass() );
 
   // Adds event-level variables to TStore (this time using truth containers)
   bool truth = true;
