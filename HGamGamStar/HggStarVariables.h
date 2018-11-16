@@ -26,8 +26,6 @@ namespace HG {
       // For Reco:
       // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
       // getPhotons only returns the leading photon candidate.
-      // For Truth: best to use "m_h1"
-      (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
       const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
@@ -59,7 +57,6 @@ namespace HG {
       // For Reco:
       // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
       // For Truth: best to use "m_yStar_undressed_h1"
-      (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
       if (mus->size() >= 2)
@@ -80,7 +77,6 @@ namespace HG {
     {
       // For Reco:
       // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
-      (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
       const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
@@ -100,7 +96,6 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
-      (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
       if (mus->size() >= 2)
@@ -140,7 +135,6 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
-      (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
       const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
@@ -198,7 +192,6 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
-      (void)truth;
       const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
       const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
@@ -238,17 +231,10 @@ namespace HG {
       if (not truth)
       { return m_default; }
 
-      const xAOD::TruthParticleContainer *higgses = (xAOD::TruthParticleContainer*)HG::VarHandler::getInstance()->getHiggsBosons();
+      const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+      if (childleps->size() != 2) return m_default;
 
-      if (higgses->size() == 0) return m_default;
-
-      TruthPtcls decayProds = getHyyStarSignalDecayProducts((*higgses)[0]);
-      TruthPtcls childleps = FilterLeptons(decayProds);
-
-      if (childleps.size() != 2) return m_default;
-      if (childleps[0]->absPdgId() != childleps[1]->absPdgId()) return m_default;
-
-      return childleps[0]->pt();
+      return (*childleps)[0]->pt();
     }
   };
 
@@ -263,17 +249,10 @@ namespace HG {
       if (not truth)
       { return m_default; }
 
-      const xAOD::TruthParticleContainer *higgses = (xAOD::TruthParticleContainer*)HG::VarHandler::getInstance()->getHiggsBosons();
+      const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+      if (childleps->size() != 2) return m_default;
 
-      if (higgses->size() == 0) return m_default;
-
-      TruthPtcls decayProds = getHyyStarSignalDecayProducts((*higgses)[0]);
-      TruthPtcls childleps = FilterLeptons(decayProds);
-
-      if (childleps.size() != 2) return m_default;
-      if (childleps[0]->absPdgId() != childleps[1]->absPdgId()) return m_default;
-
-      return childleps[1]->pt();
+      return (*childleps)[1]->pt();
     }
   };
 
@@ -288,17 +267,10 @@ namespace HG {
       if (not truth)
       { return m_default; }
 
-      const xAOD::TruthParticleContainer *higgses = (xAOD::TruthParticleContainer*)HG::VarHandler::getInstance()->getHiggsBosons();
+      const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+      if (childleps->size() != 2) return m_default;
 
-      if (higgses->size() == 0) return m_default;
-
-      TruthPtcls decayProds = getHyyStarSignalDecayProducts((*higgses)[0]);
-      TruthPtcls childleps = FilterLeptons(decayProds);
-
-      if (childleps.size() != 2) return m_default;
-      if (childleps[0]->absPdgId() != childleps[1]->absPdgId()) return m_default;
-
-      return childleps[0]->p4().DeltaR(childleps[1]->p4());
+      return (*childleps)[0]->p4().DeltaR((*childleps)[1]->p4());
     }
   };
 
@@ -313,17 +285,10 @@ namespace HG {
       if (not truth)
       { return m_default; }
 
-      const xAOD::TruthParticleContainer *higgses = (xAOD::TruthParticleContainer*)HG::VarHandler::getInstance()->getHiggsBosons();
+      const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+      if (childleps->size() != 2) return m_default;
 
-      if (higgses->size() == 0) return m_default;
-
-      TruthPtcls decayProds = getHyyStarSignalDecayProducts((*higgses)[0]);
-      TruthPtcls childleps = FilterLeptons(decayProds);
-
-      if (childleps.size() != 2) return m_default;
-      if (childleps[0]->absPdgId() != childleps[1]->absPdgId()) return m_default;
-
-      return childleps[0]->absPdgId();
+      return (*childleps)[0]->absPdgId();
     }
   };
 
@@ -348,15 +313,10 @@ namespace HG {
       if (not truth)
       { return m_default; }
 
-      const xAOD::TruthParticleContainer *higgses = (xAOD::TruthParticleContainer*)HG::VarHandler::getInstance()->getHiggsBosons();
+      const xAOD::TruthParticleContainer *childphot = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsPhotons();
+      if (childphot->size() != 1) return m_default;
 
-      if (higgses->size() == 0) return m_default;
-
-      TruthPtcls decayProds = getHyyStarSignalDecayProducts((*higgses)[0]);
-      TruthPtcls childphot = FilterDirectPhotons(decayProds);
-
-      if (childphot.size() != 1) return m_default;
-      return childphot[0]->pt();
+      return (*childphot)[0]->pt();
     }
   };
 
@@ -373,16 +333,10 @@ namespace HG {
       if (not truth)
       { return m_default; }
 
-      const xAOD::TruthParticleContainer *higgses = (xAOD::TruthParticleContainer*)HG::VarHandler::getInstance()->getHiggsBosons();
+      const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+      if (childleps->size() != 2) return m_default;
 
-      if (higgses->size() == 0) return m_default;
-
-      TruthPtcls decayProds = getHyyStarSignalDecayProducts((*higgses)[0]);
-      TruthPtcls childleps = FilterLeptons(decayProds);
-
-      if (childleps.size() != 2) return m_default;
-
-      return (childleps[0]->p4() + childleps[1]->p4()).M();
+      return ((*childleps)[0]->p4() + (*childleps)[1]->p4()).M();
     }
   };
 
@@ -398,7 +352,7 @@ namespace HG {
   //____________________________________________________________________________
   class yyStarTruthChannel : public VarBase<int> {
   public:
-  yyStarTruthChannel() : VarBase("yyStarTruthChannel") { m_default = -99; }
+  yyStarTruthChannel() : VarBase("yyStarTruthChannel") { m_default = -99; m_truthOnly = true; }
     ~yyStarTruthChannel() { }
 
     // Set by hand in CutflowAndMxAOD
