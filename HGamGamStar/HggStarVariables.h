@@ -66,6 +66,27 @@ namespace HG {
       return m_default;
     }
   };
+  
+  //____________________________________________________________________________
+  class deltaR_ll : public VarBase<float> {
+  public:
+  deltaR_ll() : VarBase("deltaR_ll") { m_default = -99; }
+    ~deltaR_ll() { }
+
+    float calculateValue(bool truth)
+    {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      // For Truth: best to use "m_yStar_undressed_h1"
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      if (mus->size() >= 2)
+        return (*mus)[0]->p4().DeltaR((*mus)[1]->p4());
+      if (eles->size() >= 2)
+        return (*eles)[0]->p4().DeltaR((*eles)[1]->p4());
+      return m_default;
+    }
+  };
 
   //____________________________________________________________________________
   class pt_lly : public VarBase<float> {
@@ -374,6 +395,7 @@ namespace HG {
 namespace var {
   extern HG::m_lly m_lly;
   extern HG::m_ll m_ll;
+  extern HG::deltaR_ll deltaR_ll;
   extern HG::pt_lly pt_lly;
   extern HG::pt_ll pt_ll;
   extern HG::m_lly_track4mom m_lly_track4mom;

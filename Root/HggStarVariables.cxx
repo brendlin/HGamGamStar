@@ -6,6 +6,7 @@
 namespace var {
   HG::m_lly m_lly;
   HG::m_ll m_ll;
+  HG::deltaR_ll deltaR_ll;
   HG::pt_lly pt_lly;
   HG::pt_ll pt_ll;
   HG::m_lly_track4mom m_lly_track4mom;

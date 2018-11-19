@@ -805,6 +805,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 
   var::m_lly.addToStore(truth);
   var::m_ll.addToStore(truth);
+  var::deltaR_ll.addToStore(truth);
   var::pt_lly.addToStore(truth);
   var::pt_ll.addToStore(truth);
 
