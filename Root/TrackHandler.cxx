@@ -136,9 +136,10 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
       bool found = false;
 
-      // Check if it exists already
+      // Check if it exists in the output TrackParticleContainer already
       for (auto track : selected) {
-        if (ele_tp->p4() == track->p4())
+        xAOD::TrackParticle* track_p = (xAOD::TrackParticle*)HG::MapHelpers::getTheOriginalPointer(*track);
+        if (track_p == ele_tp)
         {
           // std::cout << "Found a duplicate track!" << std::endl;
           found = true;
@@ -146,22 +147,10 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
         }
       }
 
+      // If it does not exist in the output TrackParticleContainer, add it.
       if (found) continue;
+      selected.push_back(HG::MapHelpers::FindTrackParticle(&container,ele_tp));
 
-      for (auto track : container)
-      {
-        // std::cout << Form(" - GSF tp; pt: %.0f eta: %.3f ",track->pt(),track->eta())
-        //           << (ele_tp->p4() == track->p4()) << std::endl;
-        if (ele_tp->p4() == track->p4())
-        {
-          // Push the track into the "selected" container
-          selected.push_back(track);
-          found = true;
-          break;
-        }
-      }
-
-      if (!found) HG::fatal("Could not find TrackParticle associated to an electron!");
     }
 
   }

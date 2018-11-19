@@ -125,6 +125,8 @@ const xAOD::IParticle* HG::MapHelpers::getTheOriginalPointer(const xAOD::IPartic
 xAOD::Electron* HG::MapHelpers::FindElectron(xAOD::ElectronContainer* cont,
                                              const xAOD::Electron* toFind)
 {
+  // Find a container electron corresponding to the specified electron pointer.
+
   if (!cont) HG::fatal("FindElectron: Passed the function a null container.");
 
   for (auto el : *cont)
@@ -134,5 +136,23 @@ xAOD::Electron* HG::MapHelpers::FindElectron(xAOD::ElectronContainer* cont,
   }
 
   HG::fatal("FindElectron: Could not find a pointer in the container.");
+  return nullptr;
+}
+
+//______________________________________________________________________________
+xAOD::TrackParticle* HG::MapHelpers::FindTrackParticle(xAOD::TrackParticleContainer* cont,
+                                                       const xAOD::TrackParticle* toFind)
+{
+  // Find a container TrackParticle corresponding to the specified TrackParticle pointer.
+
+  if (!cont) HG::fatal("FindTrackParticle: Passed the function a null container.");
+
+  for (auto tp : *cont)
+  {
+    xAOD::TrackParticle* tp_p = (xAOD::TrackParticle*)getTheOriginalPointer(*tp);
+    if (tp_p == toFind) return tp;
+  }
+
+  HG::fatal("FindTrackParticle: Could not find a pointer in the container.");
   return nullptr;
 }
