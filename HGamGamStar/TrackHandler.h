@@ -4,6 +4,8 @@
 #include "HGamAnalysisFramework/HgammaHandler.h"
 #include "xAODTracking/TrackParticleAuxContainer.h"
 
+#include "HGamGamStar/TrackElectronMap.h"
+
 namespace HG {
 
   class TrackHandler : public HgammaHandler<xAOD::TrackParticle, xAOD::TrackParticleContainer, xAOD::TrackParticleAuxContainer> {
@@ -13,6 +15,8 @@ namespace HG {
     bool m_doTrqCuts;
     int m_nSiMin;
     int m_nPixMin;
+
+    int m_truth_nSiMin;
 
     double  m_etaCut;
     double  m_ptCut;
@@ -35,11 +39,17 @@ namespace HG {
     virtual CP::SystematicCode    applySystematicVariation(const CP::SystematicSet &sys);
 
     xAOD::TrackParticleContainer findTracksFromElectrons(xAOD::TrackParticleContainer& container,
-                                                         const xAOD::ElectronContainer& elecs);
+                                                         const xAOD::ElectronContainer& elecs,
+                                                         TrackElectronMap& trkEleMap,
+                                                         bool doTruthClassify=false);
 
     xAOD::ElectronContainer GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
                                                        xAOD::TrackParticle& trk2,
                                                        xAOD::ElectronContainer& preSelElecs);
+
+    TruthTrackMap MakeTruthTrackMapFromGSFContainer(xAOD::TrackParticleContainer& tracks);
+    TruthTrackMap MakeTruthTrackMapFromElectronContainer(const xAOD::ElectronContainer& elecs);
+
     bool passIPCuts(xAOD::TrackParticle& trk);
     void decorateIPCut(xAOD::TrackParticle& trk);
 
