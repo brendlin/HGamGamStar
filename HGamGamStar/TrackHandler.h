@@ -57,6 +57,7 @@ namespace HG {
     static SG::AuxElement::Accessor<char>  passIPCut;
     static SG::AuxElement::Accessor<float>  d0significance;
     static SG::AuxElement::Accessor<float>  z0sinTheta;
+    static SG::AuxElement::Accessor<char>  isTrueHiggsElectron;
 
     size_t nMatchedElectrons(const xAOD::TrackParticle& trk) const;
 
