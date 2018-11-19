@@ -1,6 +1,8 @@
 #include "HGamGamStar/TrackHandler.h"
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 
+#include "xAODTruth/xAODTruthHelpers.h"
+
 SG::AuxElement::Accessor< std::vector<int> > HG::TrackHandler::MatchedElectrons("MatchedElectrons");
 SG::AuxElement::Accessor<char>  HG::TrackHandler::passIPCut("passIPCut");
 SG::AuxElement::Accessor<float>  HG::TrackHandler::d0significance("d0significance");
@@ -31,6 +33,8 @@ EL::StatusCode HG::TrackHandler::initialize(Config &config)
   m_doTrqCuts  = config.getBool(m_name + ".Selection.ApplyTRQCuts", true);
   m_nSiMin     = config.getInt (m_name + ".Selection.nSiMin",7);
   m_nPixMin    = config.getInt (m_name + ".Selection.nPixMin",2);
+
+  m_truth_nSiMin = config.getInt (m_name + ".TruthSelection.nSiMin",3);
 
   m_etaCut     = config.getNum(m_name + ".Selection.MaxAbsEta", 2.47);
   m_ptCut      = config.getNum(m_name + ".Selection.PtPreCutGeV", 0.3) * GeV;
@@ -79,7 +83,10 @@ CP::SystematicCode HG::TrackHandler::applySystematicVariation(const CP::Systemat
 }
 
 //______________________________________________________________________________
-xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::TrackParticleContainer& container,const xAOD::ElectronContainer& elecs)
+xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::TrackParticleContainer& container,
+                                                                       const xAOD::ElectronContainer& elecs,
+                                                                       TrackElectronMap& trkEleMap,
+                                                                       bool doTruthClassify)
 {
 
   xAOD::TrackParticleContainer selected(SG::VIEW_ELEMENTS);
@@ -98,18 +105,32 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
       const xAOD::TrackParticle* ele_tp = electron->trackParticle(i);
 
-      int nSiHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfSiliconHitsAndDeadSensors(ele_tp);
-      int nPixHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(ele_tp);
-      // int passBLayerRequirement = ElectronSelectorHelpers::passBLayerRequirement(ele_tp);
+      if (doTruthClassify) {
+        // (Truth-level) track preselection for truth classification
 
-      if ( std::abs(ele_tp->eta()) > m_etaCut ) continue;
-      if ( ele_tp->pt() < m_ptCut ) continue;
+        int nSi = xAOD::EgammaHelpers::numberOfSiHits( ele_tp );
+        if( nSi < m_truth_nSiMin ) continue;
 
-      if (nSiHitsPlusDeadSensors  < 7) continue;
-      if (nPixHitsPlusDeadSensors < 2) continue;
-      // if (!passBLayerRequirement) continue;
+      }
+      else {
+        // (Reco-level) track preselection
+
+        int nSiHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfSiliconHitsAndDeadSensors(ele_tp);
+        int nPixHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(ele_tp);
+        // int passBLayerRequirement = ElectronSelectorHelpers::passBLayerRequirement(ele_tp);
+
+        if ( std::abs(ele_tp->eta()) > m_etaCut ) continue;
+        if ( ele_tp->pt() < m_ptCut ) continue;
+
+        if (nSiHitsPlusDeadSensors  < m_nSiMin) continue;
+        if (nPixHitsPlusDeadSensors < m_nPixMin) continue;
+        // if (!passBLayerRequirement) continue;
+      }
 
       // std::cout << Form("Electron tp; pt: %.0f eta: %.3f",ele_tp->pt(),ele_tp->eta()) << std::endl;
+
+      // Add track and electron to map
+      MapHelpers::AddTrackElectronMapEntry(ele_tp,electron,trkEleMap);
 
       nGoodQuality++;
 
@@ -152,6 +173,46 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
   return selected;
 
+}
+
+//______________________________________________________________________________
+HG::TruthTrackMap HG::TrackHandler::MakeTruthTrackMapFromGSFContainer(xAOD::TrackParticleContainer& tracks)
+{
+  if ( !HG::isMC() ) fatal("Should not call MakeTruthTrackMap on data!");
+
+  TruthTrackMap truthTrkMap;
+
+  for (auto trkParticle : tracks )
+  {
+
+    int nSi = xAOD::EgammaHelpers::numberOfSiHits( trkParticle );
+    if( nSi < m_truth_nSiMin ) continue;
+
+    MapHelpers::AddTruthTrackMapEntry(trkParticle,truthTrkMap);
+  }
+
+  return truthTrkMap;
+}
+
+//______________________________________________________________________________
+HG::TruthTrackMap HG::TrackHandler::MakeTruthTrackMapFromElectronContainer(const xAOD::ElectronContainer& elecs)
+{
+  if ( !HG::isMC() ) fatal("Should not call MakeTruthTrackMap on data!");
+
+  TruthTrackMap truthTrkMap;
+
+  for (auto electron : elecs) {
+    for (unsigned int i=0; i<electron->nTrackParticles(); ++i) {
+      const xAOD::TrackParticle* trkParticle = electron->trackParticle(i);
+
+      int nSi = xAOD::EgammaHelpers::numberOfSiHits( trkParticle );
+      if( nSi < m_truth_nSiMin ) continue;
+
+      MapHelpers::AddTruthTrackMapEntry(trkParticle,truthTrkMap);
+    }
+  }
+
+  return truthTrkMap;
 }
 
 //______________________________________________________________________________

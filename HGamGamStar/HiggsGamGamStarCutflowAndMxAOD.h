@@ -23,7 +23,9 @@ private:
     DIMUON=1,
     RESOLVED_DIELECTRON=2,
     MERGED_DIELECTRON=3,
-    AMBIGUOUS_DIELECTRON=4
+    AMBIGUOUS_DIELECTRON=4,
+    FAILEDTRKELECTRON=5, //// Tracking Failed Electron Decay
+    OTHER=6 //// Other Decay
   };
 
   // Cut-flow - need to keep the same order!
@@ -34,19 +36,6 @@ private:
     ZBOSON_ASSIGNMENT=12,TWO_SF_LEPTONS_POSTOR=13,BAD_MUON=14,ONE_PHOTON_POSTOR=15,
     TRIG_MATCH=16, LEP_MEDID=17, LEP_IP=18, LEP_ISO=19, GAM_TIGHTID=20, GAM_ISOLATION=21, ZMASSCUT=22, LLGMASSCUT=23, PASSALL=24
   };
-
-  enum class TruthClass{
-    //Truth Classes
-    Unknown = 0,////Unknown Decay
-    Muon,////Muon Decay
-    ResolvedElectron,////Resolved Electron Decay
-    MergedElectron,////Merged Electron Decay
-    AmbiguousElectron,////Ambigious Electron Decay
-    FailedTrkElectron,////Tracking Failed Electron Decay
-    Other ////Other Decay
-  };
-
-
 
   // names of all cuts (do not includ "pass all")
   const std::vector<TString> s_cutDescs =
@@ -135,8 +124,18 @@ private:
   
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
 
-  float getTruthMatchProbability(const xAOD::TrackParticle* trackParticle);
-  HiggsGamGamStarCutflowAndMxAOD::TruthClass truthClass();
+  HiggsGamGamStarCutflowAndMxAOD::ChannelEnum truthClass();
+  HiggsGamGamStarCutflowAndMxAOD::ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
+                                                                                  const xAOD::TrackParticle* trk1,
+                                                                                  const HG::TrackElectronMap& trkEleMap,
+                                                                                  xAOD::ElectronContainer* inEleCont=nullptr,
+                                                                                  xAOD::ElectronContainer* outEleCont=nullptr);
+
+  HiggsGamGamStarCutflowAndMxAOD::ChannelEnum ClassifyElectronsOld(xAOD::TrackParticle* trk0,
+                                                                   xAOD::TrackParticle* trk1,
+                                                                   const HG::TrackElectronMap& trkEleMap,
+                                                                   xAOD::ElectronContainer* inEleCont=nullptr,
+                                                                   xAOD::ElectronContainer* outEleCont=nullptr);
 
 private:
 #ifndef __CINT__

@@ -10,35 +10,36 @@
 namespace HG
 {
 
-class TrackElectronMap
-{
+  typedef std::map<const xAOD::TruthParticle*, const xAOD::TrackParticle*> TruthTrackMap;
+  typedef std::multimap<const xAOD::TrackParticle*, const xAOD::Electron*> TrackElectronMap;
 
-  public:
-   /**Constructor requires an ElectronContainer and to be told if its MC or not */
-   TrackElectronMap(const xAOD::ElectronContainer&, bool isMC);
-   ~TrackElectronMap();
+  namespace MapHelpers
+  {
 
    /** Find track best matched to the truth particle*/
-   const xAOD::TrackParticle* getTrackMatchingTruth( const xAOD::TruthParticle* ) const;
+   const xAOD::TrackParticle* getTrackMatchingTruth( const xAOD::TruthParticle* truth, const TruthTrackMap& trkTruthMap );
 
    /** Find all electrons that have loosely matched a certain track*/
-   std::vector<const xAOD::Electron*> getElectronsMatchingTrack( const xAOD::TrackParticle* ) const;
+   std::vector<const xAOD::Electron*> getElectronsMatchingTrack( const xAOD::TrackParticle* track, const TrackElectronMap& trkEleMap );
 
    /** Get the index of the track associated to the electron */
-   int getMatchingTrackIndex(const xAOD::Electron*, const xAOD::TrackParticle* ) const;
+   int getMatchingTrackIndex(const xAOD::Electron*, const xAOD::TrackParticle* );
 
    /** Get track index for  all electrons for a particular track */
-   std::vector<int> getMatchingTrackIndex(std::vector<const xAOD::Electron*>&, const xAOD::TrackParticle* ) const;
+   std::vector<int> getMatchingTrackIndices(std::vector<const xAOD::Electron*>&, const xAOD::TrackParticle* );
 
    /** Get the truth match probability for a particular track particle*/
-   float getTruthMatchProbability(const xAOD::TrackParticle* trackParticle) const;
+   float getTruthMatchProbability(const xAOD::TrackParticle* trackParticle);
 
-  private:
-   const bool m_isMC;
-   std::map<const xAOD::TruthParticle*, const xAOD::TrackParticle*> m_truthTrackMap;
-   std::multimap<const xAOD::TrackParticle*, const xAOD::Electron*> m_trackElectronMap;
+   const xAOD::IParticle* getTheOriginalPointer(const xAOD::IParticle& part);
+   void AddTruthTrackMapEntry(const xAOD::TrackParticle* trkParticle, TruthTrackMap& trkTruthMap);
+   void AddTrackElectronMapEntry(const xAOD::TrackParticle* trkParticle, const xAOD::Electron* electron, TrackElectronMap& trkEleMap);
 
-};
 
-}// End naespace
+   /** Find the electron in a particular container */
+   xAOD::Electron* FindElectron(xAOD::ElectronContainer* cont, const xAOD::Electron* toFind);
+
+  }// End namespace
+
+}// End namespace
 #endif

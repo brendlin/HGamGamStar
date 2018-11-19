@@ -368,17 +368,9 @@ namespace HG {
     ~yyStarChannel() { }
 
     // Set by hand in CutflowAndMxAOD
+    // Set the reco  value by specifying var::yyStarChannel.setValue(val)
+    // Set the truth value by specifying var::yyStarChannel.setTruthValue(val)
   };
-  
-  //____________________________________________________________________________
-  class yyStarTruthChannel : public VarBase<int> {
-  public:
-  yyStarTruthChannel() : VarBase("yyStarTruthChannel") { m_default = -99; m_truthOnly = true; }
-    ~yyStarTruthChannel() { }
-
-    // Set by hand in CutflowAndMxAOD
-  };
-
 
   //____________________________________________________________________________
 
@@ -412,7 +404,6 @@ namespace var {
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
-  extern HG::yyStarTruthChannel yyStarTruthChannel;
 }
 
 

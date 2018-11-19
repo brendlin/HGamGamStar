@@ -260,17 +260,17 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 }
 
 
-HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truthClass()
+HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::truthClass()
 {
   // Get Higgs Final State Decay Products
 
   if (!HG::isMC())
-    return TruthClass::Unknown;
+    return ChannelEnum::CHANNELUNKNOWN;
 
   // Get Leptons from Higgs decay products
   const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
   if (childleps->size() != 2)
-    return TruthClass::Other;
+    return ChannelEnum::OTHER;
 
   // Check if there are electrons in the decay
   bool isElectron = true;
@@ -283,30 +283,51 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   }
 
   if(isMuon)
-    return TruthClass::Muon;
+    return ChannelEnum::DIMUON;
 
   if(!isElectron)
-    return TruthClass::Other;
+    return ChannelEnum::OTHER;
 
   // Fill maps linking truth particle and track and track and electron
   // To be used to work out how many times a truth particle matches an electron candidate
-  HG::TrackElectronMap trackElectronMap( electronHandler()->getCorrectedContainer(), HG::isMC() );
+  const xAOD::ElectronContainer all_elecs = electronHandler()->getCorrectedContainer();
+  xAOD::TrackParticleContainer all_tracks = trackHandler()->getCorrectedContainer();
+
+  // Truth-track map
+  HG::TruthTrackMap trkTruthMap = trackHandler()->MakeTruthTrackMapFromElectronContainer(all_elecs);
+
+  // Track-electron map
+  HG::TrackElectronMap trkEleMap;
+  trackHandler()->findTracksFromElectrons(all_tracks,all_elecs,trkEleMap,true);
 
   // Get the track assoicated to the two leptons
   std::vector<const xAOD::TrackParticle*> leptonTracks;
   for(const auto& lepton: *childleps){
-    auto leptonTrack  =  trackElectronMap.getTrackMatchingTruth( lepton );
+    auto leptonTrack  =  HG::MapHelpers::getTrackMatchingTruth( lepton, trkTruthMap );
     if(leptonTrack)
       leptonTracks.push_back(leptonTrack);
   }
 
   // If the the two tracks are not reconstructed then the truth matching has failed, exit
   if(leptonTracks.size()!=2)
-    return TruthClass::FailedTrkElectron;
+    return ChannelEnum::FAILEDTRKELECTRON;
+
+
+  // Electron disambiguation is continued below in (reco-only) function
+  return ClassifyElectronChannelsByBestMatch(leptonTracks[0],leptonTracks[1],trkEleMap);
+}
+
+
+HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
+                                                                                                                const xAOD::TrackParticle* trk1,
+                                                                                                                const HG::TrackElectronMap& trkEleMap,
+                                                                                                                xAOD::ElectronContainer* inEleCont,
+                                                                                                                xAOD::ElectronContainer* outEleCont)
+{
 
   // Find the electrons associated to the tracks
-  auto Trk0_Electrons = trackElectronMap.getElectronsMatchingTrack( leptonTracks[0] );
-  auto Trk1_Electrons = trackElectronMap.getElectronsMatchingTrack( leptonTracks[1] );
+  auto Trk0_Electrons = HG::MapHelpers::getElectronsMatchingTrack( trk0, trkEleMap );
+  auto Trk1_Electrons = HG::MapHelpers::getElectronsMatchingTrack( trk1, trkEleMap );
 
   // Count the number of electrons a track matches to
   int Trk0_nElectron = Trk0_Electrons.size();
@@ -316,15 +337,25 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   if( Trk0_nElectron == 1 &&  Trk1_nElectron == 1){
     // Match the same electron --  Merged
     if( Trk0_Electrons.front() == Trk1_Electrons.front() )
-      return TruthClass::MergedElectron;
-    // Match different electrons  -- Resolved
+    {
+      if (inEleCont)
+        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,Trk0_Electrons.front()));
+      return ChannelEnum::MERGED_DIELECTRON;
+    }
     else
-      return TruthClass::ResolvedElectron;
+    {
+      // Match different electrons  -- Resolved
+      if (inEleCont) {
+        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,Trk0_Electrons.front()));
+        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,Trk1_Electrons.front()));
+      }
+      return ChannelEnum::RESOLVED_DIELECTRON;
+    }
   }
 
   // Tracks match more than one electron each - lets see if they are the best match for any electron
   // Determine the match ranking for the track to each electron
-  std::vector<int> Trk0_TrackNo = trackElectronMap.getMatchingTrackIndex(Trk0_Electrons,leptonTracks[0]);
+  std::vector<int> Trk0_TrackNo = HG::MapHelpers::getMatchingTrackIndices(Trk0_Electrons,trk0);
 
   // Check if the track is ever the primary track
   int Trk0_PrimaryE(-1);
@@ -342,7 +373,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   }
 
   // Same again for the other electron
-  std::vector<int> Trk1_TrackNo = trackElectronMap.getMatchingTrackIndex(Trk1_Electrons,leptonTracks[1]);
+  std::vector<int> Trk1_TrackNo = HG::MapHelpers::getMatchingTrackIndices(Trk1_Electrons,trk1);
 
   int Trk1_PrimaryE(-1);
   for( unsigned int i(0); i < Trk1_TrackNo.size(); ++i){
@@ -368,40 +399,53 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
     // Compare if the electrons are the same
     if( el0 == el1 )
     {
-      std::cout << "This should never happen -- truth error" <<  std::endl;
-      return TruthClass::AmbiguousElectron;
+      HG::fatal("Electron classification truth error!");
+      return ChannelEnum::AMBIGUOUS_DIELECTRON;
     }
-    return TruthClass::ResolvedElectron;
+    if (inEleCont) {
+      outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el0));
+      outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el1));
+    }
+    return ChannelEnum::RESOLVED_DIELECTRON;
   }
 
   // If either are primary
   if( Trk0_PrimaryE > -1 || Trk1_PrimaryE > -1 ){
     const xAOD::Electron*  el = nullptr;
+    const xAOD::Electron*  elOther = nullptr;
     const xAOD::TrackParticle* otherTrack = nullptr;
     int nEleOther = 0;
     if( Trk0_PrimaryE >= 0 ){
-      auto el0 = Trk0_Electrons[Trk0_PrimaryE];
-      el = el0;
-      otherTrack = leptonTracks[1];
+      el = Trk0_Electrons[Trk0_PrimaryE];
+      otherTrack = trk1;
       nEleOther = Trk1_nElectron;
+      if (nEleOther == 1) elOther = Trk1_Electrons[0];
     }else{
-      auto el1 = Trk1_Electrons[Trk1_PrimaryE];
-      el = el1;
-      otherTrack = leptonTracks[0];
+      el = Trk1_Electrons[Trk1_PrimaryE];
+      otherTrack = trk0;
       nEleOther = Trk0_nElectron;
+      if (nEleOther == 1) elOther = Trk0_Electrons[0];
     }
 
     // Search for the other track in the electron
     for( unsigned int trk_i(0); trk_i < el->nTrackParticles(); ++trk_i){
       if( el->trackParticle(trk_i) == otherTrack )
       {
-        return TruthClass::MergedElectron;
+        if (inEleCont)
+          outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el));
+        return ChannelEnum::MERGED_DIELECTRON;
       }
     }
     //If the other track is only matched to one electron and its not the primary track
     //We assume the reco has made a mistake so we will call it resolved
     if(nEleOther == 1)
-      return TruthClass::ResolvedElectron;
+    {
+      if (inEleCont) {
+        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el));
+        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,elOther));
+      }
+      return ChannelEnum::RESOLVED_DIELECTRON;
+    }
   }
 
   //Tracks are not primary for any electron candidate, tracks match to mutiple candiates
@@ -409,8 +453,7 @@ HiggsGamGamStarCutflowAndMxAOD::TruthClass HiggsGamGamStarCutflowAndMxAOD::truth
   // Might want to keep looking for candidates
 
 
-  return TruthClass::AmbiguousElectron;
-
+  return ChannelEnum::AMBIGUOUS_DIELECTRON;
 }
 
 
@@ -462,7 +505,8 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   }
 
   m_allTracks = trackHandler()->getCorrectedContainer();
-  m_preSelTracks = trackHandler()->findTracksFromElectrons(m_allTracks,m_preSelElectrons);
+  HG::TrackElectronMap trkElectronMap;
+  m_preSelTracks = trackHandler()->findTracksFromElectrons(m_allTracks,m_preSelElectrons,trkElectronMap);
 
   // Apply muon preselection.
   // HGamCore does not have a muon preselection step, so we make our own here:
@@ -571,30 +615,21 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_selTracks.push_back(m_preSelTracks[sel_trk1]);
     m_selTracks.push_back(m_preSelTracks[sel_trk2]);
 
-    m_selElectrons = m_trackHandler->GetElecsAssociatedToTracks(*m_selTracks[0],
-                                                                *m_selTracks[1],m_preSelElectrons);
+    // New: use the "best-track" classification system
+    // ChannelEnum echan = ClassifyElectronChannelsByBestMatch(m_selTracks[0],m_selTracks[1],
+    //                                                         trkElectronMap,
+    //                                                         &m_preSelElectrons,&m_selElectrons);
+
+    ChannelEnum echan = ClassifyElectronsOld(m_selTracks[0],m_selTracks[1],
+                                             trkElectronMap,
+                                             &m_preSelElectrons,&m_selElectrons);
+
+    m_selElectrons.sort(HG::ElectronHandler::comparePt);
+    var::yyStarChannel.setValue(echan);
 
     m_ll = return_mtrktrk;
     m_lly = (m_selTracks[0]->p4() + m_selTracks[1]->p4() + m_selPhotons[0]->p4()).M();
 
-    // Electron channel assignment.
-    // Impossible to have missed a matching electron, since
-    // it is the same collection of electons as before.
-    if (m_selElectrons.size() == 1)
-    {
-      var::yyStarChannel.setValue(MERGED_DIELECTRON);
-    }
-    else if (m_trackHandler->nMatchedElectrons(*m_selTracks[0]) > 1 ||
-             m_trackHandler->nMatchedElectrons(*m_selTracks[1]) > 1)
-    {
-      var::yyStarChannel.setValue(AMBIGUOUS_DIELECTRON);
-    }
-    else if (m_selElectrons.size() == 2) {
-      var::yyStarChannel.setValue(RESOLVED_DIELECTRON);
-    }
-    else {
-      HG::fatal("Something went wrong in channel categorization - please check!");
-    }
   }
   
   decorateCorrectedIsoCut(m_selElectrons, m_selMuons);
@@ -934,7 +969,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
   HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(all_particles);
 
-  var::yyStarTruthChannel.setTruthValue( (int) truthClass() );
+  var::yyStarChannel.setTruthValue( (int) truthClass() );
 
   // Adds event-level variables to TStore (this time using truth containers)
   bool truth = true;
@@ -1010,4 +1045,36 @@ void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronConta
     for(auto electron: electrons) eleIsoWithCorr(*electron) = m_isoCloseByTool_Electron->acceptCorrected(*electron, electronsVec);
     m_isoCloseByTool_Electron->getCloseByIsoCorrection(&electrons); //this actually modifies isolation of individual objects (electrons)
   }//don't care about merged ele channel, since correction would not do anything there
+}
+
+HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronsOld(xAOD::TrackParticle* trk0,
+                                                                                                 xAOD::TrackParticle* trk1,
+                                                                                                 const HG::TrackElectronMap& trkEleMap,
+                                                                                                 xAOD::ElectronContainer* inEleCont,
+                                                                                                 xAOD::ElectronContainer* outEleCont)
+{
+  if (!inEleCont || !outEleCont) HG::fatal("This function needs an incoming and outgoing electron container.");
+  (void)trkEleMap;
+
+  // Old Electron channel assignment.
+  // Get all electrons associated with tracks (accept all electrons)
+  m_selElectrons = m_trackHandler->GetElecsAssociatedToTracks(*trk0,*trk1,*inEleCont);
+
+  // Impossible to have missed a matching electron, since
+  // it is the same collection of electons as before.
+  if (m_selElectrons.size() == 1)
+  {
+    return ChannelEnum::MERGED_DIELECTRON;
+  }
+  else if (m_trackHandler->nMatchedElectrons(*trk0) > 1 ||
+           m_trackHandler->nMatchedElectrons(*trk1) > 1)
+  {
+    return ChannelEnum::AMBIGUOUS_DIELECTRON;
+  }
+  else if (m_selElectrons.size() == 2) {
+    return ChannelEnum::RESOLVED_DIELECTRON;
+  }
+
+  HG::fatal("Something went wrong in channel categorization - please check!");
+  return ChannelEnum::AMBIGUOUS_DIELECTRON;
 }
