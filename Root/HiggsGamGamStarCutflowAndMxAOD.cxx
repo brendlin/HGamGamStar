@@ -507,6 +507,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   m_allTracks = trackHandler()->getCorrectedContainer();
   HG::TrackElectronMap trkElectronMap;
   m_preSelTracks = trackHandler()->findTracksFromElectrons(m_allTracks,m_preSelElectrons,trkElectronMap);
+  m_preSelTracks.sort(HG::TrackHandler::comparePt);
 
   // Apply muon preselection.
   // HGamCore does not have a muon preselection step, so we make our own here:
