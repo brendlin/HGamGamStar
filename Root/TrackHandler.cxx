@@ -7,6 +7,7 @@ SG::AuxElement::Accessor< std::vector<int> > HG::TrackHandler::MatchedElectrons(
 SG::AuxElement::Accessor<char>  HG::TrackHandler::passIPCut("passIPCut");
 SG::AuxElement::Accessor<float>  HG::TrackHandler::d0significance("d0significance");
 SG::AuxElement::Accessor<float>  HG::TrackHandler::z0sinTheta("z0sinTheta");
+SG::AuxElement::Accessor<char>  HG::TrackHandler::isTrueHiggsElectron("isTrueHiggsElectron");
 
 //______________________________________________________________________________
 HG::TrackHandler::TrackHandler(const char *name, xAOD::TEvent *event, xAOD::TStore *store)
@@ -149,10 +150,16 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
       // If it does not exist in the output TrackParticleContainer, add it.
       if (found) continue;
-      selected.push_back(HG::MapHelpers::FindTrackParticle(&container,ele_tp));
 
+      xAOD::TrackParticle* container_tp = HG::MapHelpers::FindTrackParticle(&container,ele_tp);
+      selected.push_back(container_tp);
+
+      // Decorate MC particles with some truth information:
+      if (HG::isMC()) {
+        const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*container_tp);
+        isTrueHiggsElectron(*container_tp) = truthPart && HG::isFromHiggs(truthPart) && HG::isGoodTruthElectron(truthPart);
+      }
     }
-
   }
 
   // std::cout << "Number of elecss in Total: " << elecs.size() << std::endl;
