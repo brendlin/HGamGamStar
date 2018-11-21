@@ -6,6 +6,7 @@
 #include "HGamGamStar/ExtraHggStarObjects.h"
 #include "HGamGamStar/TrackElectronMap.h"
 
+SG::AuxElement::Accessor<float>  HiggsGamGamStarCutflowAndMxAOD::RhadForPID("RhadForPID");
 
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
 // #include "ZMassConstraint/ConstraintFit.h"
@@ -57,6 +58,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
   m_isoCloseByTool_Muon->setProperty("IsolationSelectionTool", iIsoSelTool_Muon); 
   m_isoCloseByTool_Muon->setProperty("BackupPrefix", "original"); 
   m_isoCloseByTool_Muon->initialize();
+
+  m_eleIDPreselection = config()->getStr("ElectronHandler.Preselection","");
 
   return EL::StatusCode::SUCCESS;
 }
@@ -271,6 +274,18 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::trut
   const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
   if (childleps->size() != 2)
     return ChannelEnum::OTHER;
+
+  // Check for out-of-acceptance
+  for(const auto& lepton: *childleps){
+    if (fabs(lepton->pdgId()) == 11) {
+      if (lepton->pt()/1000. < 0.3) return ChannelEnum::OUT_OF_ACCEPTANCE;
+      if (fabs(lepton->eta()) > 2.5) return ChannelEnum::OUT_OF_ACCEPTANCE;
+    }
+    else if (fabs(lepton->pdgId()) == 13) {
+      if (lepton->pt()/1000. < 3.0) return ChannelEnum::OUT_OF_ACCEPTANCE;
+      if (fabs(lepton->eta()) > 2.7) return ChannelEnum::OUT_OF_ACCEPTANCE;
+    }
+  }
 
   // Check if there are electrons in the decay
   bool isElectron = true;
@@ -496,11 +511,22 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // Apply electron preselection.
   // HGamCore does not have an electron preselection step, so we make our own here:
   m_allElectrons = electronHandler()->getCorrectedContainer();
+
   xAOD::ElectronContainer m_preSelElectrons(SG::VIEW_ELEMENTS);
   for (auto electron : m_allElectrons) {
+    // Decorate Rhad
+    double feta = fabs(electron->eta());
+    RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
+      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
+      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+
     if (!electronHandler()->passOQCut(electron)) { continue; }
     if (!electronHandler()->passPtEtaCuts(electron)) { continue; }
     if (!electronHandler()->passHVCut(electron)) { continue; }
+    bool passIDPreselection = m_eleIDPreselection.IsNull() || electronHandler()->passPIDCut(electron,m_eleIDPreselection);
+    // We are taking the OR of VeryLoose and a very loose Rhad cut.
+    // Why OR with VeryLoose if the Rhad mostly covers it? For scale factor validity purposes.
+    if (!passIDPreselection && RhadForPID(*electron) > 0.10) { continue; }
     m_preSelElectrons.push_back(electron);
   }
 
@@ -617,13 +643,13 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_selTracks.push_back(m_preSelTracks[sel_trk2]);
 
     // New: use the "best-track" classification system
-    // ChannelEnum echan = ClassifyElectronChannelsByBestMatch(m_selTracks[0],m_selTracks[1],
-    //                                                         trkElectronMap,
-    //                                                         &m_preSelElectrons,&m_selElectrons);
+    ChannelEnum echan = ClassifyElectronChannelsByBestMatch(m_selTracks[0],m_selTracks[1],
+                                                            trkElectronMap,
+                                                            &m_preSelElectrons,&m_selElectrons);
 
-    ChannelEnum echan = ClassifyElectronsOld(m_selTracks[0],m_selTracks[1],
-                                             trkElectronMap,
-                                             &m_preSelElectrons,&m_selElectrons);
+    // ChannelEnum echan = ClassifyElectronsOld(m_selTracks[0],m_selTracks[1],
+    //                                          trkElectronMap,
+    //                                          &m_preSelElectrons,&m_selElectrons);
 
     m_selElectrons.sort(HG::ElectronHandler::comparePt);
     var::yyStarChannel.setValue(echan);
