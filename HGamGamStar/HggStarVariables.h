@@ -12,8 +12,8 @@
 namespace HG {
 
   TruthPtcls getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl);
-  TruthPtcls FilterLeptons(TruthPtcls stableHiggsDecayProducts);
-  TruthPtcls FilterDirectPhotons(TruthPtcls stableHiggsDecayProducts);
+  TruthPtcls FilterLeptons(const TruthPtcls& stableHiggsDecayProducts);
+  TruthPtcls FilterDirectPhotons(const TruthPtcls& stableHiggsDecayProducts);
 
   //____________________________________________________________________________
   class m_lly : public VarBase<float> {

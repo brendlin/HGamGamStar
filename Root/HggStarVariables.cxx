@@ -97,7 +97,7 @@ HG::TruthPtcls HG::getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl
   return decay;
 }
 
-HG::TruthPtcls HG::FilterLeptons(TruthPtcls stableHiggsDecayProducts) {
+HG::TruthPtcls HG::FilterLeptons(const TruthPtcls& stableHiggsDecayProducts) {
   // Assuming leptons from taus or hadron decays already excluded
 
   TruthPtcls childleps(SG::VIEW_ELEMENTS);
@@ -114,7 +114,7 @@ HG::TruthPtcls HG::FilterLeptons(TruthPtcls stableHiggsDecayProducts) {
   return childleps;
 }
 
-HG::TruthPtcls HG::FilterDirectPhotons(TruthPtcls stableHiggsDecayProducts) {
+HG::TruthPtcls HG::FilterDirectPhotons(const TruthPtcls& stableHiggsDecayProducts) {
   // Assuming leptons from taus or hadron decays already excluded
 
   TruthPtcls directphots(SG::VIEW_ELEMENTS);
