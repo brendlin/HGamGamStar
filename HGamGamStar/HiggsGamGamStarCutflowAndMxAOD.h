@@ -25,7 +25,8 @@ private:
     MERGED_DIELECTRON=3,
     AMBIGUOUS_DIELECTRON=4,
     FAILEDTRKELECTRON=5, //// Tracking Failed Electron Decay
-    OTHER=6 //// Other Decay
+    OTHER=6, //// Other Decay
+    OUT_OF_ACCEPTANCE=7
   };
 
   // Cut-flow - need to keep the same order!
@@ -55,6 +56,8 @@ private:
   
   TString m_electronIsoWP;
   TString m_muonIsoWP;
+
+  TString m_eleIDPreselection;
 
   // what skimming to apply
   int m_skimCut;
@@ -179,6 +182,8 @@ public:
   void writeNominalOnlyVars(bool truth = false);
   void writeDetailedVars(bool truth = false);
   void writeTruthOnlyVars();
+
+  static SG::AuxElement::Accessor<float> RhadForPID;
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(HiggsGamGamStarCutflowAndMxAOD, 1);
