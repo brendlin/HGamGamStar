@@ -6,7 +6,6 @@
 #include "HGamGamStar/ExtraHggStarObjects.h"
 #include "HGamGamStar/TrackElectronMap.h"
 
-SG::AuxElement::Accessor<float>  HiggsGamGamStarCutflowAndMxAOD::RhadForPID("RhadForPID");
 
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
 // #include "ZMassConstraint/ConstraintFit.h"
@@ -209,7 +208,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   }
 
   // Set this for every event, just in case.
-  var::yyStarChannel.setValue(CHANNELUNKNOWN);
+  var::yyStarChannel.setValue(HG::CHANNELUNKNOWN);
 
   // apply cuts. Returned value will be the last passed cut
   m_cutFlow = cutflow();
@@ -263,27 +262,27 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 }
 
 
-HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::truthClass()
+HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::truthClass()
 {
   // Get Higgs Final State Decay Products
 
   if (!HG::isMC())
-    return ChannelEnum::CHANNELUNKNOWN;
+    return HG::CHANNELUNKNOWN;
 
   // Get Leptons from Higgs decay products
   const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
   if (childleps->size() != 2)
-    return ChannelEnum::OTHER;
+    return HG::OTHER;
 
   // Check for out-of-acceptance
   for(const auto& lepton: *childleps){
     if (fabs(lepton->pdgId()) == 11) {
-      if (lepton->pt()/1000. < 0.3) return ChannelEnum::OUT_OF_ACCEPTANCE;
-      if (fabs(lepton->eta()) > 2.5) return ChannelEnum::OUT_OF_ACCEPTANCE;
+      if (lepton->pt()/1000. < 0.3) return HG::OUT_OF_ACCEPTANCE;
+      if (fabs(lepton->eta()) > 2.5) return HG::OUT_OF_ACCEPTANCE;
     }
     else if (fabs(lepton->pdgId()) == 13) {
-      if (lepton->pt()/1000. < 3.0) return ChannelEnum::OUT_OF_ACCEPTANCE;
-      if (fabs(lepton->eta()) > 2.7) return ChannelEnum::OUT_OF_ACCEPTANCE;
+      if (lepton->pt()/1000. < 3.0) return HG::OUT_OF_ACCEPTANCE;
+      if (fabs(lepton->eta()) > 2.7) return HG::OUT_OF_ACCEPTANCE;
     }
   }
 
@@ -298,10 +297,10 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::trut
   }
 
   if(isMuon)
-    return ChannelEnum::DIMUON;
+    return HG::DIMUON;
 
   if(!isElectron)
-    return ChannelEnum::OTHER;
+    return HG::OTHER;
 
   // Fill maps linking truth particle and track and track and electron
   // To be used to work out how many times a truth particle matches an electron candidate
@@ -325,7 +324,7 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::trut
 
   // If the the two tracks are not reconstructed then the truth matching has failed, exit
   if(leptonTracks.size()!=2)
-    return ChannelEnum::FAILEDTRKELECTRON;
+    return HG::FAILEDTRKELECTRON;
 
 
   // Electron disambiguation is continued below in (reco-only) function
@@ -333,11 +332,11 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::trut
 }
 
 
-HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
-                                                                                                                const xAOD::TrackParticle* trk1,
-                                                                                                                const HG::TrackElectronMap& trkEleMap,
-                                                                                                                xAOD::ElectronContainer* inEleCont,
-                                                                                                                xAOD::ElectronContainer* outEleCont)
+HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
+                                                                                    const xAOD::TrackParticle* trk1,
+                                                                                    const HG::TrackElectronMap& trkEleMap,
+                                                                                    xAOD::ElectronContainer* inEleCont,
+                                                                                    xAOD::ElectronContainer* outEleCont)
 {
 
   // Find the electrons associated to the tracks
@@ -355,7 +354,7 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::Clas
     {
       if (inEleCont)
         outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,Trk0_Electrons.front()));
-      return ChannelEnum::MERGED_DIELECTRON;
+      return HG::MERGED_DIELECTRON;
     }
     else
     {
@@ -364,7 +363,7 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::Clas
         outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,Trk0_Electrons.front()));
         outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,Trk1_Electrons.front()));
       }
-      return ChannelEnum::RESOLVED_DIELECTRON;
+      return HG::RESOLVED_DIELECTRON;
     }
   }
 
@@ -415,13 +414,13 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::Clas
     if( el0 == el1 )
     {
       HG::fatal("Electron classification truth error!");
-      return ChannelEnum::AMBIGUOUS_DIELECTRON;
+      return HG::AMBIGUOUS_DIELECTRON;
     }
     if (inEleCont) {
       outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el0));
       outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el1));
     }
-    return ChannelEnum::RESOLVED_DIELECTRON;
+    return HG::RESOLVED_DIELECTRON;
   }
 
   // If either are primary
@@ -448,7 +447,7 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::Clas
       {
         if (inEleCont)
           outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el));
-        return ChannelEnum::MERGED_DIELECTRON;
+        return HG::MERGED_DIELECTRON;
       }
     }
     //If the other track is only matched to one electron and its not the primary track
@@ -459,7 +458,7 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::Clas
         outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el));
         outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,elOther));
       }
-      return ChannelEnum::RESOLVED_DIELECTRON;
+      return HG::RESOLVED_DIELECTRON;
     }
   }
 
@@ -468,7 +467,7 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::Clas
   // Might want to keep looking for candidates
 
 
-  return ChannelEnum::AMBIGUOUS_DIELECTRON;
+  return HG::AMBIGUOUS_DIELECTRON;
 }
 
 
@@ -516,7 +515,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   for (auto electron : m_allElectrons) {
     // Decorate Rhad
     double feta = fabs(electron->eta());
-    RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
+    HG::EleAcc::RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
       electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
       electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
 
@@ -526,7 +525,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     bool passIDPreselection = m_eleIDPreselection.IsNull() || electronHandler()->passPIDCut(electron,m_eleIDPreselection);
     // We are taking the OR of VeryLoose and a very loose Rhad cut.
     // Why OR with VeryLoose if the Rhad mostly covers it? For scale factor validity purposes.
-    if (!passIDPreselection && RhadForPID(*electron) > 0.10) { continue; }
+    if (!passIDPreselection && HG::EleAcc::RhadForPID(*electron) > 0.10) { continue; }
     m_preSelElectrons.push_back(electron);
   }
 
@@ -637,19 +636,19 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_selMuons.push_back(m_preSelMuons[sel_muon2]);
     m_ll = return_mmumu;
     m_lly = (m_selMuons[0]->p4() + m_selMuons[1]->p4() + m_selPhotons[0]->p4()).M();
-    var::yyStarChannel.setValue(DIMUON);
+    var::yyStarChannel.setValue(HG::DIMUON);
   } else {
     m_selTracks.push_back(m_preSelTracks[sel_trk1]);
     m_selTracks.push_back(m_preSelTracks[sel_trk2]);
 
     // New: use the "best-track" classification system
-    ChannelEnum echan = ClassifyElectronChannelsByBestMatch(m_selTracks[0],m_selTracks[1],
-                                                            trkElectronMap,
-                                                            &m_preSelElectrons,&m_selElectrons);
+    HG::ChannelEnum echan = ClassifyElectronChannelsByBestMatch(m_selTracks[0],m_selTracks[1],
+                                                                trkElectronMap,
+                                                                &m_preSelElectrons,&m_selElectrons);
 
-    // ChannelEnum echan = ClassifyElectronsOld(m_selTracks[0],m_selTracks[1],
-    //                                          trkElectronMap,
-    //                                          &m_preSelElectrons,&m_selElectrons);
+    // HG::ChannelEnum echan = ClassifyElectronsOld(m_selTracks[0],m_selTracks[1],
+    //                                              trkElectronMap,
+    //                                              &m_preSelElectrons,&m_selElectrons);
 
     m_selElectrons.sort(HG::ElectronHandler::comparePt);
     var::yyStarChannel.setValue(echan);
@@ -699,7 +698,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   }
 
 
-  if(var::yyStarChannel()==DIMUON){
+  if(var::yyStarChannel()==HG::DIMUON){
   //==== CUT 17: Require muons to pass medium PID
     static bool requireMedium = config()->getBool("MuonHandler.Selection.ApplyPIDCut", true);
     if (requireMedium && (!muonHandler()->passPIDCut(m_selMuons[0]) || !muonHandler()->passPIDCut(m_selMuons[1])) ) return LEP_MEDID;
@@ -717,7 +716,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       else if (!muonHandler()->passIsoCut(m_selMuons[0]) || !muonHandler()->passIsoCut(m_selMuons[1])) return LEP_ISO;
     }
   }
-  else if(var::yyStarChannel()==RESOLVED_DIELECTRON){
+  else if(var::yyStarChannel()==HG::RESOLVED_DIELECTRON){
   //==== CUT 17: Require electrons to pass medium PID
     static bool requireMedium = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
     if (requireMedium && (!electronHandler()->passPIDCut(m_selElectrons[0]) || !electronHandler()->passPIDCut(m_selElectrons[1])) ) return LEP_MEDID;
@@ -735,7 +734,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       else if(!electronHandler()->passIsoCut(m_selElectrons[0]) || !electronHandler()->passIsoCut(m_selElectrons[1])) return LEP_ISO;
     }
   }
-  else if(var::yyStarChannel()==MERGED_DIELECTRON){
+  else if(var::yyStarChannel()==HG::MERGED_DIELECTRON){
   //==== CUT 17: Require electrons to pass merged PID
     static bool requireMerged = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
     if (requireMerged && (!m_mergedElectronID->passPIDCut(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1])) ) return LEP_MEDID;
@@ -746,7 +745,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
     if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0])) ) return LEP_ISO;
   }
-  else if(var::yyStarChannel()==AMBIGUOUS_DIELECTRON){
+  else if(var::yyStarChannel()==HG::AMBIGUOUS_DIELECTRON){
   //TODO: fill in the ambiguous case; currently they get a "pass" for all cuts above
   }
   else {
@@ -1060,13 +1059,13 @@ void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronConta
     for(auto muon: muons) muIsoWithCorr(*muon) = muIso(*muon);
     for(auto electron: electrons) eleIsoWithCorr(*electron) = eleIso(*electron);
     
-  if(var::yyStarChannel()==DIMUON){
+    if(var::yyStarChannel()==HG::DIMUON){
     std::vector<const xAOD::IParticle*> muonsVec; 
     for(auto muon: muons) muonsVec.push_back((const xAOD::IParticle*) muon);
     for(auto muon: muons) muIsoWithCorr(*muon) = m_isoCloseByTool_Muon->acceptCorrected(*muon, muonsVec);
     m_isoCloseByTool_Muon->getCloseByIsoCorrection(nullptr, &muons); //this actually modifies isolation of individual objects (muons)
   }
-  else if(var::yyStarChannel()==RESOLVED_DIELECTRON){
+    else if(var::yyStarChannel()==HG::RESOLVED_DIELECTRON){
     std::vector<const xAOD::IParticle*> electronsVec; 
     for(auto electron: electrons) electronsVec.push_back((const xAOD::IParticle*) electron);
     for(auto electron: electrons) eleIsoWithCorr(*electron) = m_isoCloseByTool_Electron->acceptCorrected(*electron, electronsVec);
@@ -1074,11 +1073,11 @@ void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronConta
   }//don't care about merged ele channel, since correction would not do anything there
 }
 
-HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronsOld(xAOD::TrackParticle* trk0,
-                                                                                                 xAOD::TrackParticle* trk1,
-                                                                                                 const HG::TrackElectronMap& trkEleMap,
-                                                                                                 xAOD::ElectronContainer* inEleCont,
-                                                                                                 xAOD::ElectronContainer* outEleCont)
+HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronsOld(xAOD::TrackParticle* trk0,
+                                                                     xAOD::TrackParticle* trk1,
+                                                                     const HG::TrackElectronMap& trkEleMap,
+                                                                     xAOD::ElectronContainer* inEleCont,
+                                                                     xAOD::ElectronContainer* outEleCont)
 {
   if (!inEleCont || !outEleCont) HG::fatal("This function needs an incoming and outgoing electron container.");
   (void)trkEleMap;
@@ -1091,17 +1090,17 @@ HiggsGamGamStarCutflowAndMxAOD::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::Clas
   // it is the same collection of electons as before.
   if (m_selElectrons.size() == 1)
   {
-    return ChannelEnum::MERGED_DIELECTRON;
+    return HG::MERGED_DIELECTRON;
   }
   else if (m_trackHandler->nMatchedElectrons(*trk0) > 1 ||
            m_trackHandler->nMatchedElectrons(*trk1) > 1)
   {
-    return ChannelEnum::AMBIGUOUS_DIELECTRON;
+    return HG::AMBIGUOUS_DIELECTRON;
   }
   else if (m_selElectrons.size() == 2) {
-    return ChannelEnum::RESOLVED_DIELECTRON;
+    return HG::RESOLVED_DIELECTRON;
   }
 
   HG::fatal("Something went wrong in channel categorization - please check!");
-  return ChannelEnum::AMBIGUOUS_DIELECTRON;
+  return HG::AMBIGUOUS_DIELECTRON;
 }

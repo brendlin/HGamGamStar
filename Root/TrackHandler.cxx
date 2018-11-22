@@ -3,13 +3,6 @@
 
 #include "xAODTruth/xAODTruthHelpers.h"
 
-SG::AuxElement::Accessor< std::vector<int> > HG::TrackHandler::MatchedElectrons("MatchedElectrons");
-SG::AuxElement::Accessor<char>  HG::TrackHandler::passIPCut("passIPCut");
-SG::AuxElement::Accessor<float>  HG::TrackHandler::d0significance("d0significance");
-SG::AuxElement::Accessor<float>  HG::TrackHandler::z0sinTheta("z0sinTheta");
-SG::AuxElement::Accessor<char>  HG::TrackHandler::isTrueHiggsElectron("isTrueHiggsElectron");
-SG::AuxElement::Accessor<float>  HG::TrackHandler::TRT_PID_trans("TRT_PID_trans");
-
 //______________________________________________________________________________
 HG::TrackHandler::TrackHandler(const char *name, xAOD::TEvent *event, xAOD::TStore *store)
   : HgammaHandler(name, event, store)
@@ -159,7 +152,7 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
       // Decorate MC particles with some truth information:
       if (HG::isMC()) {
         const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*container_tp);
-        isTrueHiggsElectron(*container_tp) = truthPart && HG::isFromHiggs(truthPart) && HG::isGoodTruthElectron(truthPart);
+        TrkAcc::isTrueHiggsElectron(*container_tp) = truthPart && HG::isFromHiggs(truthPart) && HG::isGoodTruthElectron(truthPart);
       }
     }
   }
@@ -225,8 +218,8 @@ HG::TrackHandler::GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
 
   xAOD::ElectronContainer selected(SG::VIEW_ELEMENTS);
 
-  MatchedElectrons(trk1).clear();
-  MatchedElectrons(trk2).clear();
+  TrkAcc::MatchedElectrons(trk1).clear();
+  TrkAcc::MatchedElectrons(trk2).clear();
 
   unsigned int index_selected = 0;
 
@@ -239,8 +232,8 @@ HG::TrackHandler::GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
       bool matches_trk1 = ele_tp->p4() == trk1.p4();
       bool matches_trk2 = ele_tp->p4() == trk2.p4();
 
-      if (matches_trk1) MatchedElectrons(trk1).push_back(index_selected);
-      if (matches_trk2) MatchedElectrons(trk2).push_back(index_selected);
+      if (matches_trk1) TrkAcc::MatchedElectrons(trk1).push_back(index_selected);
+      if (matches_trk2) TrkAcc::MatchedElectrons(trk2).push_back(index_selected);
 
       matches = matches || matches_trk1 || matches_trk2;
     }
@@ -252,7 +245,7 @@ HG::TrackHandler::GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
 
   }
 
-  if (MatchedElectrons(trk1).size() == 0 || MatchedElectrons(trk2).size() == 0)
+  if (TrkAcc::MatchedElectrons(trk1).size() == 0 || TrkAcc::MatchedElectrons(trk2).size() == 0)
     HG::fatal("Something went wrong - did not find the matching electrons that we should have.");
 
   return selected;
@@ -261,13 +254,13 @@ HG::TrackHandler::GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
 //______________________________________________________________________________
 size_t HG::TrackHandler::nMatchedElectrons(const xAOD::TrackParticle& trk) const
 {
-  return MatchedElectrons(trk).size();
+  return TrkAcc::MatchedElectrons(trk).size();
 }
 
 //______________________________________________________________________________
 bool HG::TrackHandler::passIPCuts(xAOD::TrackParticle& trk)
 {
-    if (passIPCut.isAvailable(trk) && !passIPCut(trk)) { return false; }
+  if (TrkAcc::passIPCut.isAvailable(trk) && !TrkAcc::passIPCut(trk)) { return false; }
 
     return true;
 }
@@ -275,7 +268,7 @@ bool HG::TrackHandler::passIPCuts(xAOD::TrackParticle& trk)
 //______________________________________________________________________________
 void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
 {
-  passIPCut(trk) = true;
+  TrkAcc::passIPCut(trk) = true;
   const xAOD::EventInfo *eventInfo = 0;
 
   if (m_event->retrieve(eventInfo, "EventInfo").isFailure()) {
@@ -284,31 +277,31 @@ void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
 
   double d0sig = xAOD::TrackingHelpers::d0significance(&trk, eventInfo->beamPosSigmaX(), eventInfo->beamPosSigmaY(), eventInfo->beamPosSigmaXY());
   
-  d0significance(trk) = fabs(d0sig);
+  TrkAcc::d0significance(trk) = fabs(d0sig);
 
-  if (fabs(d0sig) > m_d0BySigd0Cut) { passIPCut(trk) = false; }
+  if (fabs(d0sig) > m_d0BySigd0Cut) { TrkAcc::passIPCut(trk) = false; }
 
   const xAOD::VertexContainer *vertexCont = 0;
 
-  if (m_event->retrieve(vertexCont, "PrimaryVertices").isFailure()) { passIPCut(trk) = false; return; }
+  if (m_event->retrieve(vertexCont, "PrimaryVertices").isFailure()) { TrkAcc::passIPCut(trk) = false; return; }
 
   const xAOD::Vertex *pvx = xAOD::PVHelpers::getHardestVertex(vertexCont);
 
-  if (pvx == nullptr) { passIPCut(trk) = false; return; }
+  if (pvx == nullptr) { TrkAcc::passIPCut(trk) = false; return; }
 
   double z0 = trk.z0() + trk.vz() - pvx->z();
   z0 = z0 * sin(trk.theta());
   
-  z0sinTheta(trk) = z0;
+  TrkAcc::z0sinTheta(trk) = z0;
 
-  if (fabs(z0) > m_z0Cut) { passIPCut(trk) = false; }
+  if (fabs(z0) > m_z0Cut) { TrkAcc::passIPCut(trk) = false; }
 }
 void HG::TrackHandler::decorateTRT_PID(xAOD::TrackParticle& trk)
 {
-    float t_TRT_PID(0.0), t_TRT_PID_trans(0.0);
+    float t_TRT_PID(0.0);
     trk.summaryValue(t_TRT_PID, xAOD::eProbabilityHT);
     const double tau = 15.0;
     if (t_TRT_PID >= 1.0) t_TRT_PID = 1.0 - 1.0e-15;
     if (t_TRT_PID < 1.0e-30) t_TRT_PID = 1.0e-30;
-    TRT_PID_trans(trk) = - log(1.0/t_TRT_PID - 1.0) / tau;
+    TrkAcc::TRT_PID_trans(trk) = - log(1.0/t_TRT_PID - 1.0) / tau;
 }

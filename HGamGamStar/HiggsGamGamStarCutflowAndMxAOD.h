@@ -1,6 +1,7 @@
 #ifndef HGamGamStar_HiggsGamGamStarCutflowAndMxAOD_H
 #define HGamGamStar_HiggsGamGamStarCutflowAndMxAOD_H
 
+#include "HGamGamStar/HggStarCommon.h"
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
 #include "HGamGamStar/MxAODTool.h"
 /* #include "FsrUtils/FsrPhotonTool.h" */
@@ -17,17 +18,6 @@ class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
 
 private:
-
-  enum ChannelEnum {
-    CHANNELUNKNOWN=0,
-    DIMUON=1,
-    RESOLVED_DIELECTRON=2,
-    MERGED_DIELECTRON=3,
-    AMBIGUOUS_DIELECTRON=4,
-    FAILEDTRKELECTRON=5, //// Tracking Failed Electron Decay
-    OTHER=6, //// Other Decay
-    OUT_OF_ACCEPTANCE=7
-  };
 
   // Cut-flow - need to keep the same order!
   enum CutEnum {
@@ -127,18 +117,18 @@ private:
   
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
 
-  HiggsGamGamStarCutflowAndMxAOD::ChannelEnum truthClass();
-  HiggsGamGamStarCutflowAndMxAOD::ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
-                                                                                  const xAOD::TrackParticle* trk1,
-                                                                                  const HG::TrackElectronMap& trkEleMap,
-                                                                                  xAOD::ElectronContainer* inEleCont=nullptr,
-                                                                                  xAOD::ElectronContainer* outEleCont=nullptr);
+  HG::ChannelEnum truthClass();
+  HG::ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
+                                                      const xAOD::TrackParticle* trk1,
+                                                      const HG::TrackElectronMap& trkEleMap,
+                                                      xAOD::ElectronContainer* inEleCont=nullptr,
+                                                      xAOD::ElectronContainer* outEleCont=nullptr);
 
-  HiggsGamGamStarCutflowAndMxAOD::ChannelEnum ClassifyElectronsOld(xAOD::TrackParticle* trk0,
-                                                                   xAOD::TrackParticle* trk1,
-                                                                   const HG::TrackElectronMap& trkEleMap,
-                                                                   xAOD::ElectronContainer* inEleCont=nullptr,
-                                                                   xAOD::ElectronContainer* outEleCont=nullptr);
+  HG::ChannelEnum ClassifyElectronsOld(xAOD::TrackParticle* trk0,
+                                       xAOD::TrackParticle* trk1,
+                                       const HG::TrackElectronMap& trkEleMap,
+                                       xAOD::ElectronContainer* inEleCont=nullptr,
+                                       xAOD::ElectronContainer* outEleCont=nullptr);
 
 private:
 #ifndef __CINT__
@@ -182,8 +172,6 @@ public:
   void writeNominalOnlyVars(bool truth = false);
   void writeDetailedVars(bool truth = false);
   void writeTruthOnlyVars();
-
-  static SG::AuxElement::Accessor<float> RhadForPID;
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(HiggsGamGamStarCutflowAndMxAOD, 1);
