@@ -1,6 +1,7 @@
 #ifndef HGamGamStar_MergedElectronID
 #define HGamGamStar_MergedElectronID
 
+#include "HGamGamStar/HggStarCommon.h"
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
 #include "HGamAnalysisFramework/Config.h"
 #include "HGamGamStar/HggStarVariables.h"
@@ -50,10 +51,6 @@ namespace HG {
     virtual EL::StatusCode initialize(Config &config);
     
     bool passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &trk1,xAOD::TrackParticle &trk2);
-    
-    static SG::AuxElement::Accessor<float>  EOverP0P1;
-    static SG::AuxElement::Accessor<float>  dRExtrapTrk12;
-    static SG::AuxElement::Accessor<float>  RhadForPID;
     
   };
 

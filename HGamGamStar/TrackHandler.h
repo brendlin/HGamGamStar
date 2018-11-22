@@ -1,6 +1,7 @@
 #ifndef HGamGamStar_TrackHandler
 #define HGamGamStar_TrackHandler
 
+#include "HGamGamStar/HggStarCommon.h"
 #include "HGamAnalysisFramework/HgammaHandler.h"
 #include "xAODTracking/TrackParticleAuxContainer.h"
 
@@ -53,13 +54,6 @@ namespace HG {
     bool passIPCuts(xAOD::TrackParticle& trk);
     void decorateIPCut(xAOD::TrackParticle& trk);
     void decorateTRT_PID(xAOD::TrackParticle& trk);
-
-    static SG::AuxElement::Accessor< std::vector<int> > MatchedElectrons;
-    static SG::AuxElement::Accessor<char>  passIPCut;
-    static SG::AuxElement::Accessor<float>  d0significance;
-    static SG::AuxElement::Accessor<float>  z0sinTheta;
-    static SG::AuxElement::Accessor<char>  isTrueHiggsElectron;
-    static SG::AuxElement::Accessor<float> TRT_PID_trans;
 
     size_t nMatchedElectrons(const xAOD::TrackParticle& trk) const;
 
