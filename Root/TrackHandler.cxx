@@ -8,6 +8,7 @@ SG::AuxElement::Accessor<char>  HG::TrackHandler::passIPCut("passIPCut");
 SG::AuxElement::Accessor<float>  HG::TrackHandler::d0significance("d0significance");
 SG::AuxElement::Accessor<float>  HG::TrackHandler::z0sinTheta("z0sinTheta");
 SG::AuxElement::Accessor<char>  HG::TrackHandler::isTrueHiggsElectron("isTrueHiggsElectron");
+SG::AuxElement::Accessor<float>  HG::TrackHandler::TRT_PID_trans("TRT_PID_trans");
 
 //______________________________________________________________________________
 HG::TrackHandler::TrackHandler(const char *name, xAOD::TEvent *event, xAOD::TStore *store)
@@ -57,6 +58,7 @@ xAOD::TrackParticleContainer HG::TrackHandler::getCorrectedContainer()
   
   for (auto trk : shallowContainer){
     decorateIPCut(*trk);
+    decorateTRT_PID(*trk);
   }
 
   return shallowContainer;
@@ -300,4 +302,13 @@ void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
   z0sinTheta(trk) = z0;
 
   if (fabs(z0) > m_z0Cut) { passIPCut(trk) = false; }
+}
+void HG::TrackHandler::decorateTRT_PID(xAOD::TrackParticle& trk)
+{
+    float t_TRT_PID(0.0), t_TRT_PID_trans(0.0);
+    trk.summaryValue(t_TRT_PID, xAOD::eProbabilityHT);
+    const double tau = 15.0;
+    if (t_TRT_PID >= 1.0) t_TRT_PID = 1.0 - 1.0e-15;
+    if (t_TRT_PID < 1.0e-30) t_TRT_PID = 1.0e-30;
+    TRT_PID_trans(trk) = - log(1.0/t_TRT_PID - 1.0) / tau;
 }
