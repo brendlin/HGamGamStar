@@ -1,4 +1,8 @@
 #include "HGamGamStar/MergedElectronID.h"
+
+SG::AuxElement::Accessor<float>  HG::MergedElectronID::EOverP0P1("EOverP0P1");
+SG::AuxElement::Accessor<float>  HG::MergedElectronID::dRExtrapTrk12("dRExtrapTrk12");
+SG::AuxElement::Accessor<float>  HG::MergedElectronID::RhadForPID("RhadForPID");
 //______________________________________________________________________________
 HG::MergedElectronID::MergedElectronID()
 {
@@ -25,18 +29,6 @@ bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &t
 
     // calculate shower shapes and other discriminating variables
 
-    float t1_TRT_PID(0.0), t1_TRT_PID_trans(0.0);
-    float t2_TRT_PID(0.0), t2_TRT_PID_trans(0.0);
-    trk1.summaryValue(t1_TRT_PID, xAOD::eProbabilityHT);
-    trk2.summaryValue(t2_TRT_PID, xAOD::eProbabilityHT);
-    const double tau = 15.0;
-    if (t1_TRT_PID >= 1.0) t1_TRT_PID = 1.0 - 1.0e-15;
-    if (t2_TRT_PID >= 1.0) t2_TRT_PID = 1.0 - 1.0e-15;
-    if (t1_TRT_PID < 1.0e-30) t1_TRT_PID = 1.0e-30;
-    if (t2_TRT_PID < 1.0e-30) t2_TRT_PID = 1.0e-30;
-    t1_TRT_PID_trans = - log(1.0/t1_TRT_PID - 1.0) / tau;
-    t2_TRT_PID_trans = - log(1.0/t2_TRT_PID - 1.0) / tau;
-
     float deltaEta1 = ele.trackCaloMatchValue(xAOD::EgammaParameters::TrackCaloMatchType::deltaEta1);
 
     double f1 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f1);
@@ -50,24 +42,17 @@ bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &t
 
     double f3 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f3);
 
-    double RHad;
-    double feta = fabs(ele.eta());
-    if (0.8 < feta && feta < 1.37){
-      RHad = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad);
-    } else {
-      RHad = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
-    }
-
     double pTrk1 = trk1.p4().Rho(); // same as p4().P()
     double pTrk2 = trk2.p4().Rho(); // same as p4().P()
-    double EOverP = ele.e() / (pTrk1 + pTrk2);
+//     double EOverP = ele.e() / (pTrk1 + pTrk2);
+    EOverP0P1(ele) = ele.e() / (pTrk1 + pTrk2);
 
-    double d0Trk1 = trk1.d0();
-    double d0Trk2 = trk2.d0();
-    float d0VarTrk1 = trk1.definingParametersCovMatrix()(0,0);
-    float d0VarTrk2 = trk2.definingParametersCovMatrix()(0,0);
-    double d0SigmaTrk1 = fabs(d0Trk1 / sqrtf(d0VarTrk1));
-    double d0SigmaTrk2 = fabs(d0Trk2 / sqrtf(d0VarTrk2));
+//     double d0Trk1 = trk1.d0();
+//     double d0Trk2 = trk2.d0();
+//     float d0VarTrk1 = trk1.definingParametersCovMatrix()(0,0);
+//     float d0VarTrk2 = trk2.definingParametersCovMatrix()(0,0);
+//     double d0SigmaTrk1 = fabs(d0Trk1 / sqrtf(d0VarTrk1));
+//     double d0SigmaTrk2 = fabs(d0Trk2 / sqrtf(d0VarTrk2));
 
 
     // get pt and eta bins
@@ -91,7 +76,7 @@ bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &t
       {"<0.0290", "<0.0270", "<0.0250", "<0.0240", "<0.01680", "<0.0300", "<0.0300", "<0.0300", "<0.0260", ""}, // pT [60, 80] GeV
       {"<0.0270", "<0.0250", "<0.0230", "<0.0220", "<0.01680", "<0.0280", "<0.0280", "<0.0280", "<0.0250", ""}, // pT > 80 GeV
     });
-    if (!passCut(RHad, cutRHad[iPt][iEta])) return(false);
+    if (!passCut(RhadForPID(ele), cutRHad[iPt][iEta])) return(false);
 
     // second cut: f3
     // const std::vector<std::string> cutF3({"", "", "", "", "", ">0.0005", ">0.0005", ">0.0005", ">0.0005", ">0.0005", ">0.0005"});
@@ -128,12 +113,13 @@ bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &t
 
     AngularPosition trk1AngPos = getExtrapolatedTrackPosition(&trk1, m_electron_trk_ex_origin, false, false, false);
     AngularPosition trk2AngPos = getExtrapolatedTrackPosition(&trk2, m_electron_trk_ex_origin, false, false, false);
-    double dRTrk12 = trk1AngPos.deltaR(trk2AngPos);
+    dRExtrapTrk12(ele) = trk1AngPos.deltaR(trk2AngPos);
+//     double dRTrk12 = trk1AngPos.deltaR(trk2AngPos);
 
     // fourth cut: ERatio / eta
     const std::vector<std::string> cutERatioInEta({">0.90", ">0.90", ">0.85", ">0.80", "", ">0.90", ">0.90", ">0.90", "", ""});
     if (f1 > 0.005 && !passCut(Eratio, cutERatioInEta[iEta])){
-      if (dRTrk12 > 0.1) return(false);
+      if (dRExtrapTrk12(ele) > 0.1) return(false);
     }
 
     // fifth cut: wTotS1 / eta
@@ -154,20 +140,20 @@ bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &t
 
     // eigth cut: RHad / eta
     const std::vector<std::string> cutRHadInEta({"<0.02", "<0.02", "<0.02", "<0.02", "", "<0.02", "<0.02", "<0.02", "<0.02", ""});
-    if (!passCut(RHad, cutRHadInEta[iEta])) return(false);
+    if (!passCut(RhadForPID(ele), cutRHadInEta[iEta])) return(false);
 
     // ninth cut: FHT2 / eta
     const std::vector<std::string> cutFHT2InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
-    if (!passCut(t2_TRT_PID_trans, cutFHT2InEta[iEta])) return(false);
+    if (!passCut(TrackHandler::TRT_PID_trans(trk2), cutFHT2InEta[iEta])) return(false);
 
     // tenth cut: FHT1 / eta
     const std::vector<std::string> cutFHT1InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
-    if (!passCut(t1_TRT_PID_trans, cutFHT1InEta[iEta])) return(false);
+    if (!passCut(TrackHandler::TRT_PID_trans(trk1), cutFHT1InEta[iEta])) return(false);
 
     // eleventh cut: EOverP / eta
     // const std::vector<std::string> cutEOverPInPt({"", ">0.2", ">0.2", ">0.2", ">0.2", ">0.2", ">0.25", "", "", ""});
     const std::vector<std::string> cutEOverPInEta({">0.8", ">0.8", ">0.8", ">0.8", "", "", "", "", "", ""});
-    if (!passCut(EOverP, cutEOverPInEta[iEta])) return(false);
+    if (!passCut(EOverP0P1(ele), cutEOverPInEta[iEta])) return(false);
 
     // twelvth cut: rPhi / eta
     const std::vector<std::string> cutRPhiInEta({">0.84", ">0.84", "", "", "", "", ">0.80", ">0.84", ">0.84", ""});
@@ -179,11 +165,11 @@ bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &t
 
     // thirteenth cut: d0SigmaTrk1
     const std::vector<std::string> cutD0SigmaTrk1({"<5.0"});
-    if (!passCut(d0SigmaTrk1, cutD0SigmaTrk1[0])) return(false);
+    if (!passCut(TrackHandler::d0significance(trk1), cutD0SigmaTrk1[0])) return(false);
 
     // fourteenth cut: d0SigmaTrk2
     const std::vector<std::string> cutD0SigmaTrk2({"<5.0"});
-    if (!passCut(d0SigmaTrk2, cutD0SigmaTrk2[0])) return(false);
+    if (!passCut(TrackHandler::d0significance(trk2), cutD0SigmaTrk2[0])) return(false);
 
 
     // fSide: if (f1 > 0.005 && )

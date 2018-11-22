@@ -6,6 +6,7 @@
 #include "HGamGamStar/HggStarVariables.h"
 #include "HGamGamStar/AngularPosition.h"
 #include "HGamGamStar/TrackModel.h"
+#include "HGamGamStar/TrackHandler.h"
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 #include "xAODTracking/TrackParticle.h"
 #include "xAODTruth/xAODTruthHelpers.h"
@@ -49,6 +50,10 @@ namespace HG {
     virtual EL::StatusCode initialize(Config &config);
     
     bool passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &trk1,xAOD::TrackParticle &trk2);
+    
+    static SG::AuxElement::Accessor<float>  EOverP0P1;
+    static SG::AuxElement::Accessor<float>  dRExtrapTrk12;
+    static SG::AuxElement::Accessor<float>  RhadForPID;
     
   };
 
