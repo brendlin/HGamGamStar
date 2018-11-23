@@ -1022,10 +1022,19 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
       isFiducial = false;
     } else {
       for( const auto& part: *higgsLeptons){
-        if( part->pt() < 5. * HG::GeV )
+        if( abs(part->pdgId()) == 11 ){
+          if( part->pt() < 4.5 * HG::GeV )
+            continue;
+          if( fabs(part->eta() ) < 2.5 )  
+            continue;
+        } else if ( abs(part->pdgId()) == 13 ){
+          if( part->pt() < 3. * HG::GeV )
+            continue;
+          if( fabs(part->eta() ) < 2.7 )
+            continue;
+        } else {
           continue;
-        if( fabs(part->eta() ) < 2.5 )  
-          continue;
+        }
         ++nFidLeptons;
       }
       
