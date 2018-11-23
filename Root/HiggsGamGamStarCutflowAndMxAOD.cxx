@@ -997,6 +997,9 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
 
   var::yyStarChannel.setTruthValue( (int) truthClass() );
 
+ 
+
+
   // Adds event-level variables to TStore (this time using truth containers)
   bool truth = true;
   if (m_saveTruthVars) {
@@ -1006,8 +1009,49 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
     writeTruthOnlyVars();
     if (m_saveDetailed)
     { writeDetailedVars(truth); }
+    //   
+    const xAOD::TruthParticleContainer *higgsLeptons = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+    const xAOD::TruthParticleContainer *higgsPhotons = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsPhotons();
+    
+    bool isFiducial = true;
+    int nFidLeptons=0;
+    int nFidPhotons=0;
 
+    if( higgsLeptons->size() !=2 || higgsPhotons->size()!=1 ){
+      isFiducial = false;
+    } else {
+      for( const auto& part: *higgsLeptons){
+        if( abs(part->pdgId()) == 11 ){
+          if( part->pt() < 4.5 * HG::GeV )
+            continue;
+          if( fabs(part->eta() ) < 2.5 )  
+            continue;
+        } else if ( abs(part->pdgId()) == 13 ){
+          if( part->pt() < 3. * HG::GeV )
+            continue;
+          if( fabs(part->eta() ) < 2.7 )
+            continue;
+        } else {
+          continue;
+        }
+        ++nFidLeptons;
+      }
+      
+      for( const auto& part: *higgsPhotons){
+        if( part->pt() < 30. * HG::GeV  )
+          continue;
+        if( fabs(part->eta() ) < 2.37 )  
+          continue;
+        ++nFidPhotons;
+      }
+    }
+  
+    if( nFidPhotons !=1 || nFidLeptons !=2 ){
+      isFiducial = false;
+    }
+    eventHandler()->storeTruthVar<char>("isFiducial", isFiducial);
   }
+
 
   // Adds all event variables to the TEvent output stream
   HG::VarHandler::getInstance()->writeTruth();
