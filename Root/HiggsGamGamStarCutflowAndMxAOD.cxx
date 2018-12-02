@@ -611,20 +611,9 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   double return_mmumu = -1;
   HG::AssignZbosonIndices(m_preSelMuons,sel_muon1,sel_muon2,return_mmumu,/*sortby_pt*/ true,13000.*HG::GeV);
 
-  // int sel_ele1 = -1, sel_ele2 = -1;
-  // double return_mee = -1;
-  // HG::AssignZbosonIndices(m_preSelElectrons,sel_ele1,sel_ele2,return_mee,/*sortby_pt*/ true,13000.*HG::GeV);
-
   int sel_trk1 = -1, sel_trk2 = -1;
   double return_mtrktrk = -1;
   HG::AssignZbosonIndices(m_preSelTracks,sel_trk1,sel_trk2,return_mtrktrk,/*sortby_pt*/ true,13000.*HG::GeV);
-
-  // std::cout << "trk mass: " << return_mtrktrk << std::endl;
-  // if (return_mtrktrk > 0)
-  // {
-  //   std::cout << "trk lly m: "
-  //             << (m_preSelTracks[sel_trk1]->p4() + m_preSelTracks[sel_trk2]->p4() + m_selPhotons[0]->p4()).M() << std::endl;
-  // }
 
   //==== CUT 12 : Whether SF leptons survive OR
   if (return_mmumu < 0 && return_mtrktrk < 0) return ZBOSON_ASSIGNMENT;
@@ -653,8 +642,15 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_selElectrons.sort(HG::ElectronHandler::comparePt);
     var::yyStarChannel.setValue(echan);
 
-    m_ll = return_mtrktrk;
-    m_lly = (m_selTracks[0]->p4() + m_selTracks[1]->p4() + m_selPhotons[0]->p4()).M();
+    if (m_selElectrons.size() == 1) {
+      TLorentzVector merged = HG::MergedEleTLV(*m_selTracks[0],*m_selTracks[1],*m_selElectrons[0]);
+      m_ll = merged.M();
+      m_lly = (merged + m_selPhotons[0]->p4()).M();
+    }
+    else if (m_selElectrons.size() == 2) {
+      m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
+      m_lly = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4() + m_selPhotons[0]->p4()).M();
+    }
 
   }
   
@@ -783,6 +779,11 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
   // Also sets pointer to photon container, etc., which is used by var's
   setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, nullptr, &m_jvtJets);
   HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&m_selTracks);
+
+  // Set the Merged electron TLV
+  if (var::yyStarChannel() == HG::MERGED_DIELECTRON) {
+    HG::ExtraHggStarObjects::getInstance()->setMergedElectronTLV(*m_selTracks[0],*m_selTracks[1],*m_selElectrons[0]);
+  }
 
   // Adds event-level variables to TStore
   // Write in the nominal and systematics loops

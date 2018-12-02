@@ -9,6 +9,8 @@
 
 #include "xAODBase/IParticleContainer.h"
 #include "xAODTruth/TruthParticleContainer.h"
+#include "xAODTracking/TrackParticleAuxContainer.h"
+#include "xAODEgamma/ElectronContainer.h"
 
 namespace xAOD {
   class TEvent;
@@ -33,11 +35,15 @@ namespace HG {
     xAOD::TruthParticleContainer m_higgsPhotons;
     bool m_higgsPhotonsAvail;
 
+    TLorentzVector m_mergedElectronTLV;
+    bool m_mergedElectronTLVAvail;
+
   public:
     /// Get instance of singleton class
     static ExtraHggStarObjects *getInstance();
 
     void setElectronTrackContainer(const xAOD::IParticleContainer* tracks);
+    void setMergedElectronTLV(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2, const xAOD::Electron& ele);
 
     /// Run the code to find the photon and leptons from the Higgs
     void setTruthHiggsDecayProducts(const xAOD::TruthParticleContainer* all_particles);
@@ -47,6 +53,8 @@ namespace HG {
 
     /// Get pointer to collection
     const xAOD::IParticleContainer *getElectronTracks(bool truth = false) const;
+    const TLorentzVector *getMergedElectronTLV(bool truth = false) const;
+
     const xAOD::TruthParticleContainer *getTruthHiggsLeptons() const;
     const xAOD::TruthParticleContainer *getTruthHiggsPhotons() const;
 
