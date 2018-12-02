@@ -54,6 +54,7 @@ namespace HG {
     /// Get pointer to collection
     const xAOD::IParticleContainer *getElectronTracks(bool truth = false) const;
     const TLorentzVector *getMergedElectronTLV(bool truth = false) const;
+    bool mergedElectronTLVAvail() const {return m_mergedElectronTLVAvail;};
 
     const xAOD::TruthParticleContainer *getTruthHiggsLeptons() const;
     const xAOD::TruthParticleContainer *getTruthHiggsPhotons() const;
