@@ -51,6 +51,15 @@ void HG::ExtraHggStarObjects::setElectronTrackContainer(const xAOD::IParticleCon
   return;
 }
 
+//______________________________________________________________________________
+void HG::ExtraHggStarObjects::setMergedElectronTLV(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2, const xAOD::Electron& ele)
+{
+  m_mergedElectronTLV = MergedEleTLV(trk1,trk2,ele);
+  m_mergedElectronTLVAvail = true;
+
+  return;
+}
+
 //____________________________________________________________________________
 const xAOD::IParticleContainer *HG::ExtraHggStarObjects::getElectronTracks(bool truth) const
 {
@@ -62,6 +71,17 @@ const xAOD::IParticleContainer *HG::ExtraHggStarObjects::getElectronTracks(bool 
   { throw std::runtime_error("Track container requested but not set in ExtraHggStarObjects, throwing exception"); }
 
   return &m_tracks;
+}
+
+//____________________________________________________________________________
+const TLorentzVector *HG::ExtraHggStarObjects::getMergedElectronTLV(bool truth) const
+{
+  if (truth) { throw std::runtime_error("ExtraHggStarObjects::getMergedElectronTLV should not be attempted in truth!"); }
+
+  if (!m_mergedElectronTLVAvail)
+  { throw std::runtime_error("Merged electron TLV requested but not set in ExtraHggStarObjects, throwing exception"); }
+
+  return &m_mergedElectronTLV;
 }
 
 //______________________________________________________________________________
@@ -168,4 +188,7 @@ void HG::ExtraHggStarObjects::clearContainers()
 
   m_higgsPhotons.clear();
   m_higgsPhotonsAvail = false;
+
+  m_mergedElectronTLV.SetPtEtaPhiE(0,0,0,0);
+  m_mergedElectronTLVAvail = false;
 }

@@ -14,6 +14,7 @@ namespace HG {
   TruthPtcls getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl);
   TruthPtcls FilterLeptons(const TruthPtcls& stableHiggsDecayProducts);
   TruthPtcls FilterDirectPhotons(const TruthPtcls& stableHiggsDecayProducts);
+  TLorentzVector MergedEleTLV(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2, const xAOD::Electron& ele);
 
   //____________________________________________________________________________
   class m_lly : public VarBase<float> {
@@ -39,8 +40,8 @@ namespace HG {
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).M();
 
       // If the electron container size is 1, then take the (cluster) e-gamma mass (yystar)
-      if (eles->size() == 1 && gams->size() >= 1)
-        return ((*eles)[0]->p4() + (*gams)[0]->p4()).M();
+      if (!truth && eles->size() == 1 && gams->size() >= 1)
+        return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).M();
 
       return m_default;
     }
@@ -63,6 +64,11 @@ namespace HG {
         return ((*mus)[0]->p4() + (*mus)[1]->p4()).M();
       if (eles->size() >= 2)
         return ((*eles)[0]->p4() + (*eles)[1]->p4()).M();
+
+      // For merged electrons, take the TLV set in ExtraHggStarObjects
+      if (!truth && eles->size() == 1)
+        return HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()->M();
+
       return m_default;
     }
   };
@@ -105,6 +111,9 @@ namespace HG {
         return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4()).Pt();
       if (eles->size() >= 2 && gams->size() >= 1)
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).Pt();
+      if (!truth && eles->size() == 1 && gams->size() >= 1)
+        return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).Pt();
+
       return m_default;
     }
   };
@@ -123,6 +132,8 @@ namespace HG {
         return ((*mus)[0]->p4() + (*mus)[1]->p4()).Pt();
       if (eles->size() >= 2)
         return ((*eles)[0]->p4() + (*eles)[1]->p4()).Pt();
+      if (!truth && eles->size() == 1)
+        return HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()->Pt();
       return m_default;
     }
   };

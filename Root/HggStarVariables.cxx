@@ -64,6 +64,16 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
   return;
 }
 
+TLorentzVector HG::MergedEleTLV(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2, const xAOD::Electron& ele)
+{
+  float scale_pt = ele.pt()/(trk1.pt() + trk2.pt());
+  TLorentzVector tlv1;
+  TLorentzVector tlv2;
+  tlv1.SetPtEtaPhiM( trk1.pt() * scale_pt, trk1.eta(), trk1.phi(), ele.m() ); // ele.m == 0.510998
+  tlv2.SetPtEtaPhiM( trk2.pt() * scale_pt, trk2.eta(), trk2.phi(), ele.m() );
+  return (tlv1 + tlv2);
+}
+
 HG::TruthPtcls HG::getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl)
 {
   // Recursive, starting from the Higgs
