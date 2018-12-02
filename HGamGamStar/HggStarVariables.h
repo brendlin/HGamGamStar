@@ -4,6 +4,7 @@
 #include "HGamAnalysisFramework/VarHandler.h"
 #include "HGamAnalysisFramework/HgammaIncludes.h"
 
+#include "HGamGamStar/HggStarCommon.h"
 #include "HGamGamStar/ExtraHggStarObjects.h"
 
 #include "xAODBase/IParticleContainer.h"
@@ -40,7 +41,7 @@ namespace HG {
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).M();
 
       // If the electron container size is 1, then take the (cluster) e-gamma mass (yystar)
-      if (!truth && eles->size() == 1 && gams->size() >= 1)
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail() && gams->size() >= 1)
         return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).M();
 
       return m_default;
@@ -66,7 +67,7 @@ namespace HG {
         return ((*eles)[0]->p4() + (*eles)[1]->p4()).M();
 
       // For merged electrons, take the TLV set in ExtraHggStarObjects
-      if (!truth && eles->size() == 1)
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail())
         return HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()->M();
 
       return m_default;
@@ -111,7 +112,7 @@ namespace HG {
         return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4()).Pt();
       if (eles->size() >= 2 && gams->size() >= 1)
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).Pt();
-      if (!truth && eles->size() == 1 && gams->size() >= 1)
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail() && gams->size() >= 1)
         return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).Pt();
 
       return m_default;
@@ -132,7 +133,7 @@ namespace HG {
         return ((*mus)[0]->p4() + (*mus)[1]->p4()).Pt();
       if (eles->size() >= 2)
         return ((*eles)[0]->p4() + (*eles)[1]->p4()).Pt();
-      if (!truth && eles->size() == 1)
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail())
         return HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()->Pt();
       return m_default;
     }
