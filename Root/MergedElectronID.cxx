@@ -18,6 +18,10 @@ EL::StatusCode HG::MergedElectronID::initialize(Config &config)
 {
   m_electron_trk_ex_origin     = (extrapolationStartPositionEnum)(config.getInt ("ElectronHandler.TrackExtrapolation.Origin",0));
   
+  m_PreselNPassBlayer = config.getInt("MergedElectrons.Preselection.NtracksPassingBlayer",1);
+  m_PreselRhad        = config.getNum("MergedElectrons.Preselection.RhadMin",0.10);
+  m_mergedElePtCut    = config.getNum("MergedElectrons.Selection.PtPreCutGeV",20.) * GeV;
+
   return EL::StatusCode::SUCCESS;
 }
 
@@ -381,4 +385,20 @@ AngularPosition HG::MergedElectronID::getExtrapolatedTrackPosition(
     return(AngularPosition(endState.position.eta, endState.position.phi));
 }
 
+//______________________________________________________________________________
+bool HG::MergedElectronID::passPreselection(const xAOD::Electron &ele,
+                                            const xAOD::TrackParticle &trk1,
+                                            const xAOD::TrackParticle &trk2){
 
+  if (ele.pt() < m_mergedElePtCut) return false;
+
+  if (HG::EleAcc::RhadForPID(ele) > m_PreselRhad) return false;
+
+
+  int nPassBlayer = 0;
+  nPassBlayer += HG::TrkAcc::passBLayerRequirement(trk1) ? 1 : 0;
+  nPassBlayer += HG::TrkAcc::passBLayerRequirement(trk2) ? 1 : 0;
+  if (nPassBlayer < m_PreselNPassBlayer) return false;
+
+  return true;
+}

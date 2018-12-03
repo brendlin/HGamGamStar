@@ -13,7 +13,6 @@ namespace HG {
 
   private:
 
-    bool m_doTrqCuts;
     int m_nSiMin;
     int m_nPixMin;
 

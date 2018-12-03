@@ -28,6 +28,11 @@ namespace HG {
       FirstMeasurement,
       LastMeasurement
     };
+
+    // Preselection cuts
+    int m_PreselNPassBlayer;
+    double m_PreselRhad;
+    double m_mergedElePtCut;
     
     AngularPosition getExtrapolatedTrackPosition(
 	const xAOD::TrackParticle * track,
@@ -51,6 +56,10 @@ namespace HG {
     virtual EL::StatusCode initialize(Config &config);
     
     bool passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &trk1,xAOD::TrackParticle &trk2);
+
+    bool passPreselection(const xAOD::Electron &ele,
+                          const xAOD::TrackParticle &trk1,
+                          const xAOD::TrackParticle &trk2);
     
   };
 
