@@ -25,7 +25,6 @@ EL::StatusCode HG::TrackHandler::initialize(Config &config)
   m_containerName = config.getStr(m_name + ".ContainerName", "GSFTrackParticles");
 
   //electron selection
-  m_doTrqCuts  = config.getBool(m_name + ".Selection.ApplyTRQCuts", true);
   m_nSiMin     = config.getInt (m_name + ".Selection.nSiMin",7);
   m_nPixMin    = config.getInt (m_name + ".Selection.nPixMin",2);
 
@@ -148,6 +147,9 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
       xAOD::TrackParticle* container_tp = HG::MapHelpers::FindTrackParticle(&container,ele_tp);
       selected.push_back(container_tp);
+
+      // Add reco-level decorators
+      TrkAcc::passBLayerRequirement(*container_tp) = ElectronSelectorHelpers::passBLayerRequirement(container_tp);
 
       // Decorate MC particles with some truth information:
       if (HG::isMC()) {

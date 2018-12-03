@@ -58,7 +58,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
   m_isoCloseByTool_Muon->setProperty("BackupPrefix", "original"); 
   m_isoCloseByTool_Muon->initialize();
 
-  m_eleIDPreselection = config()->getStr("ElectronHandler.Preselection","");
+  // Resolved electron ID preselection. Applied in FindZboson_ElectronChannelAware.
+  m_eleIDPreselection = config()->getStr("ResolvedElectrons.Preselection.PID","VeryLoose");
 
   return EL::StatusCode::SUCCESS;
 }
@@ -511,21 +512,13 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // HGamCore does not have an electron preselection step, so we make our own here:
   m_allElectrons = electronHandler()->getCorrectedContainer();
 
+  AddElectronDecorations(m_allElectrons);
+
   xAOD::ElectronContainer m_preSelElectrons(SG::VIEW_ELEMENTS);
   for (auto electron : m_allElectrons) {
-    // Decorate Rhad
-    double feta = fabs(electron->eta());
-    HG::EleAcc::RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
-      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
-      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
-
     if (!electronHandler()->passOQCut(electron)) { continue; }
     if (!electronHandler()->passPtEtaCuts(electron)) { continue; }
     if (!electronHandler()->passHVCut(electron)) { continue; }
-    bool passIDPreselection = m_eleIDPreselection.IsNull() || electronHandler()->passPIDCut(electron,m_eleIDPreselection);
-    // We are taking the OR of VeryLoose and a very loose Rhad cut.
-    // Why OR with VeryLoose if the Rhad mostly covers it? For scale factor validity purposes.
-    if (!passIDPreselection && HG::EleAcc::RhadForPID(*electron) > 0.10) { continue; }
     m_preSelElectrons.push_back(electron);
   }
 
@@ -544,13 +537,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (!muonHandler()->passPIDCut(muon)) { continue; } // This includes MaxEta cut
     m_preSelMuons.push_back(muon);
   }
-
-  // //==== CUTs on leptons
-  // if (m_preSelElectrons.size() < 2 && m_preSelMuons.size() < 2) {
-  //   return LEPTON_ID;
-  //   return LEPTON_ISOLATION;
-  //   return LEPTON_IPCUTS;
-  // }
 
   //==== CUT 9 : 2 SF leptons (before OR) ====
   if (m_preSelTracks.size() < 2 && m_preSelMuons.size() < 2) return TWO_SF_LEPTONS;
@@ -611,9 +597,13 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   double return_mmumu = -1;
   HG::AssignZbosonIndices(m_preSelMuons,sel_muon1,sel_muon2,return_mmumu,/*sortby_pt*/ true,13000.*HG::GeV);
 
-  int sel_trk1 = -1, sel_trk2 = -1;
+  xAOD::TrackParticle* sel_trk1 = nullptr;
+  xAOD::TrackParticle* sel_trk2 = nullptr;
   double return_mtrktrk = -1;
-  HG::AssignZbosonIndices(m_preSelTracks,sel_trk1,sel_trk2,return_mtrktrk,/*sortby_pt*/ true,13000.*HG::GeV);
+
+  xAOD::ElectronContainer candElectrons(SG::VIEW_ELEMENTS);
+  HG::ChannelEnum echan = FindZboson_ElectronChannelAware(&m_preSelTracks,sel_trk1,sel_trk2,return_mtrktrk,
+                                                          trkElectronMap,&m_preSelElectrons,&candElectrons);
 
   //==== CUT 12 : Whether SF leptons survive OR
   if (return_mmumu < 0 && return_mtrktrk < 0) return ZBOSON_ASSIGNMENT;
@@ -627,18 +617,22 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_lly = (m_selMuons[0]->p4() + m_selMuons[1]->p4() + m_selPhotons[0]->p4()).M();
     var::yyStarChannel.setValue(HG::DIMUON);
   } else {
-    m_selTracks.push_back(m_preSelTracks[sel_trk1]);
-    m_selTracks.push_back(m_preSelTracks[sel_trk2]);
+    if (!sel_trk1 || !sel_trk2) HG::fatal("Pointer error. Check code.");
+    m_selTracks.push_back(sel_trk1);
+    m_selTracks.push_back(sel_trk2);
 
     // New: use the "best-track" classification system
-    HG::ChannelEnum echan = ClassifyElectronChannelsByBestMatch(m_selTracks[0],m_selTracks[1],
-                                                                trkElectronMap,
-                                                                &m_preSelElectrons,&m_selElectrons);
+    // HG::ChannelEnum echan = ClassifyElectronChannelsByBestMatch(m_selTracks[0],m_selTracks[1],
+    //                                                             trkElectronMap,
+    //                                                             &m_preSelElectrons,&m_selElectrons);
 
     // HG::ChannelEnum echan = ClassifyElectronsOld(m_selTracks[0],m_selTracks[1],
     //                                              trkElectronMap,
     //                                              &m_preSelElectrons,&m_selElectrons);
 
+    for (auto ele : candElectrons) {
+      m_selElectrons.push_back(ele);
+    }
     m_selElectrons.sort(HG::ElectronHandler::comparePt);
     var::yyStarChannel.setValue(echan);
 
@@ -1148,4 +1142,91 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronsOld(xAOD::Track
 
   HG::fatal("Something went wrong in channel categorization - please check!");
   return HG::AMBIGUOUS_DIELECTRON;
+}
+
+HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(xAOD::TrackParticleContainer* inTracks,
+                                                                                xAOD::TrackParticle*& sel_trk1,
+                                                                                xAOD::TrackParticle*& sel_trk2,
+                                                                                double& return_mll,
+                                                                                const HG::TrackElectronMap& trkEleMap,
+                                                                                xAOD::ElectronContainer* inEleCont,
+                                                                                xAOD::ElectronContainer* outEleCont
+                                                                                )
+{
+
+  HG::ChannelEnum return_chan = HG::CHANNELUNKNOWN;
+  double max_pt = -1;
+
+  for (auto tracki : *inTracks) {
+    for (auto trackj : *inTracks) {
+      if (tracki == trackj) continue;
+      if (tracki->pt() < trackj->pt()) continue;
+      if (tracki->charge() == trackj->charge()) continue;
+
+      xAOD::ElectronContainer tmp_eles(SG::VIEW_ELEMENTS);
+      HG::ChannelEnum tmp_chan = ClassifyElectronChannelsByBestMatch(tracki,trackj,trkEleMap,inEleCont,&tmp_eles);
+
+      if (tmp_chan != HG::RESOLVED_DIELECTRON &&
+          tmp_chan != HG::MERGED_DIELECTRON) continue;
+
+      // apply preselection cuts
+      double tmp_pt = -1;
+      double tmp_m = -1;
+
+      if (tmp_chan == HG::RESOLVED_DIELECTRON) {
+        if (tmp_eles.size() != 2) HG::fatal("Z boson assignment error (resolved).");
+
+        // Resolved preselection
+        if (!m_eleIDPreselection.IsNull()) {
+          if (!electronHandler()->passPIDCut(tmp_eles[0],m_eleIDPreselection)) continue;
+          if (!electronHandler()->passPIDCut(tmp_eles[1],m_eleIDPreselection)) continue;
+        }
+
+        TLorentzVector tmp_tlv = tmp_eles[0]->p4() + tmp_eles[1]->p4();
+        tmp_pt = tmp_tlv.Pt();
+        tmp_m  = tmp_tlv.M();
+      }
+      else if (tmp_chan == HG::MERGED_DIELECTRON) {
+        if (tmp_eles.size() != 1) HG::fatal("Z boson assignment error (merged).");
+
+        // apply resolved preselection cuts
+        if (!m_mergedElectronID->passPreselection(*tmp_eles[0],*tracki,*trackj)) continue;
+
+        TLorentzVector merged = HG::MergedEleTLV(*tracki,*trackj,*tmp_eles[0]);
+        tmp_pt = merged.Pt();
+        tmp_m  = merged.M();
+      }
+
+      // Sort by max pt of the di-object system
+      if (tmp_pt > max_pt) {
+        max_pt = tmp_pt;
+        sel_trk1 = tracki;
+        sel_trk2 = trackj;
+        return_mll = tmp_m;
+      }
+    }
+  }
+
+  if (return_mll > 0)
+  {
+    // Re-do, but fill electron containers
+    return_chan = ClassifyElectronChannelsByBestMatch(sel_trk1,sel_trk2,trkEleMap,inEleCont,outEleCont);
+  }
+
+  return return_chan;
+}
+
+void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
+
+  for (auto electron : electrons) {
+
+    // Decorate Rhad
+    double feta = fabs(electron->eta());
+    HG::EleAcc::RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
+      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
+      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+
+  }
+
+    return;
 }

@@ -23,6 +23,7 @@ namespace HG {
     static SG::AuxElement::Accessor<float> z0sinTheta("z0sinTheta");
     static SG::AuxElement::Accessor<char>  isTrueHiggsElectron("isTrueHiggsElectron");
     static SG::AuxElement::Accessor<float> TRT_PID_trans("TRT_PID_trans");
+    static SG::AuxElement::Accessor<char>  passBLayerRequirement("passBLayerRequirement");
 
   } // namespace TrkAcc
 
