@@ -26,8 +26,8 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 | **Get &gamma; container** | m_preSelPhotons, OQ, cleaning, HV,<br> Loose ID, p<sub>T</sub>>10 GeV, &#124;&eta;&#124;<2.37<br> no crack, AuthorAmbiguous allowed | PhotonHandler.cxx | N/A
 |10, ONE_LOOSE_GAM         | Nloose &ge; 1 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 | **Photon choice**      | Selected photon is highest-p<sub>T</sub><br> presel photon | HiggsGamGamStarCutflowAndMxAOD.cxx | N/A |
-| **Z boson assignment** | Pick highest vector-sum p<sub>T</sub> SFOS pair<br>(Muons or tracks). Channels: <br>DIMUON=1, RESOLVED_DIELECTRON=2,<br>MERGED_DIELECTRON=3,<br>AMBIGUOUS_DIELECTRON=4. | HggStarVariables.cxx,<br>HiggsGamGamStarCutflowAndMxAOD.cxx | N/A |
-| **Presel for Z-assignment** | Res e: VeryLooseLH<br>Mrgd e: Rhad<0.10, NpassBL&geq;1, p<sub>T</sub>>20 GeV<br>&mu;: No additional cuts | " " | N/A |
+| **Z boson assignment** | Pick highest vector-sum p<sub>T</sub> SFOS pair<br>(&mu;s or tracks). Channels: <br>DIMUON=1, RESOLVED_DIELECTRON=2,<br>MERGED_DIELECTRON=3.<br>&mu; preferred. Use preselection below. | HggStarVariables.cxx,<br>HiggsGamGamStarCutflowAndMxAOD.cxx | N/A |
+| **Presel for Z-assignment above** | Res e: VeryLooseLH<br>Mrgd e: Rhad<0.1, NtrkPassBL&geq;1,<br>p<sub>T</sub>>20 GeV<br>&mu;: No additional cuts | " " | N/A |
 |12, ZBOSON_ASSIGNMENT     | nSFOS &ge; 1 (muon or track pairs). | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 | **Get jet container**  | Selected jets | JetHandler.cxx | N/A |
 | **Overlap removal**    | Remove e if &Delta;R(e,&gamma;)<0.4<br> Remove jet if &Delta;R(j,&gamma;)<0.4<br>Remove jet if &Delta;R(j,e)<0.2<br>Remove e if &Delta;R(j,e)<0.4<br>Remove &mu; if &Delta;R(&mu;,&gamma;)<0.4<br>Remove &mu; if &Delta;R(&mu;,j)<0.4 | HGamAnalysisFramework/<br>OverlapRemovalHandler.cxx | " " |
