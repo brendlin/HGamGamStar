@@ -27,6 +27,7 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |10, ONE_LOOSE_GAM         | Nloose &ge; 1 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 | **Photon choice**      | Selected photon is highest-p<sub>T</sub><br> presel photon | HiggsGamGamStarCutflowAndMxAOD.cxx | N/A |
 | **Z boson assignment** | Pick highest vector-sum p<sub>T</sub> SFOS pair<br>(Muons or tracks). Channels: <br>DIMUON=1, RESOLVED_DIELECTRON=2,<br>MERGED_DIELECTRON=3,<br>AMBIGUOUS_DIELECTRON=4. | HggStarVariables.cxx,<br>HiggsGamGamStarCutflowAndMxAOD.cxx | N/A |
+| **Presel for Z-assignment** | Res e: VeryLooseLH<br>Mrgd e: Rhad<0.10, NpassBL&geq;1, p<sub>T</sub>>20 GeV<br>&mu;: No additional cuts | " " | N/A |
 |12, ZBOSON_ASSIGNMENT     | nSFOS &ge; 1 (muon or track pairs). | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 | **Get jet container**  | Selected jets | JetHandler.cxx | N/A |
 | **Overlap removal**    | Remove e if &Delta;R(e,&gamma;)<0.4<br> Remove jet if &Delta;R(j,&gamma;)<0.4<br>Remove jet if &Delta;R(j,e)<0.2<br>Remove e if &Delta;R(j,e)<0.4<br>Remove &mu; if &Delta;R(&mu;,&gamma;)<0.4<br>Remove &mu; if &Delta;R(&mu;,j)<0.4 | HGamAnalysisFramework/<br>OverlapRemovalHandler.cxx | " " |
@@ -34,12 +35,12 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |14, BAD_MUON              | Reject events with presel BadMuons | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |15, ONE_PHOTON_POSTOR     | Selected photon survives OR | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |16, TRIG_MATCH            | Currently disabled in<br>HggStarMxAOD.config | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
-|17, LEP_MEDID             | Resolved e: Medium (resolved e),<br>Merged e: Merged ID,<br>&mu;: Medium | HGamAnalysisFramework/HGamRel21.config<br>for merged objects | " " |
-|18, LEP_IP                | Resolved e: d<sub>0</sub>/&sigma;<sub>d0</sub> < 5, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5<br>Merged e: same but only for first track! Fix!<br>&mu;: d<sub>0</sub>/&sigma;<sub>d0</sub> < 3, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5 | Defaults in ElectronHandler.cxx, MuonHandler.cxx | " " |
-|19, LEP_ISO               | Resolved e: CloseByCorrected Loose<br>Merged e: Loose<br>&mu;: GradientLoose (no CloseBy correction!) | Merged e: specially done in<br>HiggsGamGamStarCutflowAndMxAOD.cxx.<br>Resolved e/&mu;: HGamAnalysisFramework/HGamRel21.config | " " |
+|17, LEP_MEDID             | Resolved e: Medium,<br>Merged e: Merged ID,<br>&mu;: Medium | HGamAnalysisFramework/HGamRel21.config<br>for merged objects | " " |
+|18, LEP_IP                | Res/Mrgd e: d<sub>0</sub>/&sigma;<sub>d0</sub> < 5, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5<br>&mu;: d<sub>0</sub>/&sigma;<sub>d0</sub> < 3, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5 | Defaults in ElectronHandler.cxx, MuonHandler.cxx | " " |
+|19, LEP_ISO               | Resolved e: CloseByCorrected Loose<br>Merged e: Loose<br>&mu;: CloseByCorrected GradientLoose | Merged e: specially done in<br>HiggsGamGamStarCutflowAndMxAOD.cxx.<br>Resolved e/&mu;: HGamAnalysisFramework/HGamRel21.config | " " |
 |20, GAM_TIGHTID           | Photon passes Tight | HGamAnalysisFramework/HGamRel21.config | " " |
 |21, GAM_ISOLATION         | Photon passes FixedCutLoose | HGamAnalysisFramework/HGamRel21.config | " " |
-|22, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> m<sub>trktrk</sub> < 45 GeV for MERGED | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+|22, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> (see code for merged mass definiton) | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |23, LLGMASSCUT            | 105 < m<sub>ll&gamma;</sub> && m<sub>ll&gamma;</sub> < 160 GeV | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |24, PASSALL               | Everything above passes | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 
