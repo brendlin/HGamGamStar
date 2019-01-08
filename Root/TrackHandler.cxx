@@ -1,7 +1,13 @@
 #include "HGamGamStar/TrackHandler.h"
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 
+#include "xAODEventInfo/EventInfo.h"
 #include "xAODTruth/xAODTruthHelpers.h"
+#include "xAODEgamma/ElectronxAODHelpers.h"
+#include "xAODTracking/TrackParticlexAODHelpers.h"
+#include "PhotonVertexSelection/PhotonVertexHelpers.h"
+
+#include "HGamAnalysisFramework/TruthUtils.h"
 
 //______________________________________________________________________________
 HG::TrackHandler::TrackHandler(const char *name, xAOD::TEvent *event, xAOD::TStore *store)

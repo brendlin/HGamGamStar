@@ -2,7 +2,8 @@
 #define HGamGamStar_HggStarVariables_H
 
 #include "HGamAnalysisFramework/VarHandler.h"
-#include "HGamAnalysisFramework/HgammaIncludes.h"
+#include "HGamAnalysisFramework/HGamCommon.h"
+#include "HGamAnalysisFramework/TruthUtils.h"
 
 #include "HGamGamStar/HggStarCommon.h"
 #include "HGamGamStar/ExtraHggStarObjects.h"
