@@ -3,6 +3,8 @@
 #include "HGamAnalysisFramework/TruthHandler.h"
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 
+#include "MCUtils/PIDUtils.h"
+
 namespace var {
   HG::m_lly m_lly;
   HG::m_ll m_ll;
