@@ -27,9 +27,9 @@ To checkout the necessary packages, do:
 Compiling
 ---------
 
-To compile in Rel 21.2.25, do:
+To compile in Rel 21.2.56, do:
 
-    asetup AnalysisBase,21.2.25,here # only needed once per login session
+    asetup AnalysisBase,21.2.56,here # only needed once per login session
     cd $TestArea/../build
     cmake ../source
     cmake --build .
@@ -211,10 +211,10 @@ have to match the has to the tag name if you want to see which one is currently
 used. For convenience, here is a list of the tags and their corresponding
 hashes used in this package:
 
-| HGamCore tag | HGamCore commit hash |
-| ------------ | ----------- |
-| v1.1.2-h017  | cb2c8452    |
-| v1.2.0-h018  | 04d6a778    |
-| v1.3.0-h019  | 76779324    |
-| v1.5.5-h021  | b941a3d8    |
-| v1.8.1-h024  | 9f868a8b    |
+| HGamCore tag | HGamCore commit hash | AnalysisBase release |
+| ------------ | ----------- | ---------- |
+| v1.1.2-h017  | cb2c8452    | ?          |
+| v1.2.0-h018  | 04d6a778    | ?          |
+| v1.3.0-h019  | 76779324    | ?          |
+| v1.5.5-h021  | b941a3d8    | 21.2.25    |
+| v1.8.1-h024  | 9f868a8b    | 21.2.56    |
