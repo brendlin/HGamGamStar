@@ -37,7 +37,7 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |16, TRIG_MATCH            | Currently disabled in<br>HggStarMxAOD.config | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |17, LEP_MEDID             | Resolved e: Medium,<br>Merged e: Merged ID,<br>&mu;: Medium | HGamAnalysisFramework/HGamRel21.config<br>for merged objects | " " |
 |18, LEP_IP                | Res/Mrgd e: d<sub>0</sub>/&sigma;<sub>d0</sub> < 5, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5<br>&mu;: d<sub>0</sub>/&sigma;<sub>d0</sub> < 3, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5 | Defaults in ElectronHandler.cxx, MuonHandler.cxx | " " |
-|19, LEP_ISO               | Resolved e: CloseByCorrected Loose<br>Merged e: Loose<br>&mu;: CloseByCorrected GradientLoose | Merged e: specially done in<br>HiggsGamGamStarCutflowAndMxAOD.cxx.<br>Resolved e/&mu;: HGamAnalysisFramework/HGamRel21.config | " " |
+|19, LEP_ISO               | Resolved e: CloseByCorrected FCLoose<br>Merged e: FCLoose<br>&mu;: CloseByCorrected FCLoose_FixedRad | Merged e: specially done in<br>HiggsGamGamStarCutflowAndMxAOD.cxx.<br>Resolved e/&mu;: HGamAnalysisFramework/HGamRel21.config | " " |
 |20, GAM_TIGHTID           | Photon passes Tight | HGamAnalysisFramework/HGamRel21.config | " " |
 |21, GAM_ISOLATION         | Photon passes FixedCutLoose | HGamAnalysisFramework/HGamRel21.config | " " |
 |22, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> (see code for merged mass definiton) | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
