@@ -178,7 +178,7 @@ Wait for all jobs to complete. Then merge using the following commands (it is re
     python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data16_13TeV_${prodtag}\") and sys.exit()"
     python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data17_13TeV_${prodtag}\") and sys.exit()"
     python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"mc16a_HIGG1D2_${prodtag}\") and sys.exit()"
-    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"mc16a_HIGG1D2_${prodtag}\") and sys.exit()"
+    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"mc16d_HIGG1D2_${prodtag}\") and sys.exit()"
 
 When all jobs have merged, put the MxAOD output files (located in the directory `data-MxAOD`) into a directory on EOS and the DESY dust (if applicable),
 and add the production details to the section below.
