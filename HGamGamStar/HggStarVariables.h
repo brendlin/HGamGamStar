@@ -17,6 +17,7 @@ namespace HG {
   TruthPtcls FilterLeptons(const TruthPtcls& stableHiggsDecayProducts);
   TruthPtcls FilterDirectPhotons(const TruthPtcls& stableHiggsDecayProducts);
   TLorentzVector MergedEleTLV(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2, const xAOD::Electron& ele);
+  void decoratePhotonMass(xAOD::Photon& phot);
 
   //____________________________________________________________________________
   class m_lly : public VarBase<float> {

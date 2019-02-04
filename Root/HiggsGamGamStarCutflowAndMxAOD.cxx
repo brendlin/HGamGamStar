@@ -550,6 +550,8 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // Our *Higgs candidate photon* is the leading pre-selected (Loose) photon
   if (m_preSelPhotons.size()  ) m_selPhotons.push_back(m_preSelPhotons[0]);
 
+  // My special thing
+  if (m_selPhotons.size()  ) HG::decoratePhotonMass(*m_selPhotons[0]);
 
   // This section is just for the cutflow purposes.
   int nloose=0, namb=0, nHV=0;

@@ -16,6 +16,8 @@ namespace HG {
     OUT_OF_ACCEPTANCE=7
   };
 
+  static SG::AuxElement::Accessor<float> photonMass("photonMass");
+
   namespace TrkAcc {
     static SG::AuxElement::Accessor< std::vector<int> > MatchedElectrons("MatchedElectrons");
     static SG::AuxElement::Accessor<char>  passIPCut("passIPCut");

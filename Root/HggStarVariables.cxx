@@ -76,6 +76,33 @@ TLorentzVector HG::MergedEleTLV(const xAOD::TrackParticle& trk1, const xAOD::Tra
   return (tlv1 + tlv2);
 }
 
+void HG::decoratePhotonMass(xAOD::Photon& phot)
+{
+  if (phot.conversionType() == 0) {
+    HG::photonMass(phot) = -10000;
+    return;
+  }
+
+  const xAOD::Vertex* vx = phot.vertex(0);
+
+  if (!vx || vx->nTrackParticles() < 2) {
+    HG::photonMass(phot) = -10000;
+    return;
+  }
+
+  const xAOD::TrackParticle *trk1 = vx->trackParticle(0);
+  const xAOD::TrackParticle *trk2 = vx->trackParticle(1);
+
+  float scale_pt = phot.pt()/(trk1->pt() + trk2->pt());
+  TLorentzVector tlv1;
+  TLorentzVector tlv2;
+  tlv1.SetPtEtaPhiM( trk1->pt() * scale_pt, trk1->eta(), trk1->phi(), phot.m() ); // phot.m == 0.510998
+  tlv2.SetPtEtaPhiM( trk2->pt() * scale_pt, trk2->eta(), trk2->phi(), phot.m() );
+
+  HG::photonMass(phot) = (tlv1 + tlv2).M();
+  return;
+}
+
 HG::TruthPtcls HG::getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl)
 {
   // Recursive, starting from the Higgs
