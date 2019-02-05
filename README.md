@@ -137,7 +137,7 @@ To do this, move to your `MyOutputDir`, and make a file `rerun.sh` with the foll
     #!/bin/bash
     for i in $(ls status | grep fail); do 
         job=${i/fail-/}; 
-        sed "s/\$(Process)/${job}/g" submit/submit >& submit/submit-$job \
+        sed "s/\$(Item)/${job}/g" submit/submit >& submit/submit-$job \
         && sed -i 's/queue.*/queue/g' submit/submit-$job \
         && cd submit && condor_submit submit-$job && cd - \
         && rm status/fail-$job \
@@ -147,6 +147,34 @@ To do this, move to your `MyOutputDir`, and make a file `rerun.sh` with the foll
     done
 
 Running `source rerun.sh` will rerun the specific jobs that failed. If they fail again, then you can rerun this script.
+
+Finally, if your jobs stalled for some reason and need to be killed, then **first kill them** and then
+you can retry the jobs using the following:
+
+    #!/bin/bash
+
+    ## List of jobs to retry
+    retryJobsList=()
+
+    ## Add not-complete (killed?) jobs
+    nJobs=$(( $(cat submit/segments | tail -n 1 | cut -d " " -f1) ))
+    for i in $(seq 0 $nJobs ); do
+        if [ ! -f status/completed-$i ]; then
+            retryJobsList=("${retryJobsList[@]}" $i)
+        fi;
+    done
+
+    ## Rerun jobs, remove files if they exist
+    for job in "${retryJobsList[@]}"; do
+        sed "s/\$(Item)/${job}/g" submit/submit >& submit/submit-$job \
+        && sed -i 's/queue.*/queue/g' submit/submit-$job \
+        && cd submit && condor_submit submit-$job && cd -;
+        rm status/fail-$job;
+        rm status/done-$job;
+        rm submit/log-$job.err;
+        rm submit/log-$job.out;
+    done
+
 
 ### Running on the Grid
 
@@ -168,7 +196,7 @@ first **make sure the code is fully committed, tagged in git, and that the event
 Then do (specifying an appropriate ProdTag):
 
     prodtag=ysy00X
-    for DS in data15_13TeV data16_13TeV data17_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2; do
+    for DS in data15_13TeV data16_13TeV data17_13TeV data18_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2; do
     runJob.py --InputList HGamGamStar/input/$DS.txt --OutputDir ${DS}_${prodtag} --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000 --ProdTag $prodtag;
     done;
 
@@ -177,6 +205,7 @@ Wait for all jobs to complete. Then merge using the following commands (it is re
     python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data15_13TeV_${prodtag}\") and sys.exit()"
     python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data16_13TeV_${prodtag}\") and sys.exit()"
     python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data17_13TeV_${prodtag}\") and sys.exit()"
+    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data18_13TeV_${prodtag}\") and sys.exit()"
     python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"mc16a_HIGG1D2_${prodtag}\") and sys.exit()"
     python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"mc16d_HIGG1D2_${prodtag}\") and sys.exit()"
 
