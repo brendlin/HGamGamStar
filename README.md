@@ -119,62 +119,31 @@ Once the jobs above are complete, you can merge the files using the `EL::Driver:
 The easiest way to do this is to launch this via command line, with:
 
     cd MyOutputDir/..
-    python -c 'import ROOT; import sys; ROOT.EL.Driver.wait("MyOutputDir") and sys.exit()'
+    runJob_merge MyOutputDir
 
 Note that this will wait for all jobs to finish, and then merge the root files. The resulting MxAODs will be in the directory `MyOutputDir/data-MxAOD`.
 If a job failed at any point, an error will be thrown and the merging will be paused. See below for how to re-run the jobs that failed.
 (You can simply re-run the above command after your jobs finish successfully, and the merging should start back up where it left off.)
 
-### Rerunning failed jobs
+### Rerunning failed / killed Condor jobs
 
-Did any of your jobs fail? You can check by running:
+Did any of your Condor jobs fail? You can check by running:
 
     find MyOutputDir/. | grep fail
 
-In the event that a few jobs failed for "transient regions" (e.g. there is no inherent bug in the code), you can restart the individual jobs.
-To do this, move to your `MyOutputDir`, and make a file `rerun.sh` with the following contents:
+In the event that a few jobs failed for "transient reasons" (e.g. there is no inherent bug in the code), you can restart the individual jobs.
+To do this, execute:
 
-    #!/bin/bash
-    for i in $(ls status | grep fail); do 
-        job=${i/fail-/}; 
-        sed "s/\$(Item)/${job}/g" submit/submit >& submit/submit-$job \
-        && sed -i 's/queue.*/queue/g' submit/submit-$job \
-        && cd submit && condor_submit submit-$job && cd - \
-        && rm status/fail-$job \
-        && rm status/done-$job \
-        && rm submit/log-$job.err \
-        && rm submit/log-$job.out;
-    done
+    cd MyOutputDir/..
+    runJob_condor_resubmit_failed MyOutputDir
 
-Running `source rerun.sh` will rerun the specific jobs that failed. If they fail again, then you can rerun this script.
+This will rerun the specific jobs that failed. If they fail again, then you can rerun this script.
 
 Finally, if your jobs stalled for some reason and need to be killed, then **first kill them** and then
 you can retry the jobs using the following:
 
-    #!/bin/bash
-
-    ## List of jobs to retry
-    retryJobsList=()
-
-    ## Add not-complete (killed?) jobs
-    nJobs=$(( $(cat submit/segments | tail -n 1 | cut -d " " -f1) ))
-    for i in $(seq 0 $nJobs ); do
-        if [ ! -f status/completed-$i ]; then
-            retryJobsList=("${retryJobsList[@]}" $i)
-        fi;
-    done
-
-    ## Rerun jobs, remove files if they exist
-    for job in "${retryJobsList[@]}"; do
-        sed "s/\$(Item)/${job}/g" submit/submit >& submit/submit-$job \
-        && sed -i 's/queue.*/queue/g' submit/submit-$job \
-        && cd submit && condor_submit submit-$job && cd -;
-        rm status/fail-$job;
-        rm status/done-$job;
-        rm submit/log-$job.err;
-        rm submit/log-$job.out;
-    done
-
+    cd MyOutputDir/..
+    runJob_condor_resubmit_killed MyOutputDir
 
 ### Running on the Grid
 
@@ -202,12 +171,9 @@ Then do (specifying an appropriate ProdTag):
 
 Wait for all jobs to complete. Then merge using the following commands (it is recommended to run these one-by-one; in case a job failed, follow the rerun procedure outlined above):
 
-    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data15_13TeV_${prodtag}\") and sys.exit()"
-    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data16_13TeV_${prodtag}\") and sys.exit()"
-    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data17_13TeV_${prodtag}\") and sys.exit()"
-    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"data18_13TeV_${prodtag}\") and sys.exit()"
-    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"mc16a_HIGG1D2_${prodtag}\") and sys.exit()"
-    python -c "import ROOT; import sys; ROOT.EL.Driver.wait(\"mc16d_HIGG1D2_${prodtag}\") and sys.exit()"
+    for DS in data15_13TeV data16_13TeV data17_13TeV data18_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2; do
+        runJob_merge ${DS}_${prodtag}
+    done;
 
 When all jobs have merged, put the MxAOD output files (located in the directory `data-MxAOD`) into a directory on EOS and the DESY dust (if applicable),
 and add the production details to the section below.
