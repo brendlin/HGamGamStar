@@ -1,0 +1,37 @@
+#!/bin/bash
+
+##
+## Script to restart condor (EventLoop) jobs that did not finish (e.g. killed by user)
+## Usage: runJob_condor_resubmit_killed MyJob
+##
+
+echo 
+echo Restarting jobs from $1 that did not finish.
+echo Note: if some jobs are still running, then this will fail miserably!
+echo You have 5 seconds to CTRL-C ...
+sleep 5
+
+DIR=$1
+
+## List of jobs to retry
+retryJobsList=()
+
+## Add not-complete (killed?) jobs
+## by checking which ones did not make a "complete-X" file.
+nJobs=$(( $(cat $DIR/submit/segments | tail -n 1 | cut -d " " -f1) ))
+for i in $(seq 0 $nJobs ); do
+    if [ ! -f $DIR/status/completed-$i ]; then
+        retryJobsList=("${retryJobsList[@]}" $i)
+    fi;
+done
+
+## Rerun jobs, remove files if they exist
+for job in "${retryJobsList[@]}"; do
+    echo Resubmitting job number $job
+    sed "s/\$(Item)/${job}/g" $DIR/submit/submit >& $DIR/submit/submit-$job \
+    && sed -i 's/queue.*/queue/g' $DIR/submit/submit-$job \
+    && cd $DIR/submit && condor_submit submit-$job && cd -;
+    for i in status/fail-$job status/done-$job submit/log-$job.err submit/log-$job.out; do
+        if [ -f $DIR/$i ]; then rm $DIR/$i; fi;
+    done
+done

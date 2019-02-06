@@ -1,0 +1,20 @@
+#!/bin/bash
+
+##
+## Script to restart condor (EventLoop) jobs that failed.
+## Usage: runJob_condor_resubmit_failed MyJob
+##
+
+DIR=$1
+
+for i in $(ls $DIR/status | grep fail); do 
+    job=${i/fail-/}; 
+    echo Resubmitting job number $job
+    sed "s/\$(Item)/${job}/g" $DIR/submit/submit >& $DIR/submit/submit-$job \
+    && sed -i 's/queue.*/queue/g' $DIR/submit/submit-$job \
+    && cd $DIR/submit && condor_submit submit-$job && cd - \
+    && rm $DIR/status/fail-$job \
+    && rm $DIR/status/done-$job \
+    && rm $DIR/submit/log-$job.err \
+    && rm $DIR/submit/log-$job.out;
+done
