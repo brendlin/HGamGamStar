@@ -70,7 +70,13 @@ Some more details about using this run scheme with Condor:
  - **--optCondorConf**: Another option to add to the condor option configuration (expert mode)
  - **--Condor_UseLD_LIBRARY_PATH**: Some systems refuse to export `LD_LIBRARY_PATH` to your worker nodes, so some code was written to do this for you if it's necessary. (This is a boolean). If you work at DESY, then this is probably necessary.
 
-### How to use the **--GridDirect** option
+### How (and why) to use the **--GridDirect** option
+
+SampleHandler has a function for converting a DSID into a list of files that are local to a specified LOCALGROUPDISK.
+In this way, all you need to do is specify the DSID and a list of files will be made for you.
+**Note that --GridDirect can be time consuming -- so the code will save the local files it finds to a text file, and
+put it in a directory called GridDirectFiles. When you rerun on the same DSID and specify --GridDirect, the code
+will find the file that it saved in the previous run, and therefore save you a lot of time on the second run.**
 
 You will need to export a few variables to your environment so that the code knows how to access your local group disk.
 (You can put these in your `.bash_profile` startup script too):
@@ -92,7 +98,7 @@ you can't figure out your system.)
 Once you've set up these environment variables, you can use the built-in functionality to
 automatically convert the DSIDs in your localgroupdisk to a list of files.
 
-### Putting it all together
+### Running with Condor
 
  - You have a list of datasets that you want to run on condor. You make a file Samples.txt that looks like:
 
@@ -112,18 +118,6 @@ automatically convert the DSIDs in your localgroupdisk to a list of files.
     cd $TestArea/../run
     runJob.py --InputList Samples.txt --OutputDir MyOutputDir --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000
     ```
-
-### Merging the files of an EventLoop job
-
-Once the jobs above are complete, you can merge the files using the `EL::Driver::wait` command.
-The easiest way to do this is to launch this via command line, with:
-
-    cd MyOutputDir/..
-    runJob_merge MyOutputDir
-
-Note that this will wait for all jobs to finish, and then merge the root files. The resulting MxAODs will be in the directory `MyOutputDir/data-MxAOD`.
-If a job failed at any point, an error will be thrown and the merging will be paused. See below for how to re-run the jobs that failed.
-(You can simply re-run the above command after your jobs finish successfully, and the merging should start back up where it left off.)
 
 ### Rerunning failed / killed Condor jobs
 
@@ -151,6 +145,21 @@ To run on the grid, you must specify a **GridTag** as well as a **ProdTag** via 
 **--Input** or **--InputList** to specify the samples):
 
     runJob.py --Input mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_e5984_s3126_r10201_r10210_p3415 --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --Grid --GridTag user.brendlin --ProdTag ysy001
+
+You can also specify any of the other normal grid running options via command-line or in your config file
+(e.g `--nc_nFilesPerJob`, `--nc_destSE`, etc.).
+
+### Merging the files of an EventLoop job
+
+Once the jobs above are complete, you can merge the files using the `EL::Driver::wait` command.
+The easiest way to do this is to launch this via command line, with:
+
+    cd MyOutputDir/..
+    runJob_merge MyOutputDir
+
+Note that this will wait for all jobs to finish, and then merge the root files. The resulting MxAODs will be in the directory `MyOutputDir/data-MxAOD`.
+If a job failed at any point, an error will be thrown and the merging will be paused. See below for how to re-run the jobs that failed.
+(You can simply re-run the above command after your jobs finish successfully, and the merging should start back up where it left off.)
 
 MxAOD Production
 =================
