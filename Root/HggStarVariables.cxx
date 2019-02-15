@@ -7,6 +7,7 @@
 
 namespace var {
   HG::m_lly m_lly;
+  HG::m_lly_gev m_lly_gev;
   HG::m_ll m_ll;
   HG::deltaR_ll deltaR_ll;
   HG::pt_lly pt_lly;
@@ -25,6 +26,13 @@ namespace var {
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
+}
+
+// A special implementation of calculateValue that references another "var"
+float HG::m_lly_gev::calculateValue(bool truth)
+{
+  if (truth) return var::m_lly.truth()/1000.;
+  return var::m_lly()/1000.;
 }
 
 void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
