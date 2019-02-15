@@ -860,6 +860,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   // In the truth case, there is no "systematic" case, so they are saved only once.
 
   var::m_lly.addToStore(truth);
+  var::m_lly_gev.addToStore(truth);
   var::m_ll.addToStore(truth);
   var::deltaR_ll.addToStore(truth);
   var::pt_lly.addToStore(truth);

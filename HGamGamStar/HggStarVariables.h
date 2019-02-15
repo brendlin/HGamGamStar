@@ -50,6 +50,16 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_lly_gev : public VarBase<float> {
+  public:
+  m_lly_gev() : VarBase("m_lly_gev") { m_default = -99; }
+    ~m_lly_gev() { }
+
+    float calculateValue(bool truth);
+    // Implemented in the cxx file.
+  };
+
+  //____________________________________________________________________________
   class m_ll : public VarBase<float> {
   public:
   m_ll() : VarBase("m_ll") { m_default = -99; }
@@ -399,6 +409,7 @@ namespace HG {
 
 namespace var {
   extern HG::m_lly m_lly;
+  extern HG::m_lly_gev m_lly_gev;
   extern HG::m_ll m_ll;
   extern HG::deltaR_ll deltaR_ll;
   extern HG::pt_lly pt_lly;
