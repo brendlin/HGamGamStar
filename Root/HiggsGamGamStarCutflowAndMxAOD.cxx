@@ -26,6 +26,13 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 
   HG::ExtraHggStarObjects::getInstance()->setEventAndStore(event(), store());
 
+  for (auto trig: eventHandler()->getRequiredTriggers()) {
+    if (!config()->isDefined("EventHandler.TriggerMatchType." + trig))
+      HG::fatal("You must define a EventHandler.TriggerMatchType for trigger "+trig);
+    if (!config()->isDefined("EventHandler.RunNumbers." + trig))
+      HG::fatal("You must define EventHandler.RunNumbers (years of validity) for trigger "+trig);
+  }
+
   m_trackHandler = new HG::TrackHandler("TrackHandler", event(), store());
   ANA_CHECK(m_trackHandler->initialize(*config()));
 
@@ -504,6 +511,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
   //==== CUT 6 : Require trigger ====
   static bool requireTrigger = config()->getBool("EventHandler.CheckTriggers");
+  // passTrigger() will impose the RunNumbers restriction, if specified via EventHandler.RunNumbers.TRIG
   if ( requireTrigger && !eventHandler()->passTriggers() ) return TRIGGER;
 
   //==== CUT 7 : Detector quality ====
@@ -682,16 +690,19 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 15 : Photon gets lost in overlap removal
   if (m_selPhotons.size()==0) return ONE_PHOTON_POSTOR;
 
-  //==== CUT 16: Trigger matching
-  static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
-
-  if ( requireTriggerMatch ){
-    StrV m_requiredTriggers = config()->getStrV("EventHandler.RequiredTriggers");
-    int itrigmatch=0;
-    for (auto trig: m_requiredTriggers) {
-      if (passTriggerMatch(trig, NULL, &m_selElectrons, &m_selMuons, NULL) ) itrigmatch++;
+  //==== CUT 16: Trigger matching (Set in config file using EventHandler.CheckTriggerMatching)
+  if ( eventHandler()->doTrigMatch() ){
+    bool isTrigMatched = false;
+    for (auto trig: eventHandler()->getRequiredTriggers()) {
+      // You need passTrigger() here in order to make sure the RunNumbers restriction is imposed on trigs.
+      if (eventHandler()->passTrigger(trig) &&
+          eventHandler()->passTriggerMatch(trig, &m_selPhotons, &m_selElectrons, &m_selMuons, NULL))
+      {
+        isTrigMatched = true;
+        break;
+      }
     }
-    if (itrigmatch==0) return TRIG_MATCH;
+    if (!isTrigMatched) return TRIG_MATCH;
   }
 
 
