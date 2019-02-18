@@ -44,8 +44,9 @@ private:
   TString m_photonTruthContainerName, m_jetTruthContainerName, m_elecTruthContainerName, m_muonTruthContainerName;
   TString m_evtInfoName, m_truthEvtsName;
   
-  TString m_electronIsoWP;
-  TString m_muonIsoWP;
+  HG::Iso::IsolationType m_eleMergedIsoWP;
+  HG::Iso::IsolationType m_eleResolvedIsoWP;
+  HG::Iso::IsolationType m_muonIsoWP;
 
   TString m_eleIDPreselection;
 
@@ -82,11 +83,11 @@ private:
   xAOD::MuonContainer m_selMuons; //!
   xAOD::MuonContainer m_preSelMuons; //!
   
-  CP::IsolationCloseByCorrectionTool* m_isoCloseByTool_Electron; //!
-  CP::IsolationSelectionTool* m_isoSelTool_Electron; //!
-  
-  CP::IsolationCloseByCorrectionTool* m_isoCloseByTool_Muon; //!
-  CP::IsolationSelectionTool* m_isoSelTool_Muon; //!
+  std::map<HG::Iso::IsolationType, CP::IsolationCloseByCorrectionTool*> m_isoCloseByTools_Ele; //!
+  std::map<HG::Iso::IsolationType, CP::IsolationCloseByCorrectionTool*> m_isoCloseByTools_Muon; //!
+
+  std::map<HG::Iso::IsolationType, SG::AuxElement::Accessor<char>* > m_eleIsoAccCorr; //!
+  std::map<HG::Iso::IsolationType, SG::AuxElement::Accessor<char>* > m_muIsoAccCorr; //!
 
 private:
   /// helper methods to create, fill and print the cut flow
