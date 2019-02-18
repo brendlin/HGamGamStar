@@ -177,6 +177,7 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
         name = name.replace('_NNLOPS_nnlo_30_','_')
         name = name.replace('_A14NNPDF23LO_','_')
         name = name.replace('_UEEE5_CTEQ6L1_CT10ME_','_')
+        name = name.replace('_NNPDF30_AZNLOCTEQ6L1_','_')
 
         # Remove e-tags, s-tags, r-tags
         name = re.sub(r'e[0-9][0-9][0-9][0-9]_','',name)
