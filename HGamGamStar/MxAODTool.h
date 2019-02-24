@@ -19,7 +19,8 @@ public:
   const std::vector<TString> s_cutDescs_base = {"#it{N}_{xAOD}","#it{N}_{DxAOD}","All events"};
 
   bool m_saveDetailed;
-  bool m_newFileMetaData;
+  bool m_newFileMetaData; // Alerts the code that new file metadata (like cutflow hists) is available
+  bool m_newFileLoaded; // Alerts the code that a new file has been loaded (e.g. to reset xs*br*feff)
 
   /// Declares list of output variables to be written.
   /// configKey defines the key that specifies the list of variable names

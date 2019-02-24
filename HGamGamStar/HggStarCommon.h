@@ -24,6 +24,7 @@ namespace HG {
     static SG::AuxElement::Accessor<char>  isTrueHiggsElectron("isTrueHiggsElectron");
     static SG::AuxElement::Accessor<float> TRT_PID_trans("TRT_PID_trans");
     static SG::AuxElement::Accessor<char>  passBLayerRequirement("passBLayerRequirement");
+    static SG::AuxElement::Accessor<float> pt("pt");
 
   } // namespace TrkAcc
 

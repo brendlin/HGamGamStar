@@ -156,6 +156,7 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
       // Add reco-level decorators
       TrkAcc::passBLayerRequirement(*container_tp) = ElectronSelectorHelpers::passBLayerRequirement(container_tp);
+      TrkAcc::pt(*container_tp) = container_tp->pt();
 
       // Decorate MC particles with some truth information:
       if (HG::isMC()) {

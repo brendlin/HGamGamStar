@@ -193,6 +193,11 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
       return EL::StatusCode::FAILURE;
     }
 
+    m_newFileMetaData = false;
+  }
+
+  // Things to do once per file
+  if (m_newFileLoaded) {
     m_crossSectionBRfilterEff = -1;
 
     if (HG::isMC()) {
@@ -206,7 +211,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
       { m_crossSectionBRfilterEff *= getGeneratorEfficiency(); }
     }
 
-    m_newFileMetaData = false;
+    m_newFileLoaded = false;
   }
 
   m_isNonHyyStarHiggs = false;
@@ -1112,6 +1117,18 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::fileExecute() {
 
   return EL::StatusCode::SUCCESS;
 }
+
+EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::changeInput(bool firstFile) {
+  // Here you do everything you need to do when we change input files.
+
+  HgammaAnalysis::changeInput(firstFile);
+
+  // Signals to the code (in execute) that we have to reset crossSectionBRfilterEff
+  m_newFileLoaded = true;
+
+  return EL::StatusCode::SUCCESS;
+}
+
 void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons){
 
   //set corrected iso decision same as non-corrected by default
@@ -1215,7 +1232,7 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
           tmp_chan != HG::MERGED_DIELECTRON) continue;
 
       // apply preselection cuts
-      double tmp_pt = -1;
+      double tmp_pt = (tracki->p4() + trackj->p4()).Pt();
       double tmp_m = -1;
 
       if (tmp_chan == HG::RESOLVED_DIELECTRON) {
@@ -1227,8 +1244,14 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
           if (!electronHandler()->passPIDCut(tmp_eles[1],m_eleIDPreselection)) continue;
         }
 
+        // In order to use standard electron ID, these tracks must be primary tracks!
+        bool both_prim = (HG::MapHelpers::getMatchingTrackIndex(tmp_eles[0],tracki) == 0 &&
+                          HG::MapHelpers::getMatchingTrackIndex(tmp_eles[1],trackj) == 0);
+        both_prim = both_prim | (HG::MapHelpers::getMatchingTrackIndex(tmp_eles[1],tracki) == 0 &&
+                                 HG::MapHelpers::getMatchingTrackIndex(tmp_eles[0],trackj) == 0);
+        if (!both_prim) continue;
+
         TLorentzVector tmp_tlv = tmp_eles[0]->p4() + tmp_eles[1]->p4();
-        tmp_pt = tmp_tlv.Pt();
         tmp_m  = tmp_tlv.M();
       }
       else if (tmp_chan == HG::MERGED_DIELECTRON) {
@@ -1238,11 +1261,13 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
         if (!m_mergedElectronID->passPreselection(*tmp_eles[0],*tracki,*trackj)) continue;
 
         TLorentzVector merged = HG::MergedEleTLV(*tracki,*trackj,*tmp_eles[0]);
-        tmp_pt = merged.Pt();
         tmp_m  = merged.M();
       }
 
-      // Sort by max pt of the di-object system
+      // Sort by max (vector sum) pt of the di-track system.
+      // Other things tried:
+      // - [prefer resolved channel always -> bad]
+      // - [use calorimeter pt, with trk-pt tiebreaker -> ok, but not better.]
       if (tmp_pt > max_pt) {
         max_pt = tmp_pt;
         sel_trk1 = tracki;

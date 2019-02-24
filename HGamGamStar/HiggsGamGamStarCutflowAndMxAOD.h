@@ -162,6 +162,7 @@ public:
   virtual EL::StatusCode execute();
   virtual EL::StatusCode finalize();
   virtual EL::StatusCode fileExecute();
+  virtual EL::StatusCode changeInput(bool firstFile);
 
   // Variables to write when using FULL_v1 photon systematics
   // (separated from the other systs due to file size)
