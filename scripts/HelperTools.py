@@ -158,6 +158,9 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
             elif 'r10201' in name :
                 name = name.replace('mc16_13TeV.','mc16d.')
                 name = removeRtags(name)
+            elif 'r10724' in name :
+                name = name.replace('mc16_13TeV.','mc16e.')
+                name = removeRtags(name)
             else :
                 name = name.replace('mc16_13TeV.','mc16.')
 
