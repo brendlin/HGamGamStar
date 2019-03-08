@@ -1025,6 +1025,8 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
   HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(all_particles);
 
+  var::deltaR_Merged_y1.addToStore( true );
+  var::deltaR_photon_yStar.addToStore( true );
   var::yyStarChannel.setTruthValue( (int) truthClass() );
 
  
@@ -1311,6 +1313,13 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::EleAcc::RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
       electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
       electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+
+    HG::EleAcc::conversionRadius(*electron) = -99;
+    if (int(ambiguityType(*electron)) > 0){
+      if (!electron->ambiguousObject()) HG::fatal("Missing ambiguousObject.");
+      xAOD::Photon* phot = (xAOD::Photon*)electron->ambiguousObject();
+      conversionRadius(*electron) = phot->conversionRadius();
+    }
 
   }
 

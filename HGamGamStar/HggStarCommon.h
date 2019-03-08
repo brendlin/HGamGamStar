@@ -57,6 +57,8 @@ namespace HG {
     //
     // DAOD Accessors:
     //
+    static SG::AuxElement::Accessor<uint8_t> ambiguityType("ambiguityType");
+    static SG::AuxElement::Accessor<float> conversionRadius("conversionRadius");
 
     // Accessors for deltaEta / deltaPhi (perigee) - the index is the Nth-matched xAOD::Electron track
     static SG::AuxElement::Accessor<std::vector<float>> TrackMatchingP_dEta1("TrackMatchingP_dEta1");

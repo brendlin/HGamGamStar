@@ -29,6 +29,8 @@ namespace var {
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
+  HG::deltaR_Merged_y1 deltaR_Merged_y1;
+  HG::deltaR_photon_yStar deltaR_photon_yStar;
 }
 
 // A special implementation of calculateValue that references another "var"
@@ -62,6 +64,10 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
 
       if (lepi->type() == xAOD::Type::TrackParticle &&
           ((xAOD::TrackParticle*)lepi)->charge() == ((xAOD::TrackParticle*)lepj)->charge()) continue;
+
+      if (lepi->type() == xAOD::Type::TrackParticle) {
+        if (!HG::passBLayerRequirement(*lepi) && !HG::passBLayerRequirement(*lepj)) continue;
+      }
 
       if (lepi->type() == xAOD::Type::Electron &&
           ((xAOD::Electron*)lepi)->charge() == ((xAOD::Electron*)lepj)->charge()) continue;

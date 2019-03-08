@@ -445,6 +445,48 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class deltaR_Merged_y1 : public VarBase<float> {
+  public:
+  deltaR_Merged_y1() : VarBase("deltaR_Merged_y1") { m_default = -99; m_truthOnly = true; }
+    ~deltaR_Merged_y1() { }
+
+    float calculateValue(bool truth)
+    {
+      if (not truth)
+      { return m_default; }
+
+      const xAOD::TruthParticleContainer *childphot = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsPhotons();
+      if (childphot->size() != 1) return m_default;
+
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(); // reco
+      if (eles->size() != 1) return m_default;
+
+      return (*childphot)[0]->p4().DeltaR((*eles)[0]->p4());
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaR_photon_yStar : public VarBase<float> {
+  public:
+  deltaR_photon_yStar() : VarBase("deltaR_photon_yStar") { m_default = -99; m_truthOnly = true; }
+    ~deltaR_photon_yStar() { }
+
+    float calculateValue(bool truth)
+    {
+      if (not truth)
+      { return m_default; }
+
+      const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+      if (childleps->size() != 2) return m_default;
+
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      if (gams->size() < 1) return m_default;
+
+      return ((*childleps)[0]->p4() + (*childleps)[1]->p4()).DeltaR((*gams)[0]->p4());
+    }
+  };
+
+  //____________________________________________________________________________
   class yyStarChannel : public VarBase<int> {
   public:
   yyStarChannel() : VarBase("yyStarChannel") { m_default = -99; }
@@ -491,6 +533,8 @@ namespace var {
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
+  extern HG::deltaR_Merged_y1 deltaR_Merged_y1;
+  extern HG::deltaR_photon_yStar deltaR_photon_yStar;
 }
 
 
