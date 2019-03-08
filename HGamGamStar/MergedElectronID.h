@@ -41,7 +41,6 @@ namespace HG {
 	const bool verbose,
 	const bool printTrajectory);
     
-    extrapolationStartPositionEnum m_electron_trk_ex_origin;
 
 
 
@@ -55,7 +54,11 @@ namespace HG {
 
     virtual EL::StatusCode initialize(Config &config);
     
-    bool passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &trk1,xAOD::TrackParticle &trk2);
+    bool passPIDCut(const xAOD::Electron &ele,const xAOD::TrackParticle &trk1,const xAOD::TrackParticle &trk2);
+
+    void decorateMergedVariables(xAOD::Electron &ele,
+                                 xAOD::TrackParticle &trk1,
+                                 xAOD::TrackParticle &trk2);
 
     bool passPreselection(const xAOD::Electron &ele,
                           const xAOD::TrackParticle &trk1,

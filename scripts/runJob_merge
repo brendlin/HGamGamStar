@@ -9,5 +9,5 @@
 # we MUST catch "Could not find branch named X" warnings.
 # Otherwise events will be dropped!
 
-root -q -l -n -b -x -e "gErrorAbortLevel = kWarning; EL::Driver::wait(\"${1}\");"
+root -q -l -n -b -x -e "EL::Driver::wait(\"${1}\");"
 echo merge script finished.

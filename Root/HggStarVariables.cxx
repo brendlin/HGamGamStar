@@ -10,6 +10,9 @@ namespace var {
   HG::m_lly_gev m_lly_gev;
   HG::m_ll m_ll;
   HG::deltaR_ll deltaR_ll;
+  HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
+  HG::Resolved_deltaPhiRescaled2 Resolved_deltaPhiRescaled2;
+  HG::Resolved_deltaEta2 Resolved_deltaEta2;
   HG::pt_lly pt_lly;
   HG::pt_ll pt_ll;
   HG::m_lly_track4mom m_lly_track4mom;
@@ -33,6 +36,14 @@ float HG::m_lly_gev::calculateValue(bool truth)
 {
   if (truth) return var::m_lly.truth()/1000.;
   return var::m_lly()/1000.;
+}
+
+float HG::Resolved_dRExtrapTrk12::calculateValue(bool truth)
+{
+  if (var::yyStarChannel() != ChannelEnum::RESOLVED_DIELECTRON) return m_default;
+  float deta_e1e2 = var::Resolved_deltaEta2();
+  float dphi_e1e2 = var::Resolved_deltaPhiRescaled2();
+  return sqrt(dphi_e1e2*dphi_e1e2 + deta_e1e2*deta_e1e2);
 }
 
 void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
