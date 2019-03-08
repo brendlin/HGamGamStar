@@ -10,6 +10,7 @@
 
 #include "xAODBase/IParticleContainer.h"
 #include "xAODBase/IParticle.h"
+#include "FourMomUtils/xAODP4Helpers.h"
 
 namespace HG {
 
@@ -102,6 +103,65 @@ namespace HG {
         return (*mus)[0]->p4().DeltaR((*mus)[1]->p4());
       if (eles->size() >= 2)
         return (*eles)[0]->p4().DeltaR((*eles)[1]->p4());
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class Resolved_dRExtrapTrk12 : public VarBase<float> {
+  public:
+  Resolved_dRExtrapTrk12() : VarBase("Resolved_dRExtrapTrk12") { m_default = -99; m_recoOnly = true; }
+    ~Resolved_dRExtrapTrk12() { }
+
+    float calculateValue(bool truth); // See cxx file
+  };
+
+  //____________________________________________________________________________
+  class Resolved_deltaPhiRescaled2 : public VarBase<float> {
+  public:
+  Resolved_deltaPhiRescaled2() : VarBase("Resolved_deltaPhiRescaled2") { m_default = -99; m_recoOnly = true; }
+    ~Resolved_deltaPhiRescaled2() { }
+
+    float calculateValue(bool truth)
+    {
+      // This is the dR of the tracks at last measurement extrapolated to the EM calorimeter.
+      // This is dR between the cluster barycenter from 3rd sampling (etaBE2, phiBE2)
+      const xAOD::ElectronContainer *eles = (xAOD::ElectronContainer*)HG::VarHandler::getInstance()->getElectrons(truth);
+      if (eles->size() >= 2) {
+        int flipSign1 = ( (*eles)[0]->trackParticle()->charge() > 0) ? 1 : -1; // -1 = flip
+        int flipSign2 = ( (*eles)[1]->trackParticle()->charge() > 0) ? 1 : -1; // -1 = flip
+        float dphi_trk1,dphi_trk2;
+        // Christos says that track-matching uses DeltaPhiRescaled, since this matches barycenter better
+        // and that Layer 2 is best.
+        (*eles)[0]->trackCaloMatchValue(dphi_trk1, xAOD::EgammaParameters::deltaPhiRescaled2);
+        (*eles)[1]->trackCaloMatchValue(dphi_trk2, xAOD::EgammaParameters::deltaPhiRescaled2);
+        float dphi_e1e2 = xAOD::P4Helpers::deltaPhi((*eles)[0]->caloCluster()->phiBE(2) + dphi_trk1*flipSign1,
+                                                    (*eles)[1]->caloCluster()->phiBE(2) + dphi_trk2*flipSign2);
+        return dphi_e1e2;
+      }
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class Resolved_deltaEta2 : public VarBase<float> {
+  public:
+  Resolved_deltaEta2() : VarBase("Resolved_deltaEta2") { m_default = -99; m_recoOnly = true; }
+    ~Resolved_deltaEta2() { }
+
+    float calculateValue(bool truth)
+    {
+      // This is the dR of the tracks at last measurement extrapolated to the EM calorimeter.
+      // This is dR between the cluster barycenter from 3rd sampling (etaBE2, phiBE2)
+      const xAOD::ElectronContainer *eles = (xAOD::ElectronContainer*)HG::VarHandler::getInstance()->getElectrons(truth);
+      if (eles->size() >= 2) {
+        float deta_trk1,deta_trk2;
+        (*eles)[0]->trackCaloMatchValue(deta_trk1, xAOD::EgammaParameters::deltaEta2);
+        (*eles)[1]->trackCaloMatchValue(deta_trk2, xAOD::EgammaParameters::deltaEta2);
+        float deta_e1e2 = ( ((*eles)[0]->caloCluster()->etaBE(2) - deta_trk1) -
+                            ((*eles)[1]->caloCluster()->etaBE(2) - deta_trk2) );
+        return deta_e1e2;
+      }
       return m_default;
     }
   };
@@ -412,6 +472,9 @@ namespace var {
   extern HG::m_lly_gev m_lly_gev;
   extern HG::m_ll m_ll;
   extern HG::deltaR_ll deltaR_ll;
+  extern HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
+  extern HG::Resolved_deltaPhiRescaled2 Resolved_deltaPhiRescaled2;
+  extern HG::Resolved_deltaEta2 Resolved_deltaEta2;
   extern HG::pt_lly pt_lly;
   extern HG::pt_ll pt_ll;
   extern HG::m_lly_track4mom m_lly_track4mom;

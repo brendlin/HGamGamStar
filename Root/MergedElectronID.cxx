@@ -16,8 +16,6 @@ HG::MergedElectronID::~MergedElectronID()
 
 EL::StatusCode HG::MergedElectronID::initialize(Config &config)
 {
-  m_electron_trk_ex_origin     = (extrapolationStartPositionEnum)(config.getInt ("ElectronHandler.TrackExtrapolation.Origin",0));
-  
   m_PreselNPassBlayer = config.getInt("MergedElectrons.Preselection.NtracksPassingBlayer",1);
   m_PreselRhad        = config.getNum("MergedElectrons.Preselection.RhadMin",0.10);
   m_mergedElePtCut    = config.getNum("MergedElectrons.Selection.PtPreCutGeV",20.) * GeV;
@@ -26,10 +24,44 @@ EL::StatusCode HG::MergedElectronID::initialize(Config &config)
 }
 
 //______________________________________________________________________________
-bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &trk1,xAOD::TrackParticle &trk2){
+void HG::MergedElectronID::decorateMergedVariables(xAOD::Electron &ele,xAOD::TrackParticle &trk1,xAOD::TrackParticle &trk2){
+  // Note: YOU MUST INITIALIZE ANY ACCESSOR in
+  // HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(); otherwise you may cause
+  // crashes in the code when files are merged.
+  // (E.g. every *electron* should have a decorator, even if it's not a merged electron!)
+
+  // Get the index!
+  unsigned int index1 = HG::MapHelpers::getMatchingTrackIndex(&ele,&trk1);
+  unsigned int index2 = HG::MapHelpers::getMatchingTrackIndex(&ele,&trk2);
+
+  TrkAcc::mergedTrackParticleIndex(trk1) = index1;
+  TrkAcc::mergedTrackParticleIndex(trk2) = index2;
+
+  EleAcc::delta_z0_tracks(ele) = TrkAcc::z0pv(trk1) - TrkAcc::z0pv(trk2);
+  EleAcc::delta_z0sinTheta_tracks(ele) = TrkAcc::z0sinTheta(trk1) - TrkAcc::z0sinTheta(trk2);
+
+  double pTrk1 = trk1.p4().Rho(); // same as p4().P()
+  double pTrk2 = trk2.p4().Rho(); // same as p4().P()
+  EleAcc::EOverP0P1(ele) = ele.e() / (pTrk1 + pTrk2);
+
+  // Local calculation of the extrapolated track position (from Perigee)
+  AngularPosition trk1AngPos = getExtrapolatedTrackPosition(&trk1, extrapolationStartPositionEnum::Perigee, false, false, false);
+  AngularPosition trk2AngPos = getExtrapolatedTrackPosition(&trk2, extrapolationStartPositionEnum::Perigee, false, false, false);
+  EleAcc::dRExtrapTrk12(ele) = trk1AngPos.deltaR(trk2AngPos);
+
+  // Local calculation of the extrapolated track position (from LastMeasurement)
+  AngularPosition trk1AngPos_LM = getExtrapolatedTrackPosition(&trk1, extrapolationStartPositionEnum::LastMeasurement, false, false, false);
+  AngularPosition trk2AngPos_LM = getExtrapolatedTrackPosition(&trk2, extrapolationStartPositionEnum::LastMeasurement, false, false, false);
+  EleAcc::dRExtrapTrk12_LM(ele) = trk1AngPos_LM.deltaR(trk2AngPos_LM);
+
+
+  return;
+}
+
+//______________________________________________________________________________
+bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::TrackParticle &trk1,const xAOD::TrackParticle &trk2){
 
     // calculate shower shapes and other discriminating variables
-
     float deltaEta1 = ele.trackCaloMatchValue(xAOD::EgammaParameters::TrackCaloMatchType::deltaEta1);
 
     double f1 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f1);
@@ -42,19 +74,6 @@ bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &t
     double wEta2 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::weta2);
 
     double f3 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f3);
-
-    double pTrk1 = trk1.p4().Rho(); // same as p4().P()
-    double pTrk2 = trk2.p4().Rho(); // same as p4().P()
-//     double EOverP = ele.e() / (pTrk1 + pTrk2);
-    EleAcc::EOverP0P1(ele) = ele.e() / (pTrk1 + pTrk2);
-
-//     double d0Trk1 = trk1.d0();
-//     double d0Trk2 = trk2.d0();
-//     float d0VarTrk1 = trk1.definingParametersCovMatrix()(0,0);
-//     float d0VarTrk2 = trk2.definingParametersCovMatrix()(0,0);
-//     double d0SigmaTrk1 = fabs(d0Trk1 / sqrtf(d0VarTrk1));
-//     double d0SigmaTrk2 = fabs(d0Trk2 / sqrtf(d0VarTrk2));
-
 
     // get pt and eta bins
     unsigned iPt = getPtBin(&ele);
@@ -111,11 +130,6 @@ bool HG::MergedElectronID::passPIDCut(xAOD::Electron &ele,xAOD::TrackParticle &t
     // if (!passCut(rEta, cutREtaInPt[iPt])){
     //   return(false);
     // }
-
-    AngularPosition trk1AngPos = getExtrapolatedTrackPosition(&trk1, m_electron_trk_ex_origin, false, false, false);
-    AngularPosition trk2AngPos = getExtrapolatedTrackPosition(&trk2, m_electron_trk_ex_origin, false, false, false);
-    EleAcc::dRExtrapTrk12(ele) = trk1AngPos.deltaR(trk2AngPos);
-//     double dRTrk12 = trk1AngPos.deltaR(trk2AngPos);
 
     // fourth cut: ERatio / eta
     const std::vector<std::string> cutERatioInEta({">0.90", ">0.90", ">0.85", ">0.80", "", ">0.90", ">0.90", ">0.90", "", ""});

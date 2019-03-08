@@ -660,6 +660,8 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       TLorentzVector merged = HG::MergedEleTLV(*m_selTracks[0],*m_selTracks[1],*m_selElectrons[0]);
       m_ll = merged.M();
       m_lly = (merged + m_selPhotons[0]->p4()).M();
+      // Decorate merged variables as soon as you find out the channel is merged
+      m_mergedElectronID->decorateMergedVariables(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1]);
     }
     else if (m_selElectrons.size() == 2) {
       m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
@@ -897,8 +899,11 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 
   if (!truth)
   {
-    var::m_lly_track4mom.addToStore(truth);
-    var::m_ll_track4mom.addToStore(truth);
+    var::m_lly_track4mom.addToStore(false);
+    var::m_ll_track4mom.addToStore(false);
+    var::Resolved_dRExtrapTrk12.addToStore(false);
+    var::Resolved_deltaPhiRescaled2.addToStore(false);
+    var::Resolved_deltaEta2.addToStore(false);
   }
 
   var::N_mu   .addToStore(truth);
@@ -1289,6 +1294,17 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
 void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
 
   for (auto electron : electrons) {
+
+    // NEED TO initialize merged electron ID variables here!
+    HG::EleAcc::EOverP0P1(*electron) = -999;
+    HG::EleAcc::dRExtrapTrk12(*electron) = -999;
+    HG::EleAcc::dRExtrapTrk12_LM(*electron) = -999;
+    HG::EleAcc::delta_z0sinTheta_tracks(*electron) = -999;
+    HG::EleAcc::delta_z0_tracks(*electron) = -999;
+    // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
+    // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
+    // HG::EleAcc::dRbetweenTracks_P_L1(*electron) = -999;
+    // HG::EleAcc::dRbetweenTracks_P_L2(*electron) = -999;
 
     // Decorate Rhad
     double feta = fabs(electron->eta());
