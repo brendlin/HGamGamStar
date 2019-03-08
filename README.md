@@ -144,7 +144,7 @@ you can retry the jobs using the following:
 To run on the grid, you must specify a **GridTag** as well as a **ProdTag** via the command-line (or config). An example is below (you can use
 **--Input** or **--InputList** to specify the samples):
 
-    runJob.py --Input mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_e5984_s3126_r10201_r10210_p3415 --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --Grid --GridTag user.brendlin --ProdTag ysy001
+    runJob.py --Input mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_e5984_s3126_r10201_r10210_p3415 --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --Grid --GridTag user.brendlin --ProdTag ysy00X
 
 You can also specify any of the other normal grid running options via command-line or in your config file
 (e.g `--nc_nFilesPerJob`, `--nc_destSE`, etc.).
@@ -194,6 +194,7 @@ Information on MxAOD Productions
 | ysy001 | [ysy001](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy001) | 21.2.25 | [ysy001 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/0bf0779154ff38eade37b64e611707cfd77989a6/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy001<br>EOS: /eos/user/b/brendlin/ysy/ysy001  |
 | ysy002 | [ysy002](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy002) | 21.2.25 | Not fully documented yet | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy002<br>EOS: /eos/user/b/brendlin/ysy/ysy002 |
 | ysy003 | [ysy003](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy003) | 21.2.25 | [ysy003 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/fc0b714ed0354e37fd8239e7ca732ed25323ca12/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy003<br>EOS: /eos/user/b/brendlin/ysy/ysy003  |
+| ysy005 | [ysy005](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy005) | 21.2.56 | [ysy005 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/51e7884246726940caf6effe7465154c2343f470/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy005<br>EOS: /eos/user/b/brendlin/ysy/ysy005  |
 
 Updating the HGamCore Tag
 ================
