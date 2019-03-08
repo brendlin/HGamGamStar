@@ -1315,10 +1315,10 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
       electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
 
     HG::EleAcc::conversionRadius(*electron) = -99;
-    if (int(ambiguityType(*electron)) > 0){
+    if (int(HG::EleAcc::ambiguityType(*electron)) > 0){
       if (!electron->ambiguousObject()) HG::fatal("Missing ambiguousObject.");
       xAOD::Photon* phot = (xAOD::Photon*)electron->ambiguousObject();
-      conversionRadius(*electron) = phot->conversionRadius();
+      HG::EleAcc::conversionRadius(*electron) = phot->conversionRadius();
     }
 
   }

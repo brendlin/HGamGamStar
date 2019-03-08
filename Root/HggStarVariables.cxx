@@ -66,7 +66,7 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
           ((xAOD::TrackParticle*)lepi)->charge() == ((xAOD::TrackParticle*)lepj)->charge()) continue;
 
       if (lepi->type() == xAOD::Type::TrackParticle) {
-        if (!HG::passBLayerRequirement(*lepi) && !HG::passBLayerRequirement(*lepj)) continue;
+        if (!HG::TrkAcc::passBLayerRequirement(*lepi) && !HG::TrkAcc::passBLayerRequirement(*lepj)) continue;
       }
 
       if (lepi->type() == xAOD::Type::Electron &&
