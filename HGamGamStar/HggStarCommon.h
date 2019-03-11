@@ -44,15 +44,30 @@ namespace HG {
 
     // Locally calculated, using the perigee parameters, extrapolating to the calorimeter.
     static SG::AuxElement::Accessor<float> dRExtrapTrk12("dRExtrapTrk12");
+    static SG::AuxElement::Accessor<float> dEtaExtrapTrk12("dEtaExtrapTrk12");
+    static SG::AuxElement::Accessor<float> dPhiExtrapTrk12("dPhiExtrapTrk12");
     // Locally calculated, using the last measurement, extrapolating to the calorimeter.
     static SG::AuxElement::Accessor<float> dRExtrapTrk12_LM("dRExtrapTrk12_LM");
+    static SG::AuxElement::Accessor<float> dEtaExtrapTrk12_LM("dEtaExtrapTrk12_LM");
+    static SG::AuxElement::Accessor<float> dPhiExtrapTrk12_LM("dPhiExtrapTrk12_LM");
 
     // The "official" track-matching deltaR variables, e.g. propagating to the calorimeter from
     // the perigee (P) or last measurement (LM), to layer 1 (2)
-    /* static SG::AuxElement::Accessor<float> dRbetweenTracks_LM_L1("dRbetweenTracks_LM_L1"); */
-    /* static SG::AuxElement::Accessor<float> dRbetweenTracks_LM_L2("dRbetweenTracks_LM_L2"); */
-    /* static SG::AuxElement::Accessor<float> dRbetweenTracks_P_L1("dRbetweenTracks_P_L1"); */
-    /* static SG::AuxElement::Accessor<float> dRbetweenTracks_P_L2("dRbetweenTracks_P_L2"); */
+    static SG::AuxElement::Accessor<float> dR1betweenTracks_LM("dR1betweenTracks_LM");
+    static SG::AuxElement::Accessor<float> dR2betweenTracks_LM("dR2betweenTracks_LM");
+    static SG::AuxElement::Accessor<float> dR1betweenTracks_P("dR1betweenTracks_P");
+    static SG::AuxElement::Accessor<float> dR2betweenTracks_P("dR2betweenTracks_P");
+
+    static SG::AuxElement::Accessor<float> dEta1betweenTracks_LM("dEta1betweenTracks_LM");
+    static SG::AuxElement::Accessor<float> dEta1betweenTracks_P("dEta1betweenTracks_P");
+    static SG::AuxElement::Accessor<float> dEta2betweenTracks_LM("dEta2betweenTracks_LM");
+    static SG::AuxElement::Accessor<float> dEta2betweenTracks_P("dEta2betweenTracks_P");
+
+    static SG::AuxElement::Accessor<float> dPhi1betweenTracks_LM("dPhi1betweenTracks_LM");
+    static SG::AuxElement::Accessor<float> dPhi1betweenTracks_P("dPhi1betweenTracks_P");
+    static SG::AuxElement::Accessor<float> dPhi2betweenTracks_LM("dPhi2betweenTracks_LM");
+    static SG::AuxElement::Accessor<float> dPhi2betweenTracks_P("dPhi2betweenTracks_P");
+
 
     //
     // DAOD Accessors:

@@ -48,12 +48,47 @@ void HG::MergedElectronID::decorateMergedVariables(xAOD::Electron &ele,xAOD::Tra
   AngularPosition trk1AngPos = getExtrapolatedTrackPosition(&trk1, extrapolationStartPositionEnum::Perigee, false, false, false);
   AngularPosition trk2AngPos = getExtrapolatedTrackPosition(&trk2, extrapolationStartPositionEnum::Perigee, false, false, false);
   EleAcc::dRExtrapTrk12(ele) = trk1AngPos.deltaR(trk2AngPos);
+  EleAcc::dPhiExtrapTrk12(ele) = xAOD::P4Helpers::deltaPhi(trk1AngPos.phi,trk2AngPos.phi);
+  EleAcc::dEtaExtrapTrk12(ele) = trk1AngPos.eta - trk2AngPos.eta;
 
   // Local calculation of the extrapolated track position (from LastMeasurement)
   AngularPosition trk1AngPos_LM = getExtrapolatedTrackPosition(&trk1, extrapolationStartPositionEnum::LastMeasurement, false, false, false);
   AngularPosition trk2AngPos_LM = getExtrapolatedTrackPosition(&trk2, extrapolationStartPositionEnum::LastMeasurement, false, false, false);
   EleAcc::dRExtrapTrk12_LM(ele) = trk1AngPos_LM.deltaR(trk2AngPos_LM);
+  EleAcc::dPhiExtrapTrk12_LM(ele) = xAOD::P4Helpers::deltaPhi(trk1AngPos_LM.phi,trk2AngPos_LM.phi);
+  EleAcc::dEtaExtrapTrk12_LM(ele) = trk1AngPos_LM.eta - trk2AngPos_LM.eta;
 
+  int flipSign1 = ( trk1.charge() > 0) ? 1 : -1; // -1 = flip
+  int flipSign2 = ( trk2.charge() > 0) ? 1 : -1; // -1 = flip
+  float dEta,dPhi;
+
+  // delta-trk-trk, 1st layer, LM
+  dEta = EleAcc::TrackMatchingLM_dEta1(ele)[index1] - EleAcc::TrackMatchingLM_dEta1(ele)[index2];
+  dPhi = EleAcc::TrackMatchingLM_dPhi1(ele)[index1]*flipSign1 - EleAcc::TrackMatchingLM_dPhi1(ele)[index2]*flipSign2;
+  EleAcc::dEta1betweenTracks_LM(ele) = dEta;
+  EleAcc::dPhi1betweenTracks_LM(ele) = dPhi;
+  EleAcc::dR1betweenTracks_LM(ele) = sqrt(dEta*dEta + dPhi*dPhi);
+
+  // delta-trk-trk, 1st layer, perigee
+  dEta = EleAcc::TrackMatchingP_dEta1(ele)[index1] - EleAcc::TrackMatchingP_dEta1(ele)[index2];
+  dPhi = EleAcc::TrackMatchingP_dPhi1(ele)[index1]*flipSign1 - EleAcc::TrackMatchingP_dPhi1(ele)[index2]*flipSign2;
+  EleAcc::dEta1betweenTracks_P(ele) = dEta;
+  EleAcc::dPhi1betweenTracks_P(ele) = dPhi;
+  EleAcc::dR1betweenTracks_P(ele) = sqrt(dEta*dEta + dPhi*dPhi);
+
+  // delta-trk-trk, 2nd layer, LM
+  dEta = EleAcc::TrackMatchingLM_dEta2(ele)[index1] - EleAcc::TrackMatchingLM_dEta2(ele)[index2];
+  dPhi = EleAcc::TrackMatchingLM_dPhi2(ele)[index1]*flipSign1 - EleAcc::TrackMatchingLM_dPhi2(ele)[index2]*flipSign2;
+  EleAcc::dEta2betweenTracks_LM(ele) = dEta;
+  EleAcc::dPhi2betweenTracks_LM(ele) = dPhi;
+  EleAcc::dR2betweenTracks_LM(ele) = sqrt(dEta*dEta + dPhi*dPhi);
+
+  // delta-trk-trk, 2nd layer, perigee
+  dEta = EleAcc::TrackMatchingP_dEta2(ele)[index1] - EleAcc::TrackMatchingP_dEta2(ele)[index2];
+  dPhi = EleAcc::TrackMatchingP_dPhi2(ele)[index1]*flipSign1 - EleAcc::TrackMatchingP_dPhi2(ele)[index2]*flipSign2;
+  EleAcc::dEta2betweenTracks_P(ele)  = dEta;
+  EleAcc::dPhi2betweenTracks_P(ele) = dPhi;
+  EleAcc::dR2betweenTracks_P(ele) = sqrt(dEta*dEta + dPhi*dPhi);
 
   return;
 }

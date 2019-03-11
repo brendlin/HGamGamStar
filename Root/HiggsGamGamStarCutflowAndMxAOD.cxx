@@ -1298,13 +1298,29 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     // NEED TO initialize merged electron ID variables here!
     HG::EleAcc::EOverP0P1(*electron) = -999;
     HG::EleAcc::dRExtrapTrk12(*electron) = -999;
+    HG::EleAcc::dEtaExtrapTrk12(*electron) = -999;
+    HG::EleAcc::dPhiExtrapTrk12(*electron) = -999;
     HG::EleAcc::dRExtrapTrk12_LM(*electron) = -999;
+    HG::EleAcc::dEtaExtrapTrk12_LM(*electron) = -999;
+    HG::EleAcc::dPhiExtrapTrk12_LM(*electron) = -999;
     HG::EleAcc::delta_z0sinTheta_tracks(*electron) = -999;
     HG::EleAcc::delta_z0_tracks(*electron) = -999;
-    // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
-    // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
-    // HG::EleAcc::dRbetweenTracks_P_L1(*electron) = -999;
-    // HG::EleAcc::dRbetweenTracks_P_L2(*electron) = -999;
+
+    // Track-matching
+    HG::EleAcc::dR1betweenTracks_LM(*electron) = -999;
+    HG::EleAcc::dR2betweenTracks_LM(*electron) = -999;
+    HG::EleAcc::dR1betweenTracks_P(*electron) = -999;
+    HG::EleAcc::dR2betweenTracks_P(*electron) = -999;
+
+    HG::EleAcc::dEta1betweenTracks_LM(*electron) = -999;
+    HG::EleAcc::dEta1betweenTracks_P(*electron) = -999;
+    HG::EleAcc::dEta2betweenTracks_LM(*electron) = -999;
+    HG::EleAcc::dEta2betweenTracks_P(*electron) = -999;
+
+    HG::EleAcc::dPhi1betweenTracks_LM(*electron) = -999;
+    HG::EleAcc::dPhi1betweenTracks_P(*electron) = -999;
+    HG::EleAcc::dPhi2betweenTracks_LM(*electron) = -999;
+    HG::EleAcc::dPhi2betweenTracks_P(*electron) = -999;
 
     // Decorate Rhad
     double feta = fabs(electron->eta());
