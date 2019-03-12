@@ -41,6 +41,7 @@ namespace HG {
     static SG::AuxElement::Accessor<float> EOverP0P1("EOverP0P1");
     static SG::AuxElement::Accessor<float> delta_z0_tracks("delta_z0_tracks");
     static SG::AuxElement::Accessor<float> delta_z0sinTheta_tracks("delta_z0sinTheta_tracks");
+    static SG::AuxElement::Accessor<float> ambiConvRadius("ambiConvRadius");
 
     // Locally calculated, using the perigee parameters, extrapolating to the calorimeter.
     static SG::AuxElement::Accessor<float> dRExtrapTrk12("dRExtrapTrk12");
@@ -89,6 +90,9 @@ namespace HG {
     static SG::AuxElement::Accessor<std::vector<float>> subCluster_E("SubCluster_E");
     static SG::AuxElement::Accessor<std::vector<float>> subCluster_dEta("SubCluster_dEta");
     static SG::AuxElement::Accessor<std::vector<float>> subCluster_dPhi("SubCluster_dPhi");
+
+    // Ambiguity type
+    static SG::AuxElement::Accessor<uint8_t> ambiguityType("ambiguityType");
 
   } // namespace EleAcc
 
