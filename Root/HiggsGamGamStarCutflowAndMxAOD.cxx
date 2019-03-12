@@ -965,11 +965,19 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
 
 }
 
-void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool /*truth*/)
+void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
 {
   // Put here all of the HGamVariables that you want to save in the nominal loop only
   // (not the systematics loops).
-
+  var::m_jj.addToStore(truth);
+  var::Deta_j_j.addToStore(truth);
+  var::Dphi_lly_jj.addToStore(truth);
+  var::Zepp_lly.addToStore(truth);
+  var::pTt_lly.addToStore(truth);
+  var::pT_llyjj.addToStore(truth);
+  var::DRmin_y_ystar_2jets.addToStore(truth);
+  var::DRmin_y_leps_2jets.addToStore(truth);
+  return;
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::writeDetailed()

@@ -29,6 +29,12 @@ namespace var {
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
+  HG::Dphi_lly_jj Dphi_lly_jj;
+  HG::Zepp_lly Zepp_lly;
+  HG::pTt_lly pTt_lly;
+  HG::pT_llyjj pT_llyjj;
+  HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
+  HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
 }
 
 // A special implementation of calculateValue that references another "var"
