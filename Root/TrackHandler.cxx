@@ -156,6 +156,10 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
       // Add reco-level decorators
       TrkAcc::passBLayerRequirement(*container_tp) = ElectronSelectorHelpers::passBLayerRequirement(container_tp);
+      TrkAcc::pt(*container_tp) = container_tp->pt();
+
+      // Add default decorators
+      TrkAcc::mergedTrackParticleIndex(*container_tp) = -1;
 
       // Decorate MC particles with some truth information:
       if (HG::isMC()) {
@@ -297,12 +301,13 @@ void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
 
   if (pvx == nullptr) { TrkAcc::passIPCut(trk) = false; return; }
 
-  double z0 = trk.z0() + trk.vz() - pvx->z();
-  z0 = z0 * sin(trk.theta());
-  
-  TrkAcc::z0sinTheta(trk) = z0;
+  float z0 = trk.z0() + trk.vz() - pvx->z();
+  TrkAcc::z0pv(trk) = z0; // delta z0 with respect to pvx
 
-  if (fabs(z0) > m_z0Cut) { TrkAcc::passIPCut(trk) = false; }
+  float z0sinTheta = z0 * sin(trk.theta());
+  TrkAcc::z0sinTheta(trk) = z0sinTheta;
+
+  if (fabs(z0sinTheta) > m_z0Cut) { TrkAcc::passIPCut(trk) = false; }
 }
 void HG::TrackHandler::decorateTRT_PID(xAOD::TrackParticle& trk)
 {

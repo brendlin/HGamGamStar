@@ -405,6 +405,17 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
   // Also sets pointer to photon container, etc., which is used by var's
   setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, &m_selMET, &m_jvtJets);
 
+  // add lepton SF and trigger SF weight to total weight
+  if (HG::isMC()) {
+    if ( m_selElectrons.size()>=2||m_selMuons.size()>=2) var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(&m_selElectrons,&m_selMuons));
+    double myweight = var::weightSF();
+    static SG::AuxElement::Accessor<float> scaleFactor("scaleFactor");
+    if (m_selMuons.size()>=2) myweight *= scaleFactor(*m_selMuons[0])*scaleFactor(*m_selMuons[1]);
+    else if (m_selElectrons.size()>=2)  myweight *= scaleFactor(*m_selElectrons[0])*scaleFactor(*m_selElectrons[1]);
+    var::weightSF.setValue(myweight*var::weightTrigSF());
+    var::weight.setValue(weightInitial()*var::weightSF());
+  }
+
   if (not m_photonAllSys) {
     // Must come before writing out containers (Detailed mode decorates objects for studying)
     // Decorate MET information to HGamEventInfo
@@ -533,6 +544,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::N_mu   .addToStore(truth);
   var::N_e    .addToStore(truth);
   var::N_j_central  .addToStore(truth);
+  var::N_j_btag30   .addToStore(truth);
   if (!truth) {
     var::met_TST  .addToStore(truth);
     var::sumet_TST.addToStore(truth);

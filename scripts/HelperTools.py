@@ -121,7 +121,7 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
         nm = re.sub(r'r[0-9][0-9][0-9][0-9][0-9]_','',nm)
         return nm
 
-    merge_data15,merge_data16,merge_data17 = False,False,False
+    merge_data15,merge_data16,merge_data17,merge_data18 = False,False,False,False
 
     for sample in samplehandler :
 
@@ -134,8 +134,9 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
             merge_data15 = ('data15_13TeV' in name)
             merge_data16 = ('data16_13TeV' in name)
             merge_data17 = ('data17_13TeV' in name)
+            merge_data18 = ('data18_13TeV' in name)
 
-            if merge_data15 or merge_data16 or merge_data17 :
+            if merge_data15 or merge_data16 or merge_data17 or merge_data18 :
                 continue
 
         if gridtag and issubclass(type(sample),ROOT.SH.SampleGrid) :
@@ -157,6 +158,9 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
             elif 'r10201' in name :
                 name = name.replace('mc16_13TeV.','mc16d.')
                 name = removeRtags(name)
+            elif 'r10724' in name :
+                name = name.replace('mc16_13TeV.','mc16e.')
+                name = removeRtags(name)
             else :
                 name = name.replace('mc16_13TeV.','mc16.')
 
@@ -176,6 +180,7 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
         name = name.replace('_NNLOPS_nnlo_30_','_')
         name = name.replace('_A14NNPDF23LO_','_')
         name = name.replace('_UEEE5_CTEQ6L1_CT10ME_','_')
+        name = name.replace('_NNPDF30_AZNLOCTEQ6L1_','_')
 
         # Remove e-tags, s-tags, r-tags
         name = re.sub(r'e[0-9][0-9][0-9][0-9]_','',name)
@@ -211,5 +216,9 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
     if merge_data17 :
         samplehandler = mergeByRunRange(samplehandler,'data17_13TeV',tag,'periodAtoE',324320,334779)
         samplehandler = mergeByRunRange(samplehandler,'data17_13TeV',tag,'periodFtoK',334842,340453)
+
+    if merge_data18 :
+        samplehandler = mergeByRunRange(samplehandler,'data18_13TeV',tag,'periodAtoK',348197,357000)
+        samplehandler = mergeByRunRange(samplehandler,'data18_13TeV',tag,'periodLtoR',357001,364486)
 
     return samplehandler

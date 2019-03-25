@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+##
+## Usage: runJob_merge MyJob
+## (Note that if your jobs are not finished, it will wait patiently for them.)
+##
+
+# It is IMPORTANT to specify gErrorAbortLevel = kWarning, because
+# we MUST catch "Could not find branch named X" warnings.
+# Otherwise events will be dropped!
+
+root -q -l -n -b -x -e "EL::Driver::wait(\"${1}\");"
+echo merge script finished.

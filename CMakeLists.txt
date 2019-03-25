@@ -53,4 +53,8 @@ atlas_add_executable( runHggStarCutflowAndMxAOD util/runHggStarCutflowAndMxAOD.c
                       INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
                       LINK_LIBRARIES ${ROOT_LIBRARIES} HGamGamStarLib )
 
-atlas_install_scripts( scripts/runJob.py )
+atlas_install_scripts( scripts/runJob.py
+                       scripts/runJob_condor_resubmit_failed
+                       scripts/runJob_condor_resubmit_killed
+                       scripts/runJob_merge
+                       )

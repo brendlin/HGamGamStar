@@ -9,11 +9,15 @@ import HelperTools
 
 #-------------------------------------------------------------------------
 def Error(message) :
+    # Quick error function
+
     print 'Error: %s. Exiting.'%(message)
     sys.exit()
 
 #-------------------------------------------------------------------------
 def getOutputName(config) :
+    # If no --OutputDir is specified, make one with a timestamp and Alg name.
+    # If an OutputDir already exists, exit gracefully.
 
     if not config.isDefined('OutputDir') :
         ctime = datetime.datetime.now()
@@ -32,6 +36,14 @@ def getOutputName(config) :
 
 #-------------------------------------------------------------------------
 def getFilesFromCommandLine(Input,InputList) :
+    # Converts --Input or --InputList into a list of files or DSIDs.
+    # For individual files, the user specifies e.g.
+    #    --Input file0.root,file1.root
+    # or --InputList ListOfFiles.txt
+    # For DSIDs, the user specifies e.g.
+    #    --Input mc16_13TeV.999999.blah.r9364_p9999,mc16_13TeV.999998.blah.r9364_p9999
+    # or --InputList ListOfDSIDs.txt
+
     files = []
 
     if Input :
@@ -61,6 +73,9 @@ def getFilesFromCommandLine(Input,InputList) :
 
 #-------------------------------------------------------------------------
 def getNeventsFromInputList(sh_sample,InputList) :
+    # This function is for reading the info in the file saved in the
+    # GridDirectFiles/ directory. In those files, the number of events
+    # per input file is stored. This will read those numbers into the metadata.
 
     if not InputList :
         return
@@ -99,6 +114,8 @@ def getNeventsFromInputList(sh_sample,InputList) :
 
 #-------------------------------------------------------------------------
 def PrintSampleSummary(sh) :
+    # This is a quick function to print out a summary of a Sample
+    # before the job runs.
 
     for sample in sh :
 
@@ -155,6 +172,7 @@ def SetEventsPerWorker(sh,conf) :
 #-------------------------------------------------------------------------
 def SaveSamplesInGridDirectFile(sh) :
     # Save the files from GridDirect (to save time on the next run)
+    # The files are saved in the local directory GridDirectFiles/
 
     for sample in sh :
 
@@ -185,6 +203,7 @@ def SaveSamplesInGridDirectFile(sh) :
 
 #-------------------------------------------------------------------------
 def GetGridDirectResultFromFile(sh,ds) :
+    # Check the directory GridDirectFiles/ for a file containing the list of LOCALGROUPDISK files.
     # If a file was saved with the results from the previous GridDirect call, take it from that file.
 
     gd_name = 'GridDirectFiles/GridDirect_%s.txt'%(ds.rstrip('/'))
@@ -227,6 +246,7 @@ def SetGridEngineOpts(driver,conf) :
 
 #-------------------------------------------------------------------------
 def SetCondorOpts(driver,conf,options) :
+    # Set options for running on Condor.
 
     # Your system might need a specific 'shell init'
     driver.shellInit = ''
@@ -255,14 +275,19 @@ def SetCondorOpts(driver,conf,options) :
 
 #-------------------------------------------------------------------------
 def GetGridOptionsDouble() :
+    # These are the list of options (double) that one can specify in the command-line,
+    # with e.g. --nc_nJobs Blah
     return ['nc_nFiles','nc_nFilesPerJob','nc_nJobs']
 
 def GetGridOptionsString() :
+    # These are the list of options (strings) that one can specify in the command-line,
+    # with e.g. --nc_site Blah
     return ['nc_site','nc_excludedSite','nc_EventLoop_SubmitFlags',
             'nc_mergeOutput','nc_official','nc_voms','nc_destSE']
 
 #-------------------------------------------------------------------------
 def SetGridOpts(driver,conf) :
+    # Set options for running on the Grid.
 
     for opt in GetGridOptionsDouble() :
         if (conf.isDefined(opt)) :
@@ -334,6 +359,7 @@ def main (options,args) :
         msg += 'user.<UserName>'
         Error(msg)
 
+    # Grid running: Check for a ProdTag
     if options.Grid and not conf.isDefined('ProdTag') :
         msg = 'To submit to the grid, you MUST define a ProdTag of the form: '
         msg += 'ysy001'
@@ -379,7 +405,9 @@ def main (options,args) :
 
     myhandler = ROOT.SH.SampleHandler()
 
-    # Dataset stored on DESY-HH_LOCALGROUPDISK
+    ######
+    # GridDirect - Dataset stored on LOCALGROUPDISK
+    ######
     if options.GridDirect :
 
         if not os.getenv('RUCIO_HOME') :
@@ -429,7 +457,9 @@ def main (options,args) :
         # Set output dataset names
         myhandler = HelperTools.SetSampleNames(myhandler,tag=conf.getStr('ProdTag','').Data())
 
+    ######
     # Grid samples
+    ######
     elif options.Grid :
 
         griddsets = getFilesFromCommandLine(options.Input,options.InputList)
@@ -449,7 +479,9 @@ def main (options,args) :
         gridtag = conf.getStr('GridTag').Data()
         myhandler = HelperTools.SetSampleNames(myhandler,tag=tag,gridtag=gridtag)
 
+    ######
     # Local file(s), via Input or InputList (file or list of files)
+    ######
     else :
 
         sampleName = conf.getStr('SampleName','sample')
