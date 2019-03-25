@@ -692,6 +692,78 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class deltaR_Merged_y1 : public VarBase<float> {
+  public:
+  deltaR_Merged_y1() : VarBase("deltaR_Merged_y1") { m_default = -99; m_truthOnly = true; }
+    ~deltaR_Merged_y1() { }
+
+    float calculateValue(bool truth)
+    {
+      if (!truth) { return m_default; }
+
+      const xAOD::TruthParticleContainer childphot = *HG::ExtraHggStarObjects::getInstance()->getTruthHiggsPhotons();
+      const xAOD::IParticleContainer eles = *HG::VarHandler::getInstance()->getElectrons(/*reco*/);
+      if (childphot.size() != 1 || eles.size() != 1) return m_default;
+
+      return eles[0]->p4().DeltaR(childphot[0]->p4());
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaR_Merged_yStar : public VarBase<float> {
+  public:
+  deltaR_Merged_yStar() : VarBase("deltaR_Merged_yStar") { m_default = -99; m_truthOnly = true; }
+    ~deltaR_Merged_yStar() { }
+
+    float calculateValue(bool truth)
+    {
+      if (!truth) { return m_default; }
+
+      const xAOD::TruthParticleContainer childleps = *HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+      const xAOD::IParticleContainer eles = *HG::VarHandler::getInstance()->getElectrons(/*reco*/);
+      if (childleps.size() != 2 || eles.size() != 1) return m_default;
+
+      return eles[0]->p4().DeltaR(childleps[0]->p4() + childleps[1]->p4());
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaR_photon_yStar : public VarBase<float> {
+  public:
+  deltaR_photon_yStar() : VarBase("deltaR_photon_yStar") { m_default = -99; m_truthOnly = true; }
+    ~deltaR_photon_yStar() { }
+
+    float calculateValue(bool truth)
+    {
+      if (!truth) { return m_default; }
+
+      const xAOD::TruthParticleContainer childleps = *HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+      const xAOD::IParticleContainer gams = *HG::VarHandler::getInstance()->getPhotons(/*reco*/);
+      if (childleps.size() != 2 || gams.size() < 1) return m_default;
+
+      return gams[0]->p4().DeltaR(childleps[0]->p4() + childleps[1]->p4());
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaR_photon_y1 : public VarBase<float> {
+  public:
+  deltaR_photon_y1() : VarBase("deltaR_photon_y1") { m_default = -99; m_truthOnly = true; }
+    ~deltaR_photon_y1() { }
+
+    float calculateValue(bool truth)
+    {
+      if (!truth) { return m_default; }
+
+      const xAOD::TruthParticleContainer childphot = *HG::ExtraHggStarObjects::getInstance()->getTruthHiggsPhotons();
+      const xAOD::IParticleContainer gams = *HG::VarHandler::getInstance()->getPhotons(/*reco*/);
+      if (childphot.size() != 1 || gams.size() < 1) return m_default;
+
+      return gams[0]->p4().DeltaR(childphot[0]->p4());
+    }
+  };
+
+  //____________________________________________________________________________
 
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
                            double& return_mll,bool sortby_pt,double closest_to); // Z = 91188
@@ -733,6 +805,10 @@ namespace var {
   extern HG::pT_llyjj pT_llyjj;
   extern HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   extern HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
+  extern HG::deltaR_Merged_y1 deltaR_Merged_y1;
+  extern HG::deltaR_Merged_yStar deltaR_Merged_yStar;
+  extern HG::deltaR_photon_yStar deltaR_photon_yStar;
+  extern HG::deltaR_photon_y1 deltaR_photon_y1;
 }
 
 

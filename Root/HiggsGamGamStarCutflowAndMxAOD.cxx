@@ -928,6 +928,12 @@ void HiggsGamGamStarCutflowAndMxAOD::writeTruthOnlyVars()
   var::pT_yDirect_h1.addToStore(truth);
   var::m_yStar_undressed_h1.addToStore(truth);
 
+  // these are a mix of truth and reco, but for technical reasons need to be here
+  var::deltaR_Merged_y1.addToStore(truth);
+  var::deltaR_Merged_yStar.addToStore(truth);
+  var::deltaR_photon_yStar.addToStore(truth);
+  var::deltaR_photon_y1.addToStore(truth);
+
 }
 
 

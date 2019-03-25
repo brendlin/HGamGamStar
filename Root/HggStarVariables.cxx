@@ -35,6 +35,10 @@ namespace var {
   HG::pT_llyjj pT_llyjj;
   HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
+  HG::deltaR_Merged_y1 deltaR_Merged_y1;
+  HG::deltaR_Merged_yStar deltaR_Merged_yStar;
+  HG::deltaR_photon_yStar deltaR_photon_yStar;
+  HG::deltaR_photon_y1 deltaR_photon_y1;
 }
 
 // A special implementation of calculateValue that references another "var"
@@ -172,16 +176,20 @@ bool HG::isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl)
 
   if (ptcl == nullptr) { HG::fatal("isFromHiggs FATAL: particle is NULL"); }
 
+  // if it IS the Higgs, return true
   if (MCUtils::PID::isHiggs(ptcl->pdgId())) { return true; }
 
   if (ptcl->parent() == nullptr) { return false; }
 
+  // if direct parent is Higgs, return true
   if ( MCUtils::PID::isHiggs( ptcl->parent()->pdgId() ) ) { return true; }
+
+  // if direct parent isn't the same pdgid, return false
   if (ptcl->parent()->pdgId() != ptcl->pdgId()) { return false; }
 
+  // recurse
   return isFromHiggs(ptcl->parent());
 }
-
 
 bool HG::eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer * allParticles) {
 
