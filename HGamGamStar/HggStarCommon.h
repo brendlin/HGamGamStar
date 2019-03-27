@@ -2,6 +2,7 @@
 #define HGamGamStar_HggStarCommon_H
 
 #include "AthContainers/AuxElement.h"
+#include <vector>
 
 namespace HG {
 
@@ -27,7 +28,6 @@ namespace HG {
     static SG::AuxElement::Accessor<char>  passBLayerRequirement("passBLayerRequirement");
     static SG::AuxElement::Accessor<float> pt("pt");
     static SG::AuxElement::Accessor<int> mergedTrackParticleIndex("mergedTrackParticleIndex");
-
   } // namespace TrkAcc
 
   namespace EleAcc {
@@ -46,6 +46,18 @@ namespace HG {
     static SG::AuxElement::Accessor<float> dRExtrapTrk12("dRExtrapTrk12");
     // Locally calculated, using the last measurement, extrapolating to the calorimeter.
     static SG::AuxElement::Accessor<float> dRExtrapTrk12_LM("dRExtrapTrk12_LM");
+
+    //Tracks matched to the electron variables
+    static SG::AuxElement::Accessor< std::vector<int>   > passTTVA ("trackPassTTVA");
+    static SG::AuxElement::Accessor< std::vector<float> > trackPT ("trackPT");
+    static SG::AuxElement::Accessor< std::vector<float> > trackD0 ("trackD0");
+    static SG::AuxElement::Accessor< std::vector<float> > trackZ0 ("trackZ0");
+    static SG::AuxElement::Accessor< std::vector<int> >  trackNPix("trackNPix");
+    static SG::AuxElement::Accessor< std::vector<int> >  trackNSCT("trackNSCT");
+    static SG::AuxElement::Accessor< std::vector<int> >  trackPassBL("trackPassBL");
+    static SG::AuxElement::Accessor< std::vector<int> >  trackPdgID("trackPdgID");
+    static SG::AuxElement::Accessor< std::vector<int> >  trackBarcode("trackBarcode");
+
 
     // The "official" track-matching deltaR variables, e.g. propagating to the calorimeter from
     // the perigee (P) or last measurement (LM), to layer 1 (2)

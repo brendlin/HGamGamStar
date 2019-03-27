@@ -12,6 +12,8 @@ atlas_depends_on_subdirs( PUBLIC
                           PhysicsAnalysis/AnalysisCommon/FsrUtils
                           PhysicsAnalysis/HiggsPhys/Run2/HZZ/Tools/ZMassConstraint
                           PhysicsAnalysis/AnalysisCommon/IsolationSelection/IsolationSelection
+                          InnerDetector/InDetRecTools/InDetTrackSelectionTool
+                          InnerDetector/InDetRecTools/TrackVertexAssociationTool
                           )
 
 # Find the needed external(s):
@@ -21,6 +23,7 @@ find_package( ROOT COMPONENTS Core RIO Hist Tree )
 atlas_add_root_dictionary ( HGamGamStarLib HGamGamStarCintDict
                             ROOT_HEADERS HGamGamStar/ZyCutflowAndMxAOD.h
                             HGamGamStar/HiggsGamGamStarCutflowAndMxAOD.h
+                            HGamGamStar/MergedElectronMxAOD.h
                             HGamGamStar/TrackHandler.h
                             HGamGamStar/ExtraHggStarObjects.h
                             HGamGamStar/MergedElectronID.h
@@ -41,10 +44,13 @@ atlas_add_library( HGamGamStarLib
                    FsrUtilsLib
                    ZMassConstraintLib
                    IsolationSelectionLib
+                   InDetTrackSelectionToolLib
+                   TrackVertexAssociationToolLib
                    )
 
 # Install files from the package:
 atlas_install_data( data/* )
+
 
 # Install scripts from the package:
 # atlas_install_scripts( scripts/*.sh scripts/*.py )
