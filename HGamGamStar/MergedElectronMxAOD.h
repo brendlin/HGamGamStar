@@ -106,6 +106,11 @@ private:
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons);
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
 
+  HG::ChannelEnum truthClass();
+  HG::ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
+                                                      const xAOD::TrackParticle* trk1,
+                                                      const HG::TrackElectronMap& trkEleMap);
+
 
 private:
 #ifndef __CINT__

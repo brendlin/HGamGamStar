@@ -7,7 +7,7 @@
 #include "xAODBase/IParticleHelpers.h"
 #include "xAODTruth/TruthParticle.h"
 
-#include "HGamAnalysisFramework/HgammaUtils.h"
+#include "HGamAnalysisFramework/HGamCommon.h"
 #include "HGamGamStar/HggStarVariables.h"
 
 //____________________________________________________________________________

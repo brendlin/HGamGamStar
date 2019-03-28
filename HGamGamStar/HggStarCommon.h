@@ -48,15 +48,22 @@ namespace HG {
     static SG::AuxElement::Accessor<float> dRExtrapTrk12_LM("dRExtrapTrk12_LM");
 
     //Tracks matched to the electron variables
-    static SG::AuxElement::Accessor< std::vector<int>   > passTTVA ("trackPassTTVA");
+    static SG::AuxElement::Accessor< std::vector<int> >   passTTVA ("trackPassTTVA");
     static SG::AuxElement::Accessor< std::vector<float> > trackPT ("trackPT");
     static SG::AuxElement::Accessor< std::vector<float> > trackD0 ("trackD0");
     static SG::AuxElement::Accessor< std::vector<float> > trackZ0 ("trackZ0");
-    static SG::AuxElement::Accessor< std::vector<int> >  trackNPix("trackNPix");
-    static SG::AuxElement::Accessor< std::vector<int> >  trackNSCT("trackNSCT");
-    static SG::AuxElement::Accessor< std::vector<int> >  trackPassBL("trackPassBL");
-    static SG::AuxElement::Accessor< std::vector<int> >  trackPdgID("trackPdgID");
-    static SG::AuxElement::Accessor< std::vector<int> >  trackBarcode("trackBarcode");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackNPix("trackNPix");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackNSCT("trackNSCT");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackPassBL("trackPassBL");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackPdgID("trackPdgID");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackBarcode("trackBarcode");
+    static SG::AuxElement::Accessor< std::vector<float> > trackTruthE("trackTruthE");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackFromHiggs("trackFromHiggs");
+    static SG::AuxElement::Accessor< int >   isTrueMergedE("isTrueMergedE");
+    static SG::AuxElement::Accessor< float > trueEnergy("trueEnergy");
+    static SG::AuxElement::Accessor< float > trueMass("trueMass");
+    static SG::AuxElement::Accessor< float > trueEta("trueEta");
+    static SG::AuxElement::Accessor< float > truePhi("truePhi");
 
 
     // The "official" track-matching deltaR variables, e.g. propagating to the calorimeter from
