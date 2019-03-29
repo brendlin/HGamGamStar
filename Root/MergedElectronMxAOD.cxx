@@ -327,7 +327,7 @@ MergedElectronMxAOD::CutEnum MergedElectronMxAOD::cutflow()
       }
 
       int nSiHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfSiliconHitsAndDeadSensors(ele_tp);
-      if(nSiHitsPlusDeadSensors > 7)
+      if(nSiHitsPlusDeadSensors >= 7)
         ++nSiTrack;
     }
     //If 2 or more the electron is selected
