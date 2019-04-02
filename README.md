@@ -154,7 +154,6 @@ You can also specify any of the other normal grid running options via command-li
 Once the jobs above are complete, you can merge the files using the `EL::Driver::wait` command.
 The easiest way to do this is to launch this via command line, with:
 
-    cd MyOutputDir/..
     runJob_merge MyOutputDir
 
 Note that this will wait for all jobs to finish, and then merge the root files. The resulting MxAODs will be in the directory `MyOutputDir/data-MxAOD`.
