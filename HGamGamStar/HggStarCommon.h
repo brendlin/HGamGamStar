@@ -17,6 +17,8 @@ namespace HG {
   };
 
   static SG::AuxElement::Accessor<float> photonMass("photonMass");
+  static SG::AuxElement::Accessor<float> pionMass("pionMass");
+  static SG::AuxElement::Accessor<float> gammaEOverP0P1("gammaEOverP0P1");
 
   namespace TrkAcc {
     static SG::AuxElement::Accessor< std::vector<int> > MatchedElectrons("MatchedElectrons");

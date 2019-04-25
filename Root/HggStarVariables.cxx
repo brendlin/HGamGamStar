@@ -103,26 +103,31 @@ TLorentzVector HG::MergedEleTLV(const xAOD::TrackParticle& trk1, const xAOD::Tra
 
 void HG::decoratePhotonMass(xAOD::Photon& phot)
 {
+  HG::photonMass(phot) = -10000;
+  HG::pionMass(phot)   = -10000;
+
   if (phot.conversionType() == 0) {
-    HG::photonMass(phot) = -10000;
     return;
   }
 
   const xAOD::Vertex* vx = phot.vertex(0);
 
   if (!vx || vx->nTrackParticles() < 2) {
-    HG::photonMass(phot) = -10000;
     return;
   }
 
   const xAOD::TrackParticle *trk1 = vx->trackParticle(0);
   const xAOD::TrackParticle *trk2 = vx->trackParticle(1);
 
+  HG::pionMass(phot) = (trk1->p4() + trk2->p4()).M();
+
+  HG::gammaEOverP0P1(phot) = phot.e() / (trk1->p4().P() + trk2->p4().P());
+
   float scale_pt = phot.pt()/(trk1->pt() + trk2->pt());
   TLorentzVector tlv1;
   TLorentzVector tlv2;
-  tlv1.SetPtEtaPhiM( trk1->pt() * scale_pt, trk1->eta(), trk1->phi(), phot.m() ); // phot.m == 0.510998
-  tlv2.SetPtEtaPhiM( trk2->pt() * scale_pt, trk2->eta(), trk2->phi(), phot.m() );
+  tlv1.SetPtEtaPhiM( trk1->pt() * scale_pt, trk1->eta(), trk1->phi(), 0.510998 );
+  tlv2.SetPtEtaPhiM( trk2->pt() * scale_pt, trk2->eta(), trk2->phi(), 0.510998 );
 
   HG::photonMass(phot) = (tlv1 + tlv2).M();
   return;
