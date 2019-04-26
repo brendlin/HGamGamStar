@@ -456,6 +456,15 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class vertexTruthFitRadius : public VarBase<float> {
+    public:
+     vertexTruthFitRadius() : VarBase("vertexTruthFitRadius") { m_default = -99; }
+     ~vertexTruthFitRadius() { }
+  //              
+  };
+
+  
+  //____________________________________________________________________________
 
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
                            double& return_mll,bool sortby_pt,double closest_to); // Z = 91188
@@ -491,6 +500,7 @@ namespace var {
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
+  extern HG::vertexTruthFitRadius vertexTruthFitRadius;
 }
 
 

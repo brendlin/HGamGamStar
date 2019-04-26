@@ -29,6 +29,7 @@ namespace var {
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
+  HG::vertexTruthFitRadius vertexTruthFitRadius;
 }
 
 // A special implementation of calculateValue that references another "var"

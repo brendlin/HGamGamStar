@@ -38,7 +38,7 @@ EL::StatusCode HG::TrackHandler::initialize(Config &config)
 
   m_etaCut     = config.getNum(m_name + ".Selection.MaxAbsEta", 2.47);
   m_ptCut      = config.getNum(m_name + ".Selection.PtPreCutGeV", 0.3) * GeV;
-  
+
   m_d0BySigd0Cut = config.getNum("ElectronHandler.Selection.d0BySigd0Max", 5.0);
   m_z0Cut = config.getNum("ElectronHandler.Selection.z0Max", 0.5);
 
@@ -53,7 +53,7 @@ xAOD::TrackParticleContainer HG::TrackHandler::getCorrectedContainer()
 
   // sort the tracks
   shallowContainer.sort(comparePt);
-  
+
   for (auto trk : shallowContainer){
     decorateIPCut(*trk);
     decorateTRT_PID(*trk);
@@ -288,7 +288,7 @@ void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
   }
 
   double d0sig = xAOD::TrackingHelpers::d0significance(&trk, eventInfo->beamPosSigmaX(), eventInfo->beamPosSigmaY(), eventInfo->beamPosSigmaXY());
-  
+
   TrkAcc::d0significance(trk) = fabs(d0sig);
 
   if (fabs(d0sig) > m_d0BySigd0Cut) { TrkAcc::passIPCut(trk) = false; }
@@ -309,12 +309,18 @@ void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
 
   if (fabs(z0sinTheta) > m_z0Cut) { TrkAcc::passIPCut(trk) = false; }
 }
+
+float HG::TrackHandler::calculateTRT_PID(const xAOD::TrackParticle& trk) const
+{
+  float t_TRT_PID(0.0);
+  trk.summaryValue(t_TRT_PID, xAOD::eProbabilityHT);
+  const double tau = 15.0;
+  if (t_TRT_PID >= 1.0) t_TRT_PID = 1.0 - 1.0e-15;
+  if (t_TRT_PID < 1.0e-30) t_TRT_PID = 1.0e-30;
+  return  - log(1.0/t_TRT_PID - 1.0) / tau;
+}
+
 void HG::TrackHandler::decorateTRT_PID(xAOD::TrackParticle& trk)
 {
-    float t_TRT_PID(0.0);
-    trk.summaryValue(t_TRT_PID, xAOD::eProbabilityHT);
-    const double tau = 15.0;
-    if (t_TRT_PID >= 1.0) t_TRT_PID = 1.0 - 1.0e-15;
-    if (t_TRT_PID < 1.0e-30) t_TRT_PID = 1.0e-30;
-    TrkAcc::TRT_PID_trans(trk) = - log(1.0/t_TRT_PID - 1.0) / tau;
+  TrkAcc::TRT_PID_trans(trk) = calculateTRT_PID(trk);
 }

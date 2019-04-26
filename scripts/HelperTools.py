@@ -147,6 +147,9 @@ def SetSampleNames(samplehandler,tag='',gridtag='') :
         name = name.replace('.DAOD_HIGG1D2.','.')
         name = name.replace('.DAOD_HIGG1D1.','.')
 
+        name = name.replace('user.amorley.user.amorley','user.amorley')
+        name = name.replace('_EXT0','')
+
         # mc16a / mc16c / mc16d / mc16e
         if 'mc16_13TeV' in name :
             if 'r9364' in name :

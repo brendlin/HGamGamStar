@@ -50,8 +50,13 @@ namespace HG {
     //Tracks matched to the electron variables
     static SG::AuxElement::Accessor< std::vector<int> >   passTTVA ("trackPassTTVA");
     static SG::AuxElement::Accessor< std::vector<float> > trackPT ("trackPT");
+    static SG::AuxElement::Accessor< std::vector<float> > trackP ("trackP");
     static SG::AuxElement::Accessor< std::vector<float> > trackD0 ("trackD0");
+    static SG::AuxElement::Accessor< std::vector<float> > trackD0Sig ("trackD0Sig");
     static SG::AuxElement::Accessor< std::vector<float> > trackZ0 ("trackZ0");
+    static SG::AuxElement::Accessor< std::vector<float> > trackZ0Sig ("trackZ0Sig");
+    static SG::AuxElement::Accessor< std::vector<float> > trackTRT_PID_trans("trackTRT_PID_trans");
+
     static SG::AuxElement::Accessor< std::vector<int> >   trackNPix("trackNPix");
     static SG::AuxElement::Accessor< std::vector<int> >   trackNSCT("trackNSCT");
     static SG::AuxElement::Accessor< std::vector<int> >   trackPassBL("trackPassBL");
@@ -64,6 +69,14 @@ namespace HG {
     static SG::AuxElement::Accessor< float > trueMass("trueMass");
     static SG::AuxElement::Accessor< float > trueEta("trueEta");
     static SG::AuxElement::Accessor< float > truePhi("truePhi");
+    static SG::AuxElement::Accessor< float > standAloneVertexR("standAloneVertexR");
+    static SG::AuxElement::Accessor< int >   standAloneIndexA("standAloneIndexA");
+    static SG::AuxElement::Accessor< int >   standAloneIndexB("standAloneIndexB");
+
+
+    static SG::AuxElement::Accessor< int >   truthTrackIndexA("truthTrackIndexA");
+    static SG::AuxElement::Accessor< int >   truthTrackIndexB("truthTrackIndexB");
+
 
 
     // The "official" track-matching deltaR variables, e.g. propagating to the calorimeter from

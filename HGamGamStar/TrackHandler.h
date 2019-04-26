@@ -20,7 +20,7 @@ namespace HG {
 
     double  m_etaCut;
     double  m_ptCut;
-    
+
     double m_d0BySigd0Cut;
     double m_z0Cut;
 
@@ -52,6 +52,7 @@ namespace HG {
 
     bool passIPCuts(xAOD::TrackParticle& trk);
     void decorateIPCut(xAOD::TrackParticle& trk);
+    float calculateTRT_PID(const xAOD::TrackParticle& trk)const;
     void decorateTRT_PID(xAOD::TrackParticle& trk);
 
     size_t nMatchedElectrons(const xAOD::TrackParticle& trk) const;

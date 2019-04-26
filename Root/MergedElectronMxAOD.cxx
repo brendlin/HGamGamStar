@@ -5,6 +5,7 @@
 
 #include "HGamGamStar/ExtraHggStarObjects.h"
 #include "HGamGamStar/TrackElectronMap.h"
+#include "HGamGamStar/SimpleVertexFit.h"
 
 #include <InDetTrackSelectionTool/IInDetTrackSelectionTool.h>
 #include <TrackVertexAssociationTool/ITrackVertexAssociationTool.h>
@@ -14,6 +15,25 @@
 
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
 // #include "ZMassConstraint/ConstraintFit.h"
+
+//template <class T >
+std::pair<bool, int> findInVector(const DataVector<xAOD::IParticle>& vecOfElements,const xAOD::IParticle* element)
+{
+  std::pair<bool, int> result;
+
+  // Find given element in vector
+  result.first = false;
+  result.second = -1;
+  for(unsigned int i(0); i < vecOfElements.size();++i){
+    if(HG::MapHelpers::getTheOriginalPointer(*vecOfElements[i]) == element){
+      result.second = i;
+      result.first = true;
+    }
+  }
+
+  return result;
+}
+
 
 // this is needed to distribute the algorithm to the workers
 ClassImp(MergedElectronMxAOD)
@@ -229,6 +249,8 @@ EL::StatusCode MergedElectronMxAOD::execute()
     { HG::fatal("Can't access TruthParticleContainer"); }
     m_isNonHyyStarHiggs = HG::isMC() && HG::eventIsNonHyyStarHiggs(truthParticles);
     var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
+
+    HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(truthParticles);
   }
 
   // Set this for every event, just in case.
@@ -268,11 +290,14 @@ EL::StatusCode MergedElectronMxAOD::execute()
     }
   }
 
+
   if ( HG::isMC() && (m_saveTruthObjects || m_saveTruthVars))
     doTruth();
 
   // Write nominal EventInfo to output
   eventHandler()->writeEventInfo();
+
+
 
   // Save all information written to output
   event()->fill();
@@ -530,8 +555,8 @@ EL::StatusCode  MergedElectronMxAOD::doTruth()
   HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);
 
   // Set the truth decay product containers in ExtraHggStarObjects
-  const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
-  HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(all_particles);
+  //const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
+  //HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(all_particles);
 
   // Set the truth decay product containers in ExtraHggStarObjects
   var::yyStarChannel.setTruthValue( (int) HG::CHANNELUNKNOWN );
@@ -624,11 +649,53 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
   const xAOD::Vertex *primaryVertex = xAOD::PVHelpers::getHardestVertex(vertices);
 
 
+  xAOD::TrackParticleContainer all_tracks = trackHandler()->getCorrectedContainer();
+  // Truth-track map
+  HG::TruthTrackMap trkTruthMap = trackHandler()->MakeTruthTrackMapFromElectronContainer(electrons);
+  // Track-electron map
+  HG::TrackElectronMap trkEleMap;
+  trackHandler()->findTracksFromElectrons(all_tracks,electrons,trkEleMap,true);
+  // Get the track assoicated to the two leptons
+  const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+
+  std::vector<const xAOD::IParticle*> leptonTracks;
+  for(const auto& lepton: *childleps){
+    auto leptonTrack  =  HG::MapHelpers::getTrackMatchingTruth( lepton, trkTruthMap );
+    if(leptonTrack)
+      leptonTracks.push_back(leptonTrack);
+  }
+
+  for(const auto el: electrons){
+    HG::EleAcc::truthTrackIndexA(*el) = -999;
+    HG::EleAcc::truthTrackIndexB(*el) = -999;
+    int nfound =0 ;
+    for( unsigned int trk_i(0); trk_i < el->nTrackParticles(); ++trk_i)
+    {
+
+      auto found = std::find(leptonTracks.begin(),leptonTracks.end(),el->trackParticle(trk_i));
+      if( found !=leptonTracks.end() )
+      {
+        if(nfound==0)
+          HG::EleAcc::truthTrackIndexA(*el) = trk_i;
+        else if (nfound==1)
+          HG::EleAcc::truthTrackIndexB(*el) = trk_i;
+        else
+          std::cout << "Found too many tracks " <<  std::endl;
+        ++nfound;
+      }
+
+    }
+  }
+
   for (auto electron : electrons) {
     std::vector<int>   passTTVA;
     std::vector<float> trackPT;
     std::vector<float> trackD0;
     std::vector<float> trackZ0;
+    std::vector<float> trackP;
+    std::vector<float> trackD0Sig;
+    std::vector<float> trackZ0Sig;
+    std::vector<float> trackTRT_PID_trans;
     std::vector<int>   trackNPix;
     std::vector<int>   trackNSCT;
     std::vector<int>   trackPassBL;
@@ -646,13 +713,20 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     int nFromHiggs(0);
     TLorentzVector sumOfTruthProducts;
 
+    std::vector <const xAOD::TrackParticle*> trksToFit;
+    std::vector <int>  indexToFit;
 
     for( unsigned int trk_i(0); trk_i < electron->nTrackParticles(); ++trk_i){
       auto ele_tp =  electron->trackParticle(trk_i);
+
       passTTVA.push_back(0);
       trackPT.push_back(-999);
       trackD0.push_back(-999);
       trackZ0.push_back(-999);
+      trackP.push_back(-999);
+      trackD0Sig.push_back(-999);
+      trackZ0Sig.push_back(-999);
+      trackTRT_PID_trans.push_back(-999);
       trackNPix.push_back(-999);
       trackNSCT.push_back(-999);
       trackPassBL.push_back(-999);
@@ -661,13 +735,35 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       trackFromHiggs.push_back(0);
       if(!ele_tp)
         continue;
+
+      //auto cov = ele_tp->definingParametersCovMatrix();
+      //std::cout << cov << std::endl;
+
       trackPT.back() = ele_tp->pt();
       trackD0.back() = ele_tp->d0();
       trackZ0.back() = ele_tp->z0();
+      trackP.back() = 1./(ele_tp->qOverP());
+      trackD0Sig.back() = xAOD::TrackingHelpers::d0significance(ele_tp);
+      trackZ0Sig.back() = xAOD::TrackingHelpers::z0significance(ele_tp);
+      trackTRT_PID_trans.back() = trackHandler()->calculateTRT_PID(*ele_tp);
+
       trackNPix.back() = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(ele_tp);
       trackNSCT.back() = ElectronSelectorHelpers::numberOfSCTHitsAndDeadSensors(ele_tp);
       trackPassBL.back() = ElectronSelectorHelpers::passBLayerRequirement(ele_tp);
       const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*ele_tp);
+      if( trackNPix.back() + trackNSCT.back()  > 7 ){
+        if(trksToFit.size() == 0 )
+        {
+          trksToFit.push_back( ele_tp );
+          indexToFit.push_back( trk_i );
+        }else {
+          if(trksToFit.size() == 1 && trksToFit[0]->charge() !=ele_tp->charge()){
+            trksToFit.push_back( ele_tp );
+            indexToFit.push_back( trk_i );
+          }
+        }
+      }
+
       if(truthPart){
         trackPdgID.back()   =  truthPart->pdgId();
         trackBarcode.back() =  truthPart->barcode();
@@ -694,10 +790,31 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       passTTVA.back()=1;
     }
 
+    if( trksToFit.size() == 2 ){
+      SimpleVertexFit svf;
+      AmgVector(3) bs( -0.5,
+                     -0.5,
+                      0  );
+      Vertex vtx = svf.fitVertex( trksToFit, bs );
+
+      HG::EleAcc::standAloneVertexR(*electron) = vtx.position().perp();
+      HG::EleAcc::standAloneIndexA(*electron) = indexToFit[0];
+      HG::EleAcc::standAloneIndexB(*electron) = indexToFit[1];
+
+    } else {
+      HG::EleAcc::standAloneVertexR(*electron) = -999;
+      HG::EleAcc::standAloneIndexA(*electron) = -999;
+      HG::EleAcc::standAloneIndexB(*electron) = -999;
+    }
+
     HG::EleAcc::passTTVA(*electron)      = passTTVA;
     HG::EleAcc::trackPT(*electron)       = trackPT;
     HG::EleAcc::trackD0(*electron)       = trackD0;
     HG::EleAcc::trackZ0(*electron)       = trackZ0;
+    HG::EleAcc::trackP(*electron)        = trackP;
+    HG::EleAcc::trackD0Sig(*electron)    = trackD0Sig;
+    HG::EleAcc::trackZ0Sig(*electron)    = trackZ0Sig;
+    HG::EleAcc::trackTRT_PID_trans(*electron) = trackTRT_PID_trans;
     HG::EleAcc::trackNPix(*electron)     = trackNPix;
     HG::EleAcc::trackNSCT(*electron)     = trackNSCT;
     HG::EleAcc::trackPassBL(*electron)   = trackPassBL;
@@ -714,11 +831,11 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
 
 
     // NEED TO initialize merged electron ID variables here!
-    HG::EleAcc::EOverP0P1(*electron) = -999;
-    HG::EleAcc::dRExtrapTrk12(*electron) = -999;
-    HG::EleAcc::dRExtrapTrk12_LM(*electron) = -999;
+    HG::EleAcc::EOverP0P1(*electron)               = -999;
+    HG::EleAcc::dRExtrapTrk12(*electron)           = -999;
+    HG::EleAcc::dRExtrapTrk12_LM(*electron)        = -999;
     HG::EleAcc::delta_z0sinTheta_tracks(*electron) = -999;
-    HG::EleAcc::delta_z0_tracks(*electron) = -999;
+    HG::EleAcc::delta_z0_tracks(*electron)         = -999;
     // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_P_L1(*electron) = -999;
@@ -734,6 +851,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
 
   return;
 }
+
 
 
 HG::ChannelEnum MergedElectronMxAOD::truthClass()
@@ -778,7 +896,7 @@ HG::ChannelEnum MergedElectronMxAOD::truthClass()
 
   // Fill maps linking truth particle and track and track and electron
   // To be used to work out how many times a truth particle matches an electron candidate
-  const xAOD::ElectronContainer all_elecs = electronHandler()->getCorrectedContainer();
+  xAOD::ElectronContainer all_elecs = electronHandler()->getCorrectedContainer();
   xAOD::TrackParticleContainer all_tracks = trackHandler()->getCorrectedContainer();
 
   // Truth-track map
@@ -799,6 +917,15 @@ HG::ChannelEnum MergedElectronMxAOD::truthClass()
   // If the the two tracks are not reconstructed then the truth matching has failed, exit
   if(leptonTracks.size()!=2)
     return HG::FAILEDTRKELECTRON;
+
+
+  SimpleVertexFit svf;
+  AmgVector(3) bs( -0.5,
+                   -0.5,
+                   0  );
+  Vertex vtx = svf.fitVertex(leptonTracks, bs );
+  var::vertexTruthFitRadius.setValue( vtx.position().perp() );
+  var::vertexTruthFitRadius.setTruthValue( vtx.position().perp() );
 
 
   // Electron disambiguation is continued below in (reco-only) function
