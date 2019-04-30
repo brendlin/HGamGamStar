@@ -44,6 +44,10 @@ private:
 
   // whether to save fake photon combinations
   bool m_enableFakePhotons;
+
+  // option for different flavour lepton pair
+  bool m_checkemu;
+
   //If we have two good fakes then we need to pass the slimming
   bool m_goodFakeComb;
 
