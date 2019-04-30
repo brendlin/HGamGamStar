@@ -325,6 +325,41 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_emu : public VarBase<float> {
+  public:
+  m_emu() : VarBase("m_emu") { m_default = -99; }
+    ~m_emu() { }
+
+    float calculateValue(bool truth)
+    {
+      (void)truth;
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      if (mus->size() >= 1 && eles->size() >=1)
+        return ((*eles)[0]->p4() + (*mus)[0]->p4()).M();
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class m_emuy : public VarBase<float> {
+  public:
+  m_emuy() : VarBase("m_emuy") { m_default = -99; }
+    ~m_emuy() { }
+
+    float calculateValue(bool truth)
+    {
+      (void)truth;
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      if (mus->size() >= 1 && eles->size() >=1 && gams->size() >= 1)
+        return ((*eles)[0]->p4() + (*mus)[0]->p4() + (*gams)[0]->p4()).M();
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
   class pT_l1_h1 : public VarBase<float> {
   public:
   pT_l1_h1() : VarBase("pT_l1_h1") { m_default = -99; m_truthOnly = true; }
@@ -719,6 +754,8 @@ namespace var {
   extern HG::eta_y1 eta_y1;
   extern HG::pt_llyy pt_llyy;
   extern HG::m_llyy m_llyy;
+  extern HG::m_emu m_emu;
+  extern HG::m_emuy m_emuy;
   extern HG::pT_l1_h1 pT_l1_h1;
   extern HG::pT_l2_h1 pT_l2_h1;
   extern HG::deltaR_l1l2_h1 deltaR_l1l2_h1;

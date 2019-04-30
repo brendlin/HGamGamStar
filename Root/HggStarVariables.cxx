@@ -21,6 +21,8 @@ namespace var {
   HG::eta_y1 eta_y1;
   HG::pt_llyy pt_llyy;
   HG::m_llyy m_llyy;
+  HG::m_emu m_emu;
+  HG::m_emuy m_emuy;
   HG::pT_l1_h1 pT_l1_h1;
   HG::pT_l2_h1 pT_l2_h1;
   HG::deltaR_l1l2_h1 deltaR_l1l2_h1;
