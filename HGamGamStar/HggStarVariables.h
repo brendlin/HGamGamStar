@@ -85,7 +85,7 @@ namespace HG {
       return m_default;
     }
   };
-  
+
   //____________________________________________________________________________
   class deltaR_ll : public VarBase<float> {
   public:
@@ -325,6 +325,41 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_emu : public VarBase<float> {
+  public:
+  m_emu() : VarBase("m_emu") { m_default = -99; }
+    ~m_emu() { }
+
+    float calculateValue(bool truth)
+    {
+      (void)truth;
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      if (mus->size() >= 1 && eles->size() >=1)
+        return ((*eles)[0]->p4() + (*mus)[0]->p4()).M();
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class m_emuy : public VarBase<float> {
+  public:
+  m_emuy() : VarBase("m_emuy") { m_default = -99; }
+    ~m_emuy() { }
+
+    float calculateValue(bool truth)
+    {
+      (void)truth;
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      if (mus->size() >= 1 && eles->size() >=1 && gams->size() >= 1)
+        return ((*eles)[0]->p4() + (*mus)[0]->p4() + (*gams)[0]->p4()).M();
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
   class pT_l1_h1 : public VarBase<float> {
   public:
   pT_l1_h1() : VarBase("pT_l1_h1") { m_default = -99; m_truthOnly = true; }
@@ -460,10 +495,246 @@ namespace HG {
     public:
      vertexTruthFitRadius() : VarBase("vertexTruthFitRadius") { m_default = -99; }
      ~vertexTruthFitRadius() { }
-  //              
+  //
   };
 
-  
+
+
+  class Dphi_lly_jj : public VarBase<float> {
+  public:
+    Dphi_lly_jj() : VarBase("Dphi_lly_jj") { m_default = -99; }
+    ~Dphi_lly_jj() { }
+
+    float calculateValue(bool truth)
+    {
+      // Note - for truth, this is calculated from the raw containers, and not
+      // the true Higgs
+
+      const xAOD::IParticleContainer *js = HG::VarHandler::getInstance()->getJets(truth);
+
+      if (js->size() < 2)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+
+      if (gams->size() < 1) return m_default;
+
+      if (mus->size() >= 2){
+        return fabs(((*mus)[0]->p4() + (*mus)[1]->p4()).DeltaPhi((*js)[0]->p4() + (*js)[1]->p4()));
+      }
+      if (eles->size() >= 2){
+        return fabs(((*eles)[0]->p4() + (*eles)[1]->p4()).DeltaPhi((*js)[0]->p4() + (*js)[1]->p4()));
+      }
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
+        return fabs(((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).DeltaPhi((*js)[0]->p4() + (*js)[1]->p4()));
+      }
+      return m_default;
+    }
+
+  };
+
+  //____________________________________________________________________________
+  class Zepp_lly : public VarBase<float> {
+  public:
+    Zepp_lly() : VarBase("Zepp_lly") { m_default = -99; }
+    ~Zepp_lly() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *js = HG::VarHandler::getInstance()->getJets(truth);
+
+      if (js->size() < 2)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+
+      if (gams->size() < 1) return m_default;
+
+      if (mus->size() >= 2){
+        return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4()).Eta() - ((*js)[0]->eta() + (*js)[1]->eta()) / 2.0;
+      }
+      if (eles->size() >= 2){
+        return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).Eta() - ((*js)[0]->eta() + (*js)[1]->eta()) / 2.0;
+      }
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
+        return (*HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV() + (*gams)[0]->p4()).Eta() - ((*js)[0]->eta() + (*js)[1]->eta()) / 2.0;
+      }
+      return m_default;
+    }
+
+  };
+
+  //____________________________________________________________________________
+  class pTt_lly : public VarBase<float> {
+  public:
+    pTt_lly() : VarBase("pTt_lly") { m_default = -99; }
+    ~pTt_lly() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+
+      if (gams->size() < 1) return m_default;
+
+      TLorentzVector g1 = (*gams)[0]->p4();
+
+      if (mus->size() >= 2){
+        TLorentzVector g2 = (*mus)[0]->p4() + (*mus)[1]->p4();
+        return fabs(g1.Px() * g2.Py() - g2.Px() * g1.Py()) / (g1 - g2).Pt() * 2.0;
+      }
+      if (eles->size() >= 2){
+        TLorentzVector g2 = (*eles)[0]->p4() + (*eles)[1]->p4();
+        return fabs(g1.Px() * g2.Py() - g2.Px() * g1.Py()) / (g1 - g2).Pt() * 2.0;
+      }
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
+        TLorentzVector g2 = *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV();
+        return fabs(g1.Px() * g2.Py() - g2.Px() * g1.Py()) / (g1 - g2).Pt() * 2.0;
+      }
+      return m_default;
+    }
+
+  };
+
+  //____________________________________________________________________________
+  class pT_llyjj : public VarBase<float> {
+  public:
+    pT_llyjj() : VarBase("pT_llyjj") { m_default = -99; }
+    ~pT_llyjj() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *js = HG::VarHandler::getInstance()->getJets(truth);
+
+      if (js->size() < 2)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+
+      if (gams->size() < 1) return m_default;
+
+      if (mus->size() >= 2){
+        return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4() + (*js)[0]->p4() + (*js)[1]->p4()).Pt();
+      }
+      if (eles->size() >= 2){
+        return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4() + (*js)[0]->p4() + (*js)[1]->p4()).Pt();
+      }
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
+        return (*HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV() + (*gams)[0]->p4() + (*js)[0]->p4() + (*js)[1]->p4()).Pt();
+      }
+      return m_default;
+    }
+
+  };
+
+  //____________________________________________________________________________
+  class DRmin_y_ystar_2jets : public VarBase<float> {
+  public:
+    DRmin_y_ystar_2jets() : VarBase("DRmin_y_ystar_2jets") { m_default = -99; }
+    ~DRmin_y_ystar_2jets() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+      if (gams->size() < 1) { return m_default; }
+      if (jets->size() < 2) { return m_default; }
+
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+
+      double dR2min = 99.0, dR2 = 0.0;
+      TLorentzVector gamStar;
+
+      for (int j = 0; j < 2; j++) {
+        auto jet = jets->at(j) ;
+
+        // Check photon
+        dR2 = xAOD::P4Helpers::deltaR2(*jet, (*gams)[0]->eta(), (*gams)[0]->phi(), false);
+        if (dR2 < dR2min) { dR2min = dR2; }
+
+        // Check gammaStar
+        if (mus->size() >= 2){
+          gamStar = (*mus)[0]->p4() + (*mus)[1]->p4();
+          dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
+          if (dR2 < dR2min) { dR2min = dR2; }
+        }
+        if (eles->size() >= 2){
+          gamStar = (*eles)[0]->p4() + (*eles)[1]->p4();
+          dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
+          if (dR2 < dR2min) { dR2min = dR2; }
+        }
+        if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
+          gamStar = *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV();
+          dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
+          if (dR2 < dR2min) { dR2min = dR2; }
+        }
+      }
+
+      if (dR2min == 99) { return m_default; }
+
+      return sqrt(dR2min);
+    }
+  };
+
+  //____________________________________________________________________________
+  class DRmin_y_leps_2jets : public VarBase<float> {
+  public:
+    DRmin_y_leps_2jets() : VarBase("DRmin_y_leps_2jets") { m_default = -99; }
+    ~DRmin_y_leps_2jets() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+
+      if (gams->size() < 1) { return m_default; }
+      if (jets->size() < 2) { return m_default; }
+
+      double dR2min = 99.0, dR2 = 0.0;
+
+      for (int j = 0; j < 2; j++) {
+        auto jet = jets->at(j) ;
+
+        // Check photon
+        dR2 = xAOD::P4Helpers::deltaR2(*jet, (*gams)[0]->eta(), (*gams)[0]->phi(), false);
+        if (dR2 < dR2min) { dR2min = dR2; }
+
+        // Check gammaStar
+        if (mus->size() >= 2){
+          for (int k = 0; k < 2; k++) {
+            dR2 = xAOD::P4Helpers::deltaR2(*jet, (*mus)[k]->eta(), (*mus)[k]->phi(), false);
+            if (dR2 < dR2min) { dR2min = dR2; }
+          }
+        }
+        if (eles->size() >= 2){
+          for (int k = 0; k < 2; k++) {
+            dR2 = xAOD::P4Helpers::deltaR2(*jet, (*eles)[k]->eta(), (*eles)[k]->phi(), false);
+            if (dR2 < dR2min) { dR2min = dR2; }
+          }
+        }
+        if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
+          auto gamStar = *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV();
+          dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
+          if (dR2 < dR2min) { dR2min = dR2; }
+        }
+      }
+
+      if (dR2min == 99) { return m_default; }
+
+      return sqrt(dR2min);
+    }
+  };
+
   //____________________________________________________________________________
 
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
@@ -492,6 +763,8 @@ namespace var {
   extern HG::eta_y1 eta_y1;
   extern HG::pt_llyy pt_llyy;
   extern HG::m_llyy m_llyy;
+  extern HG::m_emu m_emu;
+  extern HG::m_emuy m_emuy;
   extern HG::pT_l1_h1 pT_l1_h1;
   extern HG::pT_l2_h1 pT_l2_h1;
   extern HG::deltaR_l1l2_h1 deltaR_l1l2_h1;
@@ -501,6 +774,12 @@ namespace var {
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
   extern HG::vertexTruthFitRadius vertexTruthFitRadius;
+  extern HG::Dphi_lly_jj Dphi_lly_jj;
+  extern HG::Zepp_lly Zepp_lly;
+  extern HG::pTt_lly pTt_lly;
+  extern HG::pT_llyjj pT_llyjj;
+  extern HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
+  extern HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
 }
 
 

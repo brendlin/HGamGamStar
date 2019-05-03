@@ -178,6 +178,7 @@ public:
   void writeDetailed();
 
   // Functions for writing variables (E.g. "writeBlahVars" is called by "writeBlah")
+  // Use these for variables for which a truth and a reco variable exists.
   void writePhotonAllSysVars(bool truth = false);
   void writeNominalAndSystematicVars(bool truth = false);
   void writeNominalOnlyVars(bool truth = false);

@@ -21,6 +21,8 @@ namespace var {
   HG::eta_y1 eta_y1;
   HG::pt_llyy pt_llyy;
   HG::m_llyy m_llyy;
+  HG::m_emu m_emu;
+  HG::m_emuy m_emuy;
   HG::pT_l1_h1 pT_l1_h1;
   HG::pT_l2_h1 pT_l2_h1;
   HG::deltaR_l1l2_h1 deltaR_l1l2_h1;
@@ -30,6 +32,12 @@ namespace var {
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
   HG::vertexTruthFitRadius vertexTruthFitRadius;
+  HG::Dphi_lly_jj Dphi_lly_jj;
+  HG::Zepp_lly Zepp_lly;
+  HG::pTt_lly pTt_lly;
+  HG::pT_llyjj pT_llyjj;
+  HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
+  HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
 }
 
 // A special implementation of calculateValue that references another "var"

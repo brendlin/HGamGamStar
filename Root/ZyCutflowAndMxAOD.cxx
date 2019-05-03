@@ -53,6 +53,9 @@ EL::StatusCode ZyCutflowAndMxAOD::createOutput()
   //Save fake photon combinations
   m_enableFakePhotons = HG::isMC() && config()->getBool("SaveFakePhotonCombinations", false);
 
+  //select opposite flavour instead of same flavour
+  m_checkemu = config()->getBool("SelectOppFlavour", false);
+
   // Whether we are running with yybb-tool in detailed mode.
   m_detailedHHyybb = config()->getBool("HHyybb.DetailedInfo",false);
 
@@ -243,7 +246,8 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   xAOD::MuonContainer dirtyMuons = muonHandler()->applySelection(m_allMuons);
 
   //==== CUT 5 : 2 SF leptons (before OR) ====
-  if (m_preSelElectrons.size() < 2 && dirtyMuons.size() < 2) return TWO_SF_LEPTONS;
+  if (m_checkemu && (m_preSelElectrons.size()==0 || dirtyMuons.size()==0)) return TWO_SF_LEPTONS;
+  else if (!m_checkemu && m_preSelElectrons.size() < 2 && dirtyMuons.size() < 2) return TWO_SF_LEPTONS;
 
   // Get object containers
   m_allPhotons = photonHandler()->getCorrectedContainer();
@@ -305,7 +309,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   // Select Z candidate after overlap removal.
   // choose leading OSSF pair
   int nOSSFpair=0;
-  if(m_preSelElectrons.size()>=2){
+  if(!m_checkemu && m_preSelElectrons.size()>=2){
     for(int ilepton1=0; ilepton1<((int)m_preSelElectrons.size()-1); ilepton1++){
       for(int ilepton2=ilepton1+1; ilepton2< (int)m_preSelElectrons.size(); ilepton2++){
         if(m_preSelElectrons[ilepton1]->charge() + m_preSelElectrons[ilepton2]->charge() == 0){
@@ -316,7 +320,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
       }
     }
   }
-  if(m_preSelMuons.size()>=2){
+  if(!m_checkemu && m_preSelMuons.size()>=2){
     for(int ilepton1=0; ilepton1<((int)m_preSelMuons.size()-1); ilepton1++){
       for(int ilepton2=ilepton1+1; ilepton2< (int)m_preSelMuons.size(); ilepton2++){
         if(m_preSelMuons[ilepton1]->charge() + m_preSelMuons[ilepton2]->charge() == 0){
@@ -327,7 +331,21 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
       }
     }
   }
-  if (nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
+  //emu pair
+  int nOSOFpair=0;
+  if(m_checkemu && m_preSelMuons.size()>=1 && m_preSelElectrons.size()>=1){
+    for(int ilepton1=0; ilepton1<((int)m_preSelMuons.size()); ilepton1++){
+      for(int ilepton2=0; ilepton2< (int)m_preSelElectrons.size(); ilepton2++){
+        if(m_preSelMuons[ilepton1]->charge() + m_preSelElectrons[ilepton2]->charge() == 0){
+           nOSOFpair++;
+           m_selMuons.push_back(m_preSelMuons[ilepton1]);
+           m_selElectrons.push_back(m_preSelElectrons[ilepton2]);
+        }
+      }
+    }
+  }
+  if (m_checkemu && nOSOFpair==0) return TWO_SF_LEPTONS_POSTOR;
+  else if (!m_checkemu && nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
 
   //==== CUT 9 : 1 photon after OR ====
   if (m_selPhotons.size()==0) return ONE_PHOTON_POSTOR;
@@ -349,10 +367,12 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   if (!((m_selElectrons.size()>0 && m_selElectrons[0]->pt()>30*HG::GeV) || (m_selMuons.size()>0 && m_selMuons[0]->pt()>30*HG::GeV))) return LEADLEPTON_PT;
 
   //==== CUT 12 : MLL>40 GeV ====
-  double m_ll=-99;
+  double m_ll=-99, m_emu=-99;
   if ( m_selElectrons.size()>=2 ) m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
   else if ( m_selMuons.size()>=2 ) m_ll = (m_selMuons[0]->p4() + m_selMuons[1]->p4()).M();
-  if ( m_ll<40*HG::GeV ) return MASSCUT;
+  if (m_selElectrons.size()>=1 && m_selMuons.size()>=1) m_emu = (m_selElectrons[0]->p4() + m_selMuons[0]->p4()).M();
+  if (m_checkemu && m_emu<40*HG::GeV ) return MASSCUT;
+  else if (!m_checkemu && m_ll<40*HG::GeV ) return MASSCUT;
 
   //==== CUT 13 : tight ID for photon ====
 
@@ -541,6 +561,8 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::m_llyy.addToStore(truth);
   var::deltaPhi_ll_y.addToStore(truth);
   var::eta_y1.addToStore(truth);
+  var::m_emu.addToStore(truth);
+  var::m_emuy.addToStore(truth);
   var::N_mu   .addToStore(truth);
   var::N_e    .addToStore(truth);
   var::N_j_central  .addToStore(truth);
@@ -559,7 +581,9 @@ void ZyCutflowAndMxAOD::writeNominalOnly()
   eventHandler()->storeVar<unsigned long long>("eventNumber", eventInfo()->eventNumber());
   eventHandler()->centralEventShapeDensity();
   eventHandler()->forwardEventShapeDensity();
-
+  if (HG::isMC()) truthHandler()->centralEventShapeDensity();
+  if (HG::isMC()) truthHandler()->forwardEventShapeDensity();
+ 
   // Additional cut flow granularity
   int Nloose = m_preSelPhotons.size();
   bool passTrigMatch = passTriggerMatch(&m_preSelPhotons);
