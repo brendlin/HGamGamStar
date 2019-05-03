@@ -699,6 +699,10 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     std::vector<int>   trackNPix;
     std::vector<int>   trackNSCT;
     std::vector<int>   trackPassBL;
+    std::vector<int>   trackSharedIBL;
+    std::vector<int>   trackSharedBL;
+    std::vector<int>   trackSplitIBL;
+    std::vector<int>   trackSplitBL;
     std::vector<int>   trackPdgID;
     std::vector<int>   trackBarcode;
     std::vector<float> trackTruthE;
@@ -730,6 +734,10 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       trackNPix.push_back(-999);
       trackNSCT.push_back(-999);
       trackPassBL.push_back(-999);
+      trackSharedIBL.push_back(-999);
+      trackSharedBL.push_back(-999);
+      trackSplitIBL.push_back(-999);
+      trackSplitBL.push_back(-999);
       trackPdgID.push_back(-999);
       trackBarcode.push_back(-999);
       trackFromHiggs.push_back(0);
@@ -746,6 +754,16 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       trackD0Sig.back() = xAOD::TrackingHelpers::d0significance(ele_tp);
       trackZ0Sig.back() = xAOD::TrackingHelpers::z0significance(ele_tp);
       trackTRT_PID_trans.back() = trackHandler()->calculateTRT_PID(*ele_tp);
+
+      uint8_t shared;
+      if( ele_tp->summaryValue(shared, xAOD::numberOfInnermostPixelLayerSharedHits) )
+        trackSharedIBL.back() = (int)shared;
+      if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerSharedHits) )
+        trackSharedBL.back() = (int)shared;
+      if( ele_tp->summaryValue(shared, xAOD::numberOfInnermostPixelLayerSplitHits ) )
+        trackSplitIBL.back() = (int)shared;
+      if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerSplitHits) )
+        trackSplitBL.back() = (int)shared;
 
       trackNPix.back() = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(ele_tp);
       trackNSCT.back() = ElectronSelectorHelpers::numberOfSCTHitsAndDeadSensors(ele_tp);
@@ -818,6 +836,10 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     HG::EleAcc::trackNPix(*electron)     = trackNPix;
     HG::EleAcc::trackNSCT(*electron)     = trackNSCT;
     HG::EleAcc::trackPassBL(*electron)   = trackPassBL;
+    HG::EleAcc::trackSharedBL(*electron)  = trackSharedBL;
+    HG::EleAcc::trackSharedIBL(*electron) = trackSharedIBL;
+    HG::EleAcc::trackSplitBL(*electron)   = trackSplitBL;
+    HG::EleAcc::trackSplitIBL(*electron)  = trackSplitIBL;
 
     HG::EleAcc::isTrueMergedE(*electron) = isTrueMergedE;
     HG::EleAcc::trueEnergy(*electron)    = trueEnergy;
@@ -1014,7 +1036,7 @@ HG::ChannelEnum MergedElectronMxAOD::ClassifyElectronChannelsByBestMatch(const x
   // If either are primary
   if( Trk0_PrimaryE > -1 || Trk1_PrimaryE > -1 ){
     const xAOD::Electron*  el = nullptr;
-    const xAOD::Electron*  elOther = nullptr;
+    //const xAOD::Electron*  elOther = nullptr;
     const xAOD::TrackParticle* otherTrack = nullptr;
     int nEleOther = 0;
     if( Trk0_PrimaryE >= 0 ){

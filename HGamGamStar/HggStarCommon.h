@@ -60,6 +60,10 @@ namespace HG {
     static SG::AuxElement::Accessor< std::vector<int> >   trackNPix("trackNPix");
     static SG::AuxElement::Accessor< std::vector<int> >   trackNSCT("trackNSCT");
     static SG::AuxElement::Accessor< std::vector<int> >   trackPassBL("trackPassBL");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackSplitBL("trackSplitBL");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackSharedBL("trackSharedBL");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackSplitIBL("trackSplitIBL");
+    static SG::AuxElement::Accessor< std::vector<int> >   trackSharedIBL("trackSharedIBL");
     static SG::AuxElement::Accessor< std::vector<int> >   trackPdgID("trackPdgID");
     static SG::AuxElement::Accessor< std::vector<int> >   trackBarcode("trackBarcode");
     static SG::AuxElement::Accessor< std::vector<float> > trackTruthE("trackTruthE");
