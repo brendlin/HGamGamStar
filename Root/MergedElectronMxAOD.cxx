@@ -699,6 +699,8 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     std::vector<int>   trackNPix;
     std::vector<int>   trackNSCT;
     std::vector<int>   trackPassBL;
+    std::vector<int>   trackNIBL;
+    std::vector<int>   trackNBL;
     std::vector<int>   trackSharedIBL;
     std::vector<int>   trackSharedBL;
     std::vector<int>   trackSplitIBL;
@@ -734,6 +736,8 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       trackNPix.push_back(-999);
       trackNSCT.push_back(-999);
       trackPassBL.push_back(-999);
+      trackNBL.push_back(-999);
+      trackNIBL.push_back(-999);
       trackSharedIBL.push_back(-999);
       trackSharedBL.push_back(-999);
       trackSplitIBL.push_back(-999);
@@ -764,6 +768,17 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
         trackSplitIBL.back() = (int)shared;
       if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerSplitHits) )
         trackSplitBL.back() = (int)shared;
+     
+      if( ele_tp->summaryValue(shared, xAOD::numberOfInnermostPixelLayerHits) )
+        trackNIBL.back() = (int)shared;
+      if( trackNIBL.back() == 0 && ele_tp->summaryValue(shared, xAOD::expectInnermostPixelLayerHit) )
+        trackNIBL.back() = -(int)shared;
+
+      if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerHits) )
+        trackNBL.back() = (int)shared;
+      if( trackNBL.back() == 0 && ele_tp->summaryValue(shared, xAOD::expectNextToInnermostPixelLayerHit) )
+        trackNBL.back() = -(int)shared;
+
 
       trackNPix.back() = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(ele_tp);
       trackNSCT.back() = ElectronSelectorHelpers::numberOfSCTHitsAndDeadSensors(ele_tp);
@@ -836,6 +851,8 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     HG::EleAcc::trackNPix(*electron)     = trackNPix;
     HG::EleAcc::trackNSCT(*electron)     = trackNSCT;
     HG::EleAcc::trackPassBL(*electron)   = trackPassBL;
+    HG::EleAcc::trackNBL(*electron)      = trackNBL;
+    HG::EleAcc::trackNIBL(*electron)     = trackNIBL;
     HG::EleAcc::trackSharedBL(*electron)  = trackSharedBL;
     HG::EleAcc::trackSharedIBL(*electron) = trackSharedIBL;
     HG::EleAcc::trackSplitBL(*electron)   = trackSplitBL;
