@@ -84,6 +84,65 @@ namespace HG {
     static SG::AuxElement::Accessor< int >   truthTrackIndexB("truthTrackIndexB");
 
 
+    static SG::AuxElement::Accessor< int >  vtxTrkIndex1("vtxTrkParticleIndex1");
+    static SG::AuxElement::Accessor< int >  vtxTrkIndex2("vtxTrkParticleIndex2");
+
+
+    static SG::AuxElement::Accessor< int >   vtxTrk1_d0("vtxTrk1_d0");
+    static SG::AuxElement::Accessor< float > vtxTrk1_PT ("vtxTrk1_PT");
+    static SG::AuxElement::Accessor< float > vtxTrk1_P ("vtxTrk1_P");
+    static SG::AuxElement::Accessor< float > vtxTrk1_D0 ("vtxTrk1_D0");
+    static SG::AuxElement::Accessor< float > vtxTrk1_D0Sig ("vtxTrk1_D0Sig");
+    static SG::AuxElement::Accessor< float > vtxTrk1_Z0 ("vtxTrk1_Z0");
+    static SG::AuxElement::Accessor< float > vtxTrk1_Z0Sig ("vtxTrk1_Z0Sig");
+    static SG::AuxElement::Accessor< float > vtxTrk1_TRT_PID_trans("vtxTrk1_TRT_PID_trans");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_NPix("vtxTrk1_NPix");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_NSCT("vtxTrk1_NSCT");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_PassBL("vtxTrk1_PassBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_NBL("vtxTrk1_NBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_NIBL("vtxTrk1_NIBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_SplitBL("vtxTrk1_SplitBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_SharedBL("vtxTrk1_SharedBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_SplitIBL("vtxTrk1_SplitIBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_SharedIBL("vtxTrk1_SharedIBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_PdgID("vtxTrk1_PdgID");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_Barcode("vtxTrk1_Barcode");
+    static SG::AuxElement::Accessor< float > vtxTrk1_TruthE("vtxTrk1_TruthE");
+    static SG::AuxElement::Accessor< int >   vtxTrk1_FromHiggs("vtxTrk1_FromHiggs");
+    static SG::AuxElement::Accessor< float > vtxTrk1_dEta2_P("vtxTrk1_dEta2_P");
+    static SG::AuxElement::Accessor< float > vtxTrk1_dEta1_P("vtxTrk1_dEta1_P");
+    static SG::AuxElement::Accessor< float > vtxTrk1_dPhi2_P("vtxTrk1_dPhi2_P");
+    static SG::AuxElement::Accessor< float > vtxTrk1_dEta2_LM("vtxTrk1_dEta2_LM");
+    static SG::AuxElement::Accessor< float > vtxTrk1_dEta1_LM("vtxTrk1_dEta1_LM");
+    static SG::AuxElement::Accessor< float > vtxTrk1_dPhi2_LM("vtxTrk1_dPhi2_LM");
+
+    static SG::AuxElement::Accessor< int >   vtxTrk2_d0("vtxTrk2_d0");
+    static SG::AuxElement::Accessor< float > vtxTrk2_PT ("vtxTrk2_PT");
+    static SG::AuxElement::Accessor< float > vtxTrk2_P ("vtxTrk2_P");
+    static SG::AuxElement::Accessor< float > vtxTrk2_D0 ("vtxTrk2_D0");
+    static SG::AuxElement::Accessor< float > vtxTrk2_D0Sig ("vtxTrk2_D0Sig");
+    static SG::AuxElement::Accessor< float > vtxTrk2_Z0 ("vtxTrk2_Z0");
+    static SG::AuxElement::Accessor< float > vtxTrk2_Z0Sig ("vtxTrk2_Z0Sig");
+    static SG::AuxElement::Accessor< float > vtxTrk2_TRT_PID_trans("vtxTrk2_TRT_PID_trans");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_NPix("vtxTrk2_NPix");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_NSCT("vtxTrk2_NSCT");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_PassBL("vtxTrk2_PassBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_NBL("vtxTrk2_NBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_NIBL("vtxTrk2_NIBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_SplitBL("vtxTrk2_SplitBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_SharedBL("vtxTrk2_SharedBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_SplitIBL("vtxTrk2_SplitIBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_SharedIBL("vtxTrk2_SharedIBL");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_PdgID("vtxTrk2_PdgID");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_Barcode("vtxTrk2_Barcode");
+    static SG::AuxElement::Accessor< float > vtxTrk2_TruthE("vtxTrk2_TruthE");
+    static SG::AuxElement::Accessor< int >   vtxTrk2_FromHiggs("vtxTrk2_FromHiggs");
+    static SG::AuxElement::Accessor< float > vtxTrk2_dEta2_P("vtxTrk2_dEta2_P");
+    static SG::AuxElement::Accessor< float > vtxTrk2_dEta1_P("vtxTrk2_dEta1_P");
+    static SG::AuxElement::Accessor< float > vtxTrk2_dPhi2_P("vtxTrk2_dPhi2_P");
+    static SG::AuxElement::Accessor< float > vtxTrk2_dEta2_LM("vtxTrk2_dEta2_LM");
+    static SG::AuxElement::Accessor< float > vtxTrk2_dEta1_LM("vtxTrk2_dEta1_LM");
+    static SG::AuxElement::Accessor< float > vtxTrk2_dPhi2_LM("vtxTrk2_dPhi2_LM");
 
     // The "official" track-matching deltaR variables, e.g. propagating to the calorimeter from
     // the perigee (P) or last measurement (LM), to layer 1 (2)

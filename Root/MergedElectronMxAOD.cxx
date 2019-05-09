@@ -768,7 +768,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
         trackSplitIBL.back() = (int)shared;
       if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerSplitHits) )
         trackSplitBL.back() = (int)shared;
-     
+
       if( ele_tp->summaryValue(shared, xAOD::numberOfInnermostPixelLayerHits) )
         trackNIBL.back() = (int)shared;
       if( trackNIBL.back() == 0 && ele_tp->summaryValue(shared, xAOD::expectInnermostPixelLayerHit) )
@@ -866,6 +866,67 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     HG::EleAcc::trackPdgID(*electron)    = trackPdgID;
     HG::EleAcc::trackBarcode(*electron)  = trackBarcode;
     HG::EleAcc::trackFromHiggs(*electron)= trackFromHiggs;
+
+
+    if( HG::EleAcc::vtxTrkIndex1.isAvailable(*electron) && HG::EleAcc::vtxTrkIndex2.isAvailable(*electron)  ){
+      int index = HG::EleAcc::vtxTrkIndex1(*electron);
+      bool hasIndex = index >= 0;
+      HG::EleAcc::vtxTrk1_PT (*electron)= hasIndex ? trackPT[index] : -999;
+      HG::EleAcc::vtxTrk1_P (*electron) = hasIndex ? trackP[index] : -999;
+      HG::EleAcc::vtxTrk1_D0 (*electron) = hasIndex ? trackD0[index] : -999;
+      HG::EleAcc::vtxTrk1_D0Sig (*electron) = hasIndex ? trackD0Sig[index] : -999;
+      HG::EleAcc::vtxTrk1_Z0 (*electron)  = hasIndex ? trackZ0[index] : -999;
+      HG::EleAcc::vtxTrk1_Z0Sig (*electron) = hasIndex ? trackD0Sig[index] : -999;
+      HG::EleAcc::vtxTrk1_TRT_PID_trans(*electron) = hasIndex ? trackTRT_PID_trans[index] : -999;
+      HG::EleAcc::vtxTrk1_NPix(*electron) = hasIndex ? trackNPix[index] : -999;
+      HG::EleAcc::vtxTrk1_NSCT(*electron) = hasIndex ? trackNSCT[index] : -999;
+      HG::EleAcc::vtxTrk1_PassBL(*electron) = hasIndex ? trackPassBL[index] : -999;
+      HG::EleAcc::vtxTrk1_NBL(*electron) = hasIndex ? trackNBL[index] : -999;
+      HG::EleAcc::vtxTrk1_NIBL(*electron) = hasIndex ? trackNIBL[index] : -999;
+      HG::EleAcc::vtxTrk1_SplitBL(*electron) = hasIndex ? trackSplitBL[index] : -999;
+      HG::EleAcc::vtxTrk1_SharedBL(*electron) = hasIndex ? trackSharedBL[index] : -999;
+      HG::EleAcc::vtxTrk1_SplitIBL(*electron) = hasIndex ? trackSplitIBL[index] : -999;
+      HG::EleAcc::vtxTrk1_SharedIBL(*electron) = hasIndex ? trackSharedIBL[index] : -999;
+      HG::EleAcc::vtxTrk1_PdgID(*electron) = hasIndex ? trackPdgID[index] : -999;
+      HG::EleAcc::vtxTrk1_Barcode(*electron) = hasIndex ? trackBarcode[index] : -999;
+      HG::EleAcc::vtxTrk1_TruthE(*electron) = hasIndex ? trackTruthE[index] : -999;
+      HG::EleAcc::vtxTrk1_FromHiggs(*electron) = hasIndex ? trackFromHiggs[index] : -999;
+      HG::EleAcc::vtxTrk1_dEta2_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dEta2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk1_dEta1_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dEta1(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk1_dPhi2_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dPhi2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk1_dEta2_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dEta2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk1_dEta1_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dEta1(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk1_dPhi2_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dPhi2(*electron)[index] : -999;
+
+      index = HG::EleAcc::vtxTrkIndex2(*electron);
+      hasIndex = index >= 0;
+      HG::EleAcc::vtxTrk2_PT (*electron)= hasIndex ? trackPT[index] : -999;
+      HG::EleAcc::vtxTrk2_P (*electron) = hasIndex ? trackP[index] : -999;
+      HG::EleAcc::vtxTrk2_D0 (*electron) = hasIndex ? trackD0[index] : -999;
+      HG::EleAcc::vtxTrk2_D0Sig (*electron) = hasIndex ? trackD0Sig[index] : -999;
+      HG::EleAcc::vtxTrk2_Z0 (*electron)  = hasIndex ? trackZ0[index] : -999;
+      HG::EleAcc::vtxTrk2_Z0Sig (*electron) = hasIndex ? trackD0Sig[index] : -999;
+      HG::EleAcc::vtxTrk2_TRT_PID_trans(*electron) = hasIndex ? trackTRT_PID_trans[index] : -999;
+      HG::EleAcc::vtxTrk2_NPix(*electron) = hasIndex ? trackNPix[index] : -999;
+      HG::EleAcc::vtxTrk2_NSCT(*electron) = hasIndex ? trackNSCT[index] : -999;
+      HG::EleAcc::vtxTrk2_PassBL(*electron) = hasIndex ? trackPassBL[index] : -999;
+      HG::EleAcc::vtxTrk2_NBL(*electron) = hasIndex ? trackNBL[index] : -999;
+      HG::EleAcc::vtxTrk2_NIBL(*electron) = hasIndex ? trackNIBL[index] : -999;
+      HG::EleAcc::vtxTrk2_SplitBL(*electron) = hasIndex ? trackSplitBL[index] : -999;
+      HG::EleAcc::vtxTrk2_SharedBL(*electron) = hasIndex ? trackSharedBL[index] : -999;
+      HG::EleAcc::vtxTrk2_SplitIBL(*electron) = hasIndex ? trackSplitIBL[index] : -999;
+      HG::EleAcc::vtxTrk2_SharedIBL(*electron) = hasIndex ? trackSharedIBL[index] : -999;
+      HG::EleAcc::vtxTrk2_PdgID(*electron) = hasIndex ? trackPdgID[index] : -999;
+      HG::EleAcc::vtxTrk2_Barcode(*electron) = hasIndex ? trackBarcode[index] : -999;
+      HG::EleAcc::vtxTrk2_TruthE(*electron) = hasIndex ? trackTruthE[index] : -999;
+      HG::EleAcc::vtxTrk2_FromHiggs(*electron) = hasIndex ? trackFromHiggs[index] : -999;
+      HG::EleAcc::vtxTrk2_dEta2_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dEta2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk2_dEta1_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dEta1(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk2_dPhi2_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dPhi2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk2_dEta2_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dEta2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk2_dEta1_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dEta1(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk2_dPhi2_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dPhi2(*electron)[index] : -999;
+    }
 
 
 
