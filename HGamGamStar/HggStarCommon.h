@@ -71,6 +71,7 @@ namespace HG {
     static SG::AuxElement::Accessor< std::vector<float> > trackTruthE("trackTruthE");
     static SG::AuxElement::Accessor< std::vector<int> >   trackFromHiggs("trackFromHiggs");
     static SG::AuxElement::Accessor< int >   isTrueMergedE("isTrueMergedE");
+    static SG::AuxElement::Accessor< int >   trueType("trueType");
     static SG::AuxElement::Accessor< float > trueEnergy("trueEnergy");
     static SG::AuxElement::Accessor< float > trueMass("trueMass");
     static SG::AuxElement::Accessor< float > trueEta("trueEta");
@@ -115,6 +116,8 @@ namespace HG {
     static SG::AuxElement::Accessor< float > vtxTrk1_dEta2_LM("vtxTrk1_dEta2_LM");
     static SG::AuxElement::Accessor< float > vtxTrk1_dEta1_LM("vtxTrk1_dEta1_LM");
     static SG::AuxElement::Accessor< float > vtxTrk1_dPhi2_LM("vtxTrk1_dPhi2_LM");
+    static SG::AuxElement::Accessor< float > vtxTrk1_dEta2_T("vtxTrk1_dEta2_T");
+    static SG::AuxElement::Accessor< float > vtxTrk1_dPhi2_T("vtxTrk1_dPhi2_T");
 
     static SG::AuxElement::Accessor< int >   vtxTrk2_d0("vtxTrk2_d0");
     static SG::AuxElement::Accessor< float > vtxTrk2_PT ("vtxTrk2_PT");
@@ -143,6 +146,8 @@ namespace HG {
     static SG::AuxElement::Accessor< float > vtxTrk2_dEta2_LM("vtxTrk2_dEta2_LM");
     static SG::AuxElement::Accessor< float > vtxTrk2_dEta1_LM("vtxTrk2_dEta1_LM");
     static SG::AuxElement::Accessor< float > vtxTrk2_dPhi2_LM("vtxTrk2_dPhi2_LM");
+    static SG::AuxElement::Accessor< float > vtxTrk2_dEta2_T("vtxTrk2_dEta2_T");
+    static SG::AuxElement::Accessor< float > vtxTrk2_dPhi2_T("vtxTrk2_dPhi2_T");
 
     // The "official" track-matching deltaR variables, e.g. propagating to the calorimeter from
     // the perigee (P) or last measurement (LM), to layer 1 (2)
@@ -166,6 +171,9 @@ namespace HG {
     static SG::AuxElement::Accessor<std::vector<float>> TrackMatchingLM_dEta2("TrackMatchingLM_dEta2");
     static SG::AuxElement::Accessor<std::vector<float>> TrackMatchingLM_dPhi1("TrackMatchingLM_dPhi1");
     static SG::AuxElement::Accessor<std::vector<float>> TrackMatchingLM_dPhi2("TrackMatchingLM_dPhi2");
+
+    static SG::AuxElement::Accessor<std::vector<float>> TrackMatchingTrue_dEta2("TrackMatchingTrue_dEta2");
+    static SG::AuxElement::Accessor<std::vector<float>> TrackMatchingTrue_dPhi2("TrackMatchingTrue_dPhi2");
 
     // Sub-cluster accessors
     static SG::AuxElement::Accessor<std::vector<float>> subCluster_E("SubCluster_E");

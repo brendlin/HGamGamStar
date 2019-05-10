@@ -36,6 +36,12 @@ private:
     DUPLICATE=3, GRL=4,  DQ=5, VERTEX=6, ELECTRON=7, PASSALL=8
   };
 
+  //
+  enum ElectronTruthType{
+    SignalGood, SignalCompromised, BackgroundHad, BackgroundHadHad, BackgroundElHad, BackgroundElEl
+  };
+
+
   // names of all cuts (do not includ "pass all")
   const std::vector<TString> s_cutDescs =  {"No duplicates","GRL","Detector DQ",
                                             "Has PV","Electron","Pass"};
@@ -110,6 +116,9 @@ private:
   HG::ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
                                                       const xAOD::TrackParticle* trk1,
                                                       const HG::TrackElectronMap& trkEleMap);
+
+  ElectronTruthType truthType( const xAOD::Electron* el ) const;
+
 
 
 private:

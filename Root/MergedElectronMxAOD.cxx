@@ -744,6 +744,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       trackSplitBL.push_back(-999);
       trackPdgID.push_back(-999);
       trackBarcode.push_back(-999);
+      trackTruthE.push_back(-999);
       trackFromHiggs.push_back(0);
       if(!ele_tp)
         continue;
@@ -800,6 +801,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       if(truthPart){
         trackPdgID.back()   =  truthPart->pdgId();
         trackBarcode.back() =  truthPart->barcode();
+        trackTruthE.back()  =  truthPart->p4().E();
         if(HG::isFromHiggs(truthPart))
         {
           trackFromHiggs.back() = 1;
@@ -897,6 +899,8 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       HG::EleAcc::vtxTrk1_dEta2_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dEta2(*electron)[index] : -999;
       HG::EleAcc::vtxTrk1_dEta1_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dEta1(*electron)[index] : -999;
       HG::EleAcc::vtxTrk1_dPhi2_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dPhi2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk1_dEta2_T(*electron) = hasIndex ? HG::EleAcc::TrackMatchingTrue_dEta2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk1_dPhi2_T(*electron) = hasIndex ? HG::EleAcc::TrackMatchingTrue_dPhi2(*electron)[index] : -999;
 
       index = HG::EleAcc::vtxTrkIndex2(*electron);
       hasIndex = index >= 0;
@@ -926,7 +930,12 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       HG::EleAcc::vtxTrk2_dEta2_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dEta2(*electron)[index] : -999;
       HG::EleAcc::vtxTrk2_dEta1_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dEta1(*electron)[index] : -999;
       HG::EleAcc::vtxTrk2_dPhi2_LM(*electron) = hasIndex ? HG::EleAcc::TrackMatchingLM_dPhi2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk2_dEta2_T(*electron) = hasIndex ? HG::EleAcc::TrackMatchingTrue_dEta2(*electron)[index] : -999;
+      HG::EleAcc::vtxTrk2_dPhi2_T(*electron) = hasIndex ? HG::EleAcc::TrackMatchingTrue_dPhi2(*electron)[index] : -999;
     }
+
+
+    HG::EleAcc::trueType(*electron) = truthType( electron );
 
 
 
@@ -950,6 +959,58 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
   }
 
   return;
+}
+
+
+MergedElectronMxAOD::ElectronTruthType MergedElectronMxAOD::truthType( const xAOD::Electron* el ) const
+{
+  size_t nTracks = HG::EleAcc::trackPassBL(*el).size();
+  int nEl(0);
+  int nTot(0);
+  int nHiggs(0);
+  for( size_t trk(0); trk <  nTracks; ++trk){
+    if( HG::EleAcc::trackFromHiggs(*el)[trk] > 0 )
+    {
+      if(nTot<2)
+        ++nHiggs;
+    }
+    if(HG::EleAcc::trackPassBL(*el)[trk]>0)
+    {
+      if(abs(HG::EleAcc::trackPdgID(*el)[trk]) == 11)
+      {
+        ++nEl;
+      }
+      ++nTot;
+    }
+  }
+
+  if(HG::EleAcc::isTrueMergedE(*el) )
+  {
+
+    int truthIndexA = HG::EleAcc::truthTrackIndexA(*el);
+    int truthIndexB = HG::EleAcc::truthTrackIndexB(*el);
+
+    if( truthIndexA != -999 &&  truthIndexB != -999 &&
+       abs(HG::EleAcc::trackPdgID(*el)[truthIndexA]) == 11 &&
+       abs(HG::EleAcc::trackPdgID(*el)[truthIndexB]) == 11 &&
+       abs(HG::EleAcc::trackBarcode(*el)[truthIndexA]) < 200000 &&
+       abs(HG::EleAcc::trackBarcode(*el)[truthIndexB]) < 200000 )
+    {
+      return SignalGood;
+    }
+    return SignalCompromised;
+  }
+
+  if(nTot == 1 && nEl==0)
+    return BackgroundHad;
+
+  if(nEl == 1)
+    return BackgroundElHad;
+
+  if(nEl >= 2)
+    return BackgroundElEl;
+
+  return BackgroundHadHad;
 }
 
 
