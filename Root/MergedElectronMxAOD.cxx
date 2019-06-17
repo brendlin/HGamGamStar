@@ -713,7 +713,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     if(photon)
     {
       //std::cout << "Photon created " <<  std::endl;
-      photonHandler()->getCalibartionAndSmealingTool()->applyCorrection(*photon, *eventInfo());
+      photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       //std::cout << "Photon calibrated " <<  std::endl;
 
       HG::EleAcc::calibratedPhotonEnergy(*el) = photon->e();
