@@ -119,6 +119,7 @@ private:
 
   ElectronTruthType truthType( const xAOD::Electron* el ) const;
 
+  xAOD::Photon*  createPhotonFromElectron (const xAOD::Electron* el, xAOD::VertexContainer* vertexContainer) const;
 
 
 private:

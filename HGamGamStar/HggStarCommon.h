@@ -80,6 +80,11 @@ namespace HG {
     static SG::AuxElement::Accessor< int >   standAloneIndexA("standAloneIndexA");
     static SG::AuxElement::Accessor< int >   standAloneIndexB("standAloneIndexB");
 
+    static SG::AuxElement::Accessor< float > ambiguousPhotonR("ambiguousPhotonR");
+    static SG::AuxElement::Accessor< int >   ambiguousPhotonCT("ambiguousPhotonCT");
+    static SG::AuxElement::Accessor< float > calibratedPhotonEnergy("calibratedPhotonEnergy");
+    static SG::AuxElement::Accessor< float > calibratedElectronEnergy("calibratedElectronEnergy");
+
 
     static SG::AuxElement::Accessor< int >   truthTrackIndexA("truthTrackIndexA");
     static SG::AuxElement::Accessor< int >   truthTrackIndexB("truthTrackIndexB");
