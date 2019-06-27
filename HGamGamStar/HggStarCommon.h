@@ -83,6 +83,10 @@ namespace HG {
     static SG::AuxElement::Accessor< float > ambiguousPhotonR("ambiguousPhotonR");
     static SG::AuxElement::Accessor< int >   ambiguousPhotonCT("ambiguousPhotonCT");
     static SG::AuxElement::Accessor< float > calibratedPhotonEnergy("calibratedPhotonEnergy");
+    static SG::AuxElement::Accessor< float > calibratedPhotonEnergy50("calibratedPhotonEnergy50");
+    static SG::AuxElement::Accessor< float > calibratedPhotonEnergy100("calibratedPhotonEnergy100");
+    static SG::AuxElement::Accessor< float > calibratedPhotonEnergy200("calibratedPhotonEnergy200");
+    static SG::AuxElement::Accessor< float > calibratedPhotonEnergy400("calibratedPhotonEnergy400");
     static SG::AuxElement::Accessor< float > calibratedElectronEnergy("calibratedElectronEnergy");
 
 
