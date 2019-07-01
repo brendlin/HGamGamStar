@@ -10,6 +10,7 @@
 #include "HGamGamStar/HggStarVariables.h"
 #include "HGamGamStar/TrackHandler.h"
 #include "HGamGamStar/MergedElectronID.h"
+#include "HGamGamStar/MergedElectronID_v2.h"
 
 #include "IsolationSelection/IsolationCloseByCorrectionTool.h"
 #include "IsolationSelection/IsolationSelectionTool.h"
@@ -43,7 +44,7 @@ private:
   TString m_photonContainerName, m_jetContainerName, m_elecContainerName, m_muonContainerName, m_trackContainerName;
   TString m_photonTruthContainerName, m_jetTruthContainerName, m_elecTruthContainerName, m_muonTruthContainerName;
   TString m_evtInfoName, m_truthEvtsName;
-  
+
   HG::Iso::IsolationType m_eleMergedIsoWP;
   HG::Iso::IsolationType m_eleResolvedIsoWP;
   HG::Iso::IsolationType m_muonIsoWP;
@@ -82,7 +83,7 @@ private:
   xAOD::MuonContainer m_allMuons; //!
   xAOD::MuonContainer m_selMuons; //!
   xAOD::MuonContainer m_preSelMuons; //!
-  
+
   std::map<HG::Iso::IsolationType, CP::IsolationCloseByCorrectionTool*> m_isoCloseByTools_Ele; //!
   std::map<HG::Iso::IsolationType, CP::IsolationCloseByCorrectionTool*> m_isoCloseByTools_Muon; //!
 
@@ -115,7 +116,7 @@ private:
   CutEnum cutflow();
   EL::StatusCode doReco(bool isSys = false);
   EL::StatusCode doTruth();
-  
+
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
 
@@ -144,6 +145,7 @@ private:
 #ifndef __CINT__
   HG::TrackHandler *m_trackHandler; //!
   HG::MergedElectronID * m_mergedElectronID; //!
+  HG::MergedElectronID_v2 * m_mergedElectronID_v2; //!
 #endif // __CINT__
 
 protected:

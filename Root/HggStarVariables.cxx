@@ -47,7 +47,7 @@ float HG::m_lly_gev::calculateValue(bool truth)
   return var::m_lly()/1000.;
 }
 
-float HG::Resolved_dRExtrapTrk12::calculateValue(bool truth)
+float HG::Resolved_dRExtrapTrk12::calculateValue(bool/* truth*/)
 {
   if (var::yyStarChannel() != ChannelEnum::RESOLVED_DIELECTRON) return m_default;
   float deta_e1e2 = var::Resolved_deltaEta2();

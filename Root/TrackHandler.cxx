@@ -174,6 +174,10 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
   // std::cout << "Final size of container: " << container.size() << std::endl;
   // std::cout << "Final size of selected: " << selected.size() << std::endl;
 
+  for (xAOD::TrackParticle* trk : selected){
+    decorateIPCut(*trk);
+    decorateTRT_PID(*trk);
+  }
   return selected;
 
 }
@@ -278,18 +282,26 @@ bool HG::TrackHandler::passIPCuts(xAOD::TrackParticle& trk)
 }
 
 //______________________________________________________________________________
-void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
+float HG::TrackHandler::calculateIPSig(const xAOD::TrackParticle& trk) const
 {
-  TrkAcc::passIPCut(trk) = true;
   const xAOD::EventInfo *eventInfo = 0;
 
   if (m_event->retrieve(eventInfo, "EventInfo").isFailure()) {
     fatal("Cannot access EventInfo");
   }
 
-  double d0sig = xAOD::TrackingHelpers::d0significance(&trk, eventInfo->beamPosSigmaX(), eventInfo->beamPosSigmaY(), eventInfo->beamPosSigmaXY());
+  float d0sig = xAOD::TrackingHelpers::d0significance(&trk, eventInfo->beamPosSigmaX(), eventInfo->beamPosSigmaY(), eventInfo->beamPosSigmaXY());
+  return d0sig;
+}
 
-  TrkAcc::d0significance(trk) = fabs(d0sig);
+//______________________________________________________________________________
+void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
+{
+  TrkAcc::passIPCut(trk) = true;
+
+  float d0sig  = calculateIPSig(trk);
+   
+  TrkAcc::d0significance(trk) = d0sig;
 
   if (fabs(d0sig) > m_d0BySigd0Cut) { TrkAcc::passIPCut(trk) = false; }
 

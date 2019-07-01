@@ -5,6 +5,8 @@
 
 #include "HGamGamStar/ExtraHggStarObjects.h"
 #include "HGamGamStar/TrackElectronMap.h"
+#include "xAODTracking/VertexAuxContainer.h"
+
 
 
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
@@ -38,6 +40,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 
   m_mergedElectronID = new HG::MergedElectronID();
   ANA_CHECK(m_mergedElectronID->initialize(*config()));
+
+  m_mergedElectronID_v2 = new HG::MergedElectronID_v2();
+  ANA_CHECK(m_mergedElectronID_v2->initialize(*config()));
 
   // We will evaluate the close-by correction for every working point, provided that it falls
   // into the Resovled category.
@@ -395,12 +400,12 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronChannelsByBestMa
   int Trk0_PrimaryE(-1);
   for( unsigned int i(0); i < Trk0_TrackNo.size(); ++i){
     if( Trk0_TrackNo[i] == 0 ){
-      // If the track is the primary track for multiple electrons 
+      // If the track is the primary track for multiple electrons
       // choose the one with higher pT
       if( Trk0_PrimaryE > -1 ){
         if( Trk0_Electrons[i]->pt() > Trk0_Electrons[Trk0_PrimaryE]->pt() )
-          Trk0_PrimaryE = i; 
-      }else{ 
+          Trk0_PrimaryE = i;
+      }else{
         Trk0_PrimaryE = i;
       }
     }
@@ -412,12 +417,12 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronChannelsByBestMa
   int Trk1_PrimaryE(-1);
   for( unsigned int i(0); i < Trk1_TrackNo.size(); ++i){
     if( Trk1_TrackNo[i] == 0 ){
-      // If the track is the primary track for multiple electrons 
+      // If the track is the primary track for multiple electrons
       // choose the one with higher pT
       if( Trk1_PrimaryE > -1 ){
         if( Trk1_Electrons[i]->pt() > Trk1_Electrons[Trk1_PrimaryE]->pt() )
-          Trk1_PrimaryE = i; 
-      }else{ 
+          Trk1_PrimaryE = i;
+      }else{
         Trk1_PrimaryE = i;
       }
     }
@@ -669,7 +674,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     }
 
   }
-  
+
   decorateCorrectedIsoCut(m_selElectrons, m_selMuons);
 
   m_allJets = jetHandler()->getCorrectedContainer();
@@ -1035,7 +1040,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
 
   var::yyStarChannel.setTruthValue( (int) truthClass() );
 
- 
+
 
 
   // Adds event-level variables to TStore (this time using truth containers)
@@ -1047,10 +1052,10 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
     writeTruthOnlyVars();
     if (m_saveDetailed)
     { writeDetailedVars(truth); }
-    //   
+    //
     const xAOD::TruthParticleContainer *higgsLeptons = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
     const xAOD::TruthParticleContainer *higgsPhotons = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsPhotons();
-    
+
     bool isFiducial = true;
     int nFidLeptons=0;
     int nFidPhotons=0;
@@ -1062,7 +1067,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
         if( abs(part->pdgId()) == 11 ){
           if( part->pt() < 4.5 * HG::GeV )
             continue;
-          if( fabs(part->eta() ) < 2.5 )  
+          if( fabs(part->eta() ) < 2.5 )
             continue;
         } else if ( abs(part->pdgId()) == 13 ){
           if( part->pt() < 3. * HG::GeV )
@@ -1074,16 +1079,16 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
         }
         ++nFidLeptons;
       }
-      
+
       for( const auto& part: *higgsPhotons){
         if( part->pt() < 30. * HG::GeV  )
           continue;
-        if( fabs(part->eta() ) < 2.37 )  
+        if( fabs(part->eta() ) < 2.37 )
           continue;
         ++nFidPhotons;
       }
     }
-  
+
     if( nFidPhotons !=1 || nFidLeptons !=2 ){
       isFiducial = false;
     }
@@ -1155,9 +1160,9 @@ void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronConta
       (*dec.second)(*electron) = electronHandler()->passIsoCut(electron,dec.first);
     }
   }
-    
+
   if(var::yyStarChannel()==HG::DIMUON){
-    std::vector<const xAOD::IParticle*> muonsVec; 
+    std::vector<const xAOD::IParticle*> muonsVec;
     for(auto muon: muons) muonsVec.push_back((const xAOD::IParticle*) muon);
     for(auto muon: muons)
     {
@@ -1301,6 +1306,12 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
 
 void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
 
+  xAOD::VertexContainer* outVerticies = new xAOD::VertexContainer();
+  xAOD::VertexAuxContainer* outVerticiesAux = new xAOD::VertexAuxContainer();
+  outVerticies->setStore(outVerticiesAux);
+  eventHandler()->evtStore()->record( outVerticies, "TempVerticies" );
+  eventHandler()->evtStore()->record( outVerticiesAux, "TempVerticiesAux." );
+
   for (auto electron : electrons) {
 
     // NEED TO initialize merged electron ID variables here!
@@ -1319,6 +1330,32 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::EleAcc::RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
       electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
       electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+
+
+
+    int index1 = HG::EleAcc::vtxTrkIndex1(*electron);
+    int index2 = HG::EleAcc::vtxTrkIndex2(*electron);
+    HG::EleAcc::vtxTrk1_TRT_PID_trans(*electron) = index1<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index1)) ;
+    HG::EleAcc::vtxTrk2_TRT_PID_trans(*electron) = index2<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index2)) ;
+    HG::EleAcc::vtxTrk1_D0Sig(*electron) = index1<0 ? -999 : trackHandler()->calculateIPSig(*electron->trackParticle(index1)) ;
+    HG::EleAcc::vtxTrk2_D0Sig(*electron) = index2<0 ? -999 : trackHandler()->calculateIPSig(*electron->trackParticle(index2)) ;
+
+    xAOD::Photon* photon = HG::createPhotonFromElectron(electron);
+
+
+    if(photon)
+    {
+      HG::setPhotonConversionVertex( electron, photon, 20, outVerticies);
+      HG::EleAcc::calibratedPhotonEnergy(*electron) = photon->e();
+
+      delete photon;
+    } else {
+      HG::EleAcc::calibratedPhotonEnergy(*electron) = -999;
+    }
+
+    HG::EleAcc::passPID(*electron) =  index2>0 ? m_mergedElectronID->passPIDCut(*electron,*electron->trackParticle(index1),*electron->trackParticle(index2)) : false;
+    HG::EleAcc::passTMVAPID(*electron) = m_mergedElectronID_v2->passPIDCut(*electron);
+
 
   }
 

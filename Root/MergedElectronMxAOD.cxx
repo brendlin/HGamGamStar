@@ -707,34 +707,32 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
 
 
 
-    xAOD::Photon* photon = createPhotonFromElectron(el);
+    xAOD::Photon* photon = HG::createPhotonFromElectron(el);
 
 
     if(photon)
     {
-      setPhotonConversionVertex( el, photon, 20, outVerticies);
+      HG::setPhotonConversionVertex( el, photon, 20, outVerticies);
       //std::cout << "Photon created " <<  std::endl;
       photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       //std::cout << "Photon calibrated " <<  std::endl;
       HG::EleAcc::calibratedPhotonEnergy(*el) = photon->e();
 
-      setPhotonConversionVertex( el, photon, 50, outVerticies);
+      HG::setPhotonConversionVertex( el, photon, 50, outVerticies);
       photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       HG::EleAcc::calibratedPhotonEnergy50(*el) = photon->e();
 
-      setPhotonConversionVertex( el, photon, 100, outVerticies);
+      HG::setPhotonConversionVertex( el, photon, 100, outVerticies);
       photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       HG::EleAcc::calibratedPhotonEnergy100(*el) = photon->e();
 
-      setPhotonConversionVertex( el, photon, 200, outVerticies);
+      HG::setPhotonConversionVertex( el, photon, 200, outVerticies);
       photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       HG::EleAcc::calibratedPhotonEnergy200(*el) = photon->e();
 
-      setPhotonConversionVertex( el, photon, 400, outVerticies);
+      HG::setPhotonConversionVertex( el, photon, 400, outVerticies);
       photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       HG::EleAcc::calibratedPhotonEnergy400(*el) = photon->e();
-
-
     } else {
       HG::EleAcc::calibratedPhotonEnergy(*el) = -999;
       HG::EleAcc::calibratedPhotonEnergy50(*el) = -999;
@@ -1272,119 +1270,4 @@ HG::ChannelEnum MergedElectronMxAOD::ClassifyElectronChannelsByBestMatch(const x
 
 
   return HG::AMBIGUOUS_DIELECTRON;
-}
-
-
-
-xAOD::Photon*  MergedElectronMxAOD::createPhotonFromElectron (const xAOD::Electron* el) const
-{
-
-
-  int index1 = -999;
-  int index2 = -999;
-
-  if( HG::EleAcc::vtxTrkIndex1.isAvailable(*el) && HG::EleAcc::vtxTrkIndex2.isAvailable(*el)  ){
-    index1 = HG::EleAcc::vtxTrkIndex1(*el);
-    index2 = HG::EleAcc::vtxTrkIndex2(*el);
-  }
-  if(index1 < 0 || index2 < 0 ){
-    return 0;
-  }
-  //std::cout << "Index 1/2  " << index1  << " " << index2 << std::endl;
-
-  xAOD::Photon* photon = new xAOD::Photon();
-  photon->makePrivateStore();
-
-  if( el->ambiguousObject() ){
-    //std::cout << "Copying photon" <<  std::endl;
-    auto ambiPhoton = dynamic_cast<const xAOD::Photon*>( el->ambiguousObject() );
-    photon->Photon_v1::operator=(*ambiPhoton);
-    photon->setCaloClusterLinks(el->caloClusterLinks());
-  } else {
-    //std::cout << "Creating photon" <<  std::endl;
-    photon = new xAOD::Photon();
-    photon->Egamma_v1::operator=(*el);
-    photon->setCaloClusterLinks(el->caloClusterLinks());
-  }
-
-  //std::cout << "Setting Topo" <<  std::endl;
-
-  static SG::AuxElement::Decorator<int> nClu("numTopoClusters") ;
-  auto clusterVec = xAOD::EgammaHelpers::getAssociatedTopoClusters( photon->caloCluster() );
-  nClu(*el)= clusterVec.size();
-
-
-  return photon;
-}
-
-void   MergedElectronMxAOD::setPhotonConversionVertex( const xAOD::Electron* el,
-                                                       xAOD::Photon* photon, float vtxR,
-                                                       xAOD::VertexContainer* vertexContainer ) const
-{
-
-  int index1 = -999;
-  int index2 = -999;
-
-
-  if( HG::EleAcc::vtxTrkIndex1.isAvailable(*el) && HG::EleAcc::vtxTrkIndex2.isAvailable(*el)  ){
-    index1 = HG::EleAcc::vtxTrkIndex1(*el);
-    index2 = HG::EleAcc::vtxTrkIndex2(*el);
-  }
-  if(index1 < 0 || index2 < 0 ){
-    return;
-  }
-
-  static SG::AuxElement::Accessor<float> vtxPhi("vtxPhi") ;
-  static SG::AuxElement::Accessor<float> vtxZ("vtxZ") ;
-
-  float vtxX = vtxR * cos(vtxPhi(*el));
-  float vtxY = vtxR * sin(vtxPhi(*el));
-
-  //std::cout << "Creating Vtx " <<  std::endl;
-
-  xAOD::Vertex*  vertex = new xAOD::Vertex();
-  vertexContainer->push_back(vertex);
-
-  vertex->setZ(vtxZ(*el));
-  vertex->setX(vtxX);
-  vertex->setY(vtxY);
-
-  //std::cout << "Decorating Vtx " <<  std::endl;
-
-  // decorate with pt1, pt2
-  vertex->auxdata<float>("pt1") = el->trackParticle(index1)->pt();
-  vertex->auxdata<float>("pt2") = el->trackParticle(index2)->pt();
-
-
-  //std::cout << "Setting Trk element links Vtx " <<  std::endl;
-  //links to tracks
-  std::vector<ElementLink<xAOD::TrackParticleContainer>> links_tracks;
-  links_tracks.push_back( el->trackParticleLinks()[index1] );
-  links_tracks.push_back( el->trackParticleLinks()[index2] );
-
-  //set vertex - track links
-  vertex->setTrackParticleLinks(links_tracks);
-
-  //std::cout << "Setting Vtx element links Photon " <<  std::endl;
-
-  std::vector<ElementLink<xAOD::VertexContainer>> links_verticies;
-  //std::cout << "-- Setting Vtx element links Photon " <<  std::endl;
-  links_verticies.push_back(ElementLink<xAOD::VertexContainer>(vertex, *vertexContainer));
-  //std::cout << "---- Setting Vtx element links Photon " <<  std::endl;
-  photon->setVertexLinks(links_verticies);
-
-  //std::cout << "Setting deltas " <<  std::endl;
-
-  static SG::AuxElement::Accessor<float> vtxdEta("vtxdEta") ;
-  static SG::AuxElement::Accessor<float> vtxdPhi("vtxdPhi") ;
-
-
-  float dEta = vtxdEta(*el);
-  float dPhi = vtxdPhi(*el);
-  photon->setVertexCaloMatchValue( dEta, xAOD::EgammaParameters::convMatchDeltaEta1 );
-  photon->setVertexCaloMatchValue( dEta, xAOD::EgammaParameters::convMatchDeltaEta2 );
-  photon->setVertexCaloMatchValue( dPhi, xAOD::EgammaParameters::convMatchDeltaPhi1 );
-  photon->setVertexCaloMatchValue( dPhi, xAOD::EgammaParameters::convMatchDeltaPhi2 );
-
-  return;
 }

@@ -1,7 +1,13 @@
 #ifndef HGamGamStar_HggStarCommon_H
 #define HGamGamStar_HggStarCommon_H
 
+
 #include "AthContainers/AuxElement.h"
+#include "xAODEgamma/ElectronContainer.h"
+#include "xAODEgamma/PhotonContainer.h"
+#include "xAODTracking/VertexContainer.h"
+
+
 #include <vector>
 
 namespace HG {
@@ -97,6 +103,18 @@ namespace HG {
     static SG::AuxElement::Accessor< int >  vtxTrkIndex1("vtxTrkParticleIndex1");
     static SG::AuxElement::Accessor< int >  vtxTrkIndex2("vtxTrkParticleIndex2");
 
+    static SG::AuxElement::Accessor<float>   vtxdEta("vtxdEta") ;
+    static SG::AuxElement::Accessor<float>   vtxdPhi("vtxdPhi") ;
+    static SG::AuxElement::Accessor<float>   vtxPhi("vtxPhi") ;
+    static SG::AuxElement::Accessor<float>   vtxEta("vtxEta") ;
+    static SG::AuxElement::Accessor<float>   vtxZ("vtxZ") ;
+    static SG::AuxElement::Accessor<float>   vtxR("vtxR") ;
+    static SG::AuxElement::Accessor<float>   vtxE("vtxE") ;
+    static SG::AuxElement::Accessor<float>   vtxM("vtxM") ;
+
+    static SG::AuxElement::Accessor<int>     passTMVAPID("passTMVAPID") ;
+    static SG::AuxElement::Accessor<int>     passPID("passPID") ;
+
 
     static SG::AuxElement::Accessor< int >   vtxTrk1_d0("vtxTrk1_d0");
     static SG::AuxElement::Accessor< float > vtxTrk1_PT ("vtxTrk1_PT");
@@ -190,6 +208,11 @@ namespace HG {
     static SG::AuxElement::Accessor<std::vector<float>> subCluster_dPhi("SubCluster_dPhi");
 
   } // namespace EleAcc
+
+  xAOD::Photon*  createPhotonFromElectron (const xAOD::Electron* el) ;
+  void setPhotonConversionVertex( const xAOD::Electron* el,
+                             xAOD::Photon* ph, float vtxR,
+                             xAOD::VertexContainer* vertexContainer ) ;
 
 } // namespace HG
 

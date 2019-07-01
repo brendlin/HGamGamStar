@@ -59,7 +59,7 @@ void HG::MergedElectronID::decorateMergedVariables(xAOD::Electron &ele,xAOD::Tra
 }
 
 //______________________________________________________________________________
-bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::TrackParticle &trk1,const xAOD::TrackParticle &trk2){
+bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::TrackParticle &/*trk1*/,const xAOD::TrackParticle &/*trk2*/){
 
     // calculate shower shapes and other discriminating variables
     float deltaEta1 = ele.trackCaloMatchValue(xAOD::EgammaParameters::TrackCaloMatchType::deltaEta1);
@@ -159,11 +159,11 @@ bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::Trac
 
     // ninth cut: FHT2 / eta
     const std::vector<std::string> cutFHT2InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
-    if (!passCut(TrkAcc::TRT_PID_trans(trk2), cutFHT2InEta[iEta])) return(false);
+    if (!passCut(EleAcc::vtxTrk2_TRT_PID_trans(ele), cutFHT2InEta[iEta])) return(false);
 
     // tenth cut: FHT1 / eta
     const std::vector<std::string> cutFHT1InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
-    if (!passCut(TrkAcc::TRT_PID_trans(trk1), cutFHT1InEta[iEta])) return(false);
+    if (!passCut(EleAcc::vtxTrk1_TRT_PID_trans(ele), cutFHT1InEta[iEta])) return(false);
 
     // eleventh cut: EOverP / eta
     // const std::vector<std::string> cutEOverPInPt({"", ">0.2", ">0.2", ">0.2", ">0.2", ">0.2", ">0.25", "", "", ""});
@@ -180,11 +180,11 @@ bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::Trac
 
     // thirteenth cut: d0SigmaTrk1
     const std::vector<std::string> cutD0SigmaTrk1({"<5.0"});
-    if (!passCut(TrkAcc::d0significance(trk1), cutD0SigmaTrk1[0])) return(false);
+    if (!passCut(EleAcc::vtxTrk1_D0Sig(ele), cutD0SigmaTrk1[0])) return(false);
 
     // fourteenth cut: d0SigmaTrk2
     const std::vector<std::string> cutD0SigmaTrk2({"<5.0"});
-    if (!passCut(TrkAcc::d0significance(trk2), cutD0SigmaTrk2[0])) return(false);
+    if (!passCut(EleAcc::vtxTrk2_D0Sig(ele), cutD0SigmaTrk2[0])) return(false);
 
 
     // fSide: if (f1 > 0.005 && )
@@ -222,14 +222,14 @@ bool HG::MergedElectronID::passCut(const float obsValue, const std::string cutSt
       else if (cutSign == "=="){pass = pass && (obsValue == cutValue);}
       else if (cutSign == ">="){pass = pass && (obsValue >= cutValue);}
       else if (cutSign == ">"){pass = pass && (obsValue > cutValue);}
-      
+
     }
 
     return(pass);
 
 }
 unsigned HG::MergedElectronID::getPtBin(const xAOD::Electron * const el) const {
-    
+
     double pt = el->pt() / 1000.0;
 
     if (pt < 20.0){return(0);}
@@ -259,7 +259,7 @@ unsigned HG::MergedElectronID::getEtaBin(const xAOD::Electron * const el) const 
     else if (eta < 2.37){return(7);}
     else if (eta < 2.47){return(8);}
     else {return(9);}
-    
+
 }
 AngularPosition HG::MergedElectronID::getExtrapolatedTrackPosition(
     const xAOD::TrackParticle * track,
@@ -341,18 +341,18 @@ AngularPosition HG::MergedElectronID::getExtrapolatedTrackPosition(
 //lines below commented out since kalmanUpdate is not used -- to enable it, should also pass (a pointer to) xAOD::eventInfo here
 //         double sx = eventInfo->beamPosSigmaX();
 //         double sy = eventInfo->beamPosSigmaY();
-// 
+//
 //         const double measPar = 0.0;             // Constrain d0 to 0
 //         // const double measCov = 1e-12;        // Uncertainty on d0 1 nm -- something small
 //         const double measCov = 0.5 * (sx + sy);
-// 
+//
 //         const int mk = 0; // d0 is the first entry in the track parameter matrix
 //         double r = measPar - trkPar(mk);
 //         double R = measCov + trkCov(mk,mk); R = 1./R;
-// 
+//
 //         // compute updated state, here = TP + K * r = TP + TCov*H.T*R * r
 //         AmgVector(5) trkParNew = trkPar + trkCov.col(mk) * R * r;
-// 
+//
 //         d0 = trkParNew(0) / 1000.0;      // std::cout << "d0      = " << d0 << std::endl;
 //         z0 = trkParNew(1) / 1000.0;      // std::cout << "z0      = " << z0 << std::endl;
 //         phi = trkParNew(2);              // std::cout << "phi     = " << phi << std::endl;

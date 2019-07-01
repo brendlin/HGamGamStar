@@ -51,6 +51,8 @@ namespace HG {
     TruthTrackMap MakeTruthTrackMapFromElectronContainer(const xAOD::ElectronContainer& elecs);
 
     bool passIPCuts(xAOD::TrackParticle& trk);
+
+    float calculateIPSig(const xAOD::TrackParticle& trk) const;
     void decorateIPCut(xAOD::TrackParticle& trk);
     float calculateTRT_PID(const xAOD::TrackParticle& trk)const;
     void decorateTRT_PID(xAOD::TrackParticle& trk);

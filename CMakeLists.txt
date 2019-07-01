@@ -48,6 +48,7 @@ atlas_add_library( HGamGamStarLib
                    TrackVertexAssociationToolLib
                    )
 
+
 # Install files from the package:
 atlas_install_data( data/* )
 
