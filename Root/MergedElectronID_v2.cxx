@@ -45,6 +45,25 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
 //    double f1 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f1);
 //     double fSide = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::fracs1);
 
+    auto ele_tp  =  ele.trackParticle(trk1_index);
+    auto ele_tp2 =  ele.trackParticle(trk2_index);
+
+    uint8_t shared;
+    int sumOfSplitHits = 0;
+    if( ele_tp->summaryValue(shared, xAOD::numberOfInnermostPixelLayerSharedHits) )
+      sumOfSplitHits += (int)shared;
+    if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerSharedHits) )
+      sumOfSplitHits += (int)shared;
+    if( ele_tp->summaryValue(shared, xAOD::numberOfInnermostPixelLayerSplitHits ) )
+      sumOfSplitHits += (int)shared;
+    if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerSplitHits) )
+      sumOfSplitHits += (int)shared;
+
+    if(sumOfSplitHits == 0){
+      if( fabs( ele_tp2->z0() - ele_tp->z0() ) >  1.0 )
+        return false;
+    }
+
 
     float vtx_deta  = HG::EleAcc::vtxdEta(ele);
     float vtx_dphi  = HG::EleAcc::vtxdPhi(ele);
