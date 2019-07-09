@@ -499,7 +499,6 @@ namespace HG {
   };
 
 
-
   class Dphi_lly_jj : public VarBase<float> {
   public:
     Dphi_lly_jj() : VarBase("Dphi_lly_jj") { m_default = -99; }
