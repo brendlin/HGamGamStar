@@ -1,4 +1,5 @@
 #include "HGamGamStar/HggStarVariables.h"
+#include "HGamAnalysisFramework/HGamVariables.h"
 
 #include "HGamAnalysisFramework/TruthHandler.h"
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
@@ -31,6 +32,8 @@ namespace var {
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
+  HG::trk_lead_pt trk_lead_pt;
+  HG::yyStarCategory yyStarCategory;
   HG::Dphi_lly_jj Dphi_lly_jj;
   HG::Zepp_lly Zepp_lly;
   HG::pTt_lly pTt_lly;
@@ -46,6 +49,25 @@ float HG::m_lly_gev::calculateValue(bool truth)
   return var::m_lly()/1000.;
 }
 
+int HG::yyStarCategory::calculateValue(bool truth)
+{
+  if (truth) return CategoryEnum::CATEGORYUNKNOWN;
+  bool passVBF = var::m_jj()/1000>400 && var::Deta_j_j() > 2.5;
+  if (var::yyStarChannel()==ChannelEnum::DIMUON){
+      if(passVBF) return CategoryEnum::VBF_DIMUON;
+      else return CategoryEnum::GGF_DIMUON;
+  }
+  else if (var::yyStarChannel()==ChannelEnum::RESOLVED_DIELECTRON){
+      if(passVBF) return CategoryEnum::VBF_RESOLVED_DIELECTRON;
+      else return CategoryEnum::GGF_RESOLVED_DIELECTRON;
+  }
+  else if(var::yyStarChannel()==ChannelEnum::MERGED_DIELECTRON){
+      if(passVBF) return CategoryEnum::VBF_MERGED_DIELECTRON;
+      else return CategoryEnum::GGF_MERGED_DIELECTRON;
+  }
+  return CategoryEnum::CATEGORYUNKNOWN;
+}
+
 float HG::Resolved_dRExtrapTrk12::calculateValue(bool truth)
 {
   if (var::yyStarChannel() != ChannelEnum::RESOLVED_DIELECTRON) return m_default;
@@ -55,7 +77,7 @@ float HG::Resolved_dRExtrapTrk12::calculateValue(bool truth)
 }
 
 void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
-                             double& return_mll,bool sortby_pt,double closest_to){
+                             double& return_mll,bool sortby_pt,double closest_to, float lead_pt_cut){
 
   double min_delta = DBL_MAX;
 
@@ -67,6 +89,8 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
       const xAOD::IParticle* lepj = leps[j];
 
       if (lepi->pt() < lepj->pt()) continue;
+      
+      if(lepi->pt() < lead_pt_cut*HG::GeV) continue;
 
       if (lepi->type() == xAOD::Type::TrackParticle &&
           ((xAOD::TrackParticle*)lepi)->charge() == ((xAOD::TrackParticle*)lepj)->charge()) continue;
