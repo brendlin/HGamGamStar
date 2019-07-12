@@ -666,7 +666,12 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       m_ll = merged.M();
       m_lly = (merged + m_selPhotons[0]->p4()).M();
       // Decorate merged variables as soon as you find out the channel is merged
-      m_mergedElectronID->decorateMergedVariables(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1]);
+      xAOD::Electron ele = *m_selElectrons[0];
+      xAOD::TrackParticle trk0 = *m_selTracks[0];
+      xAOD::TrackParticle trk1 = *m_selTracks[1];
+      m_mergedElectronID->decorateMergedVariables(ele,trk0,trk1);
+      HG::EleAcc::passPID(ele) = m_mergedElectronID->passPIDCut(ele,trk0,trk1);
+      HG::EleAcc::passTMVAPID(ele) = m_mergedElectronID_v2->passPIDCut(ele);
     }
     else if (m_selElectrons.size() == 2) {
       m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
@@ -1320,6 +1325,9 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::EleAcc::dRExtrapTrk12_LM(*electron) = -999;
     HG::EleAcc::delta_z0sinTheta_tracks(*electron) = -999;
     HG::EleAcc::delta_z0_tracks(*electron) = -999;
+    HG::EleAcc::passPID(*electron) = false;
+    HG::EleAcc::passTMVAPID(*electron) = false;
+
     // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_P_L1(*electron) = -999;
@@ -1337,8 +1345,6 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     int index2 = HG::EleAcc::vtxTrkIndex2(*electron);
     HG::EleAcc::vtxTrk1_TRT_PID_trans(*electron) = index1<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index1)) ;
     HG::EleAcc::vtxTrk2_TRT_PID_trans(*electron) = index2<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index2)) ;
-    HG::EleAcc::vtxTrk1_D0Sig(*electron) = index1<0 ? -999 : trackHandler()->calculateIPSig(*electron->trackParticle(index1)) ;
-    HG::EleAcc::vtxTrk2_D0Sig(*electron) = index2<0 ? -999 : trackHandler()->calculateIPSig(*electron->trackParticle(index2)) ;
 
     xAOD::Photon* photon = HG::createPhotonFromElectron(electron);
 
@@ -1352,10 +1358,6 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     } else {
       HG::EleAcc::calibratedPhotonEnergy(*electron) = -999;
     }
-
-    HG::EleAcc::passPID(*electron) =  index2>0 ? m_mergedElectronID->passPIDCut(*electron,*electron->trackParticle(index1),*electron->trackParticle(index2)) : false;
-    HG::EleAcc::passTMVAPID(*electron) = m_mergedElectronID_v2->passPIDCut(*electron);
-
 
   }
 

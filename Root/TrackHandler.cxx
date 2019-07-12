@@ -55,8 +55,12 @@ xAOD::TrackParticleContainer HG::TrackHandler::getCorrectedContainer()
   shallowContainer.sort(comparePt);
 
   for (auto trk : shallowContainer){
+
+    // If we already decorated everything, then do not decorate again!
+    if (TrkAcc::TRT_PID_trans.isAvailable(*trk)) break;
+
     decorateIPCut(*trk);
-    decorateTRT_PID(*trk);
+    decorateAdditionalCuts(*trk);
   }
 
   return shallowContainer;
@@ -154,18 +158,6 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
       xAOD::TrackParticle* container_tp = HG::MapHelpers::FindTrackParticle(&container,ele_tp);
       selected.push_back(container_tp);
 
-      // Add reco-level decorators
-      TrkAcc::passBLayerRequirement(*container_tp) = ElectronSelectorHelpers::passBLayerRequirement(container_tp);
-      TrkAcc::pt(*container_tp) = container_tp->pt();
-
-      // Add default decorators
-      TrkAcc::mergedTrackParticleIndex(*container_tp) = -1;
-
-      // Decorate MC particles with some truth information:
-      if (HG::isMC()) {
-        const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*container_tp);
-        TrkAcc::isTrueHiggsElectron(*container_tp) = truthPart && HG::isFromHiggs(truthPart) && HG::isGoodTruthElectron(truthPart);
-      }
     }
   }
 
@@ -174,10 +166,6 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
   // std::cout << "Final size of container: " << container.size() << std::endl;
   // std::cout << "Final size of selected: " << selected.size() << std::endl;
 
-  for (xAOD::TrackParticle* trk : selected){
-    decorateIPCut(*trk);
-    decorateTRT_PID(*trk);
-  }
   return selected;
 
 }
@@ -332,7 +320,49 @@ float HG::TrackHandler::calculateTRT_PID(const xAOD::TrackParticle& trk) const
   return  - log(1.0/t_TRT_PID - 1.0) / tau;
 }
 
-void HG::TrackHandler::decorateTRT_PID(xAOD::TrackParticle& trk)
+void HG::TrackHandler::decorateAdditionalCuts(xAOD::TrackParticle& trk)
 {
+  // Add reco-level decorators
   TrkAcc::TRT_PID_trans(trk) = calculateTRT_PID(trk);
+  TrkAcc::passBLayerRequirement(trk) = ElectronSelectorHelpers::passBLayerRequirement(&trk);
+  TrkAcc::pt(trk) = trk.pt();
+  TrkAcc::p(trk) = 1./(trk.qOverP());
+
+  // Add default decorators
+  TrkAcc::mergedTrackParticleIndex(trk) = -1;
+
+  TrkAcc::nPixHitsAndDeadSens(trk) = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(&trk);
+  TrkAcc::nSCTHitsAndDeadSens(trk) = ElectronSelectorHelpers::numberOfSCTHitsAndDeadSensors(&trk);
+
+  uint8_t arg;
+  TrkAcc::SharedIBL(trk) = trk.summaryValue(arg, xAOD::numberOfInnermostPixelLayerSharedHits      ) ? (int)arg : -999;
+  TrkAcc::SharedBL(trk)  = trk.summaryValue(arg, xAOD::numberOfNextToInnermostPixelLayerSharedHits) ? (int)arg : -999;
+  TrkAcc::SplitIBL(trk)  = trk.summaryValue(arg, xAOD::numberOfInnermostPixelLayerSplitHits       ) ? (int)arg : -999;
+  TrkAcc::SplitBL(trk)   = trk.summaryValue(arg, xAOD::numberOfNextToInnermostPixelLayerSplitHits ) ? (int)arg : -999;
+
+  TrkAcc::NIBL(trk) = trk.summaryValue(arg, xAOD::numberOfInnermostPixelLayerHits ) ? (int)arg : -999;
+  // If NIBL is 0 and expectInnermostPixelLayerHit variable is defined,
+  // fill NIBL with -(expectIBLHit) (0 = do not expect a hit or -1 = expected a hit)
+  if (TrkAcc::NIBL(trk) == 0 && trk.summaryValue(arg, xAOD::expectInnermostPixelLayerHit)) {
+    TrkAcc::NIBL(trk) = -(int)arg;
+  }
+
+  TrkAcc::NBL(trk) = trk.summaryValue(arg, xAOD::numberOfNextToInnermostPixelLayerHits) ? (int)arg : -999;
+  if ( TrkAcc::NBL(trk) == 0 && trk.summaryValue(arg, xAOD::expectNextToInnermostPixelLayerHit)) {
+    TrkAcc::NBL(trk) = -(int)arg;
+  }
+
+  // Make passTTVA branch (default is -1)
+  TrkAcc::PassTTVA(trk) = 0;
+
+  // Decorate MC particles with some truth information:
+  if (HG::isMC()) {
+    const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(trk);
+    TrkAcc::isTrueHiggsElectron(trk) = truthPart && HG::isFromHiggs(truthPart) && HG::isGoodTruthElectron(truthPart);
+
+    TrkAcc::PdgID(trk)   = truthPart ? truthPart->pdgId()   : -999;
+    TrkAcc::Barcode(trk) = truthPart ? truthPart->barcode() : -999;
+    TrkAcc::TruthE(trk)  = truthPart ? truthPart->p4().E()  : -999;
+  }
+
 }

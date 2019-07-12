@@ -315,6 +315,8 @@ MergedElectronMxAOD::CutEnum MergedElectronMxAOD::cutflow()
 
   m_selElectrons = xAOD::ElectronContainer(SG::VIEW_ELEMENTS);
 
+  // Track container will contain any track needed later
+  m_selTracks = xAOD::TrackParticleContainer(SG::VIEW_ELEMENTS);
 
   //==== CUT 4 : Remove duplicate events (only for data) ====
   static bool checkDuplicates = config()->getBool("EventHandler.CheckDuplicates");
@@ -336,10 +338,6 @@ MergedElectronMxAOD::CutEnum MergedElectronMxAOD::cutflow()
   // Apply electron preselection.
   // HGamCore does not have an electron preselection step, so we make our own here:
   xAOD::ElectronContainer allElectrons = electronHandler()->getCorrectedContainer();
-  AddElectronDecorations(allElectrons);
-
-
-
 
   for (auto electron : allElectrons) {
     if (!electronHandler()->passOQCut(electron)) { continue; }
@@ -362,7 +360,16 @@ MergedElectronMxAOD::CutEnum MergedElectronMxAOD::cutflow()
       m_selElectrons.push_back(electron);
   }
 
+  // Get all tracks
+  xAOD::TrackParticleContainer all_tracks = trackHandler()->getCorrectedContainer();
 
+  // Track-electron map - get all of the tracks from selected electrons
+  HG::TrackElectronMap trkEleMap;
+  m_selTracks = trackHandler()->findTracksFromElectrons(all_tracks,m_selElectrons,trkEleMap);
+  m_selTracks.sort(HG::TrackHandler::comparePt);
+
+  // Do this after doing your electron selection, to avoid running on the electrons you throw away.
+  AddElectronDecorations(m_selElectrons,m_selTracks);
   decorateCorrectedIsoCut(m_selElectrons);
 
   //==== CUT 13 : Whether SF leptons survive OR
@@ -387,7 +394,7 @@ EL::StatusCode  MergedElectronMxAOD::doReco(bool /*isSys*/){
   setSelectedObjects(&noPhotons, &m_selElectrons, &noMuons, nullptr, nullptr, nullptr);
 
   xAOD::TrackParticleContainer noTracks = xAOD::TrackParticleContainer(SG::VIEW_ELEMENTS);
-  HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&noTracks);
+  HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&m_selTracks);
 
   // Adds event-level variables to TStore
   // Write in the nominal and systematics loops
@@ -404,6 +411,7 @@ EL::StatusCode  MergedElectronMxAOD::doReco(bool /*isSys*/){
   }
 
   CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
+  CP_CHECK("execute()", trackHandler   ()->writeContainer(m_selTracks   ));
 
 
   // Adds all event variables (weight, category, isPassed, and pT_yy etc.)
@@ -642,7 +650,7 @@ void MergedElectronMxAOD::decorateCorrectedIsoCut(xAOD::ElectronContainer & elec
 
 
 
-void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
+void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons, xAOD::TrackParticleContainer& trackContainer) {
   const xAOD::VertexContainer* vertices = nullptr;
   if (event()->contains<xAOD::VertexContainer>("PrimaryVertices"))
     if (event()->retrieve(vertices,"PrimaryVertices").isFailure())
@@ -656,12 +664,9 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
   eventHandler()->evtStore()->record( outVerticies, "TempVerticies" );
   eventHandler()->evtStore()->record( outVerticiesAux, "TempVerticiesAux." );
 
-  xAOD::TrackParticleContainer all_tracks = trackHandler()->getCorrectedContainer();
   // Truth-track map
   HG::TruthTrackMap trkTruthMap = trackHandler()->MakeTruthTrackMapFromElectronContainer(electrons);
-  // Track-electron map
-  HG::TrackElectronMap trkEleMap;
-  trackHandler()->findTracksFromElectrons(all_tracks,electrons,trkEleMap,true);
+
   // Get the track assoicated to the two leptons
   const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
 
@@ -749,33 +754,11 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
   //delete outVerticies;
 
   for (auto electron : electrons) {
-    std::vector<int>   passTTVA;
-    std::vector<float> trackPT;
-    std::vector<float> trackD0;
-    std::vector<float> trackZ0;
-    std::vector<float> trackP;
-    std::vector<float> trackD0Sig;
-    std::vector<float> trackZ0Sig;
-    std::vector<float> trackTRT_PID_trans;
-    std::vector<int>   trackNPix;
-    std::vector<int>   trackNSCT;
-    std::vector<int>   trackPassBL;
-    std::vector<int>   trackNIBL;
-    std::vector<int>   trackNBL;
-    std::vector<int>   trackSharedIBL;
-    std::vector<int>   trackSharedBL;
-    std::vector<int>   trackSplitIBL;
-    std::vector<int>   trackSplitBL;
-    std::vector<int>   trackPdgID;
-    std::vector<int>   trackBarcode;
-    std::vector<float> trackTruthE;
-    std::vector<int>   trackFromHiggs;
     int   isTrueMergedE = 0;
     float trueEnergy = -999;
     float trueMass = -999;
     float trueEta = -999;
     float truePhi = -999;
-
 
     int nFromHiggs(0);
     TLorentzVector sumOfTruthProducts;
@@ -786,67 +769,18 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     for( unsigned int trk_i(0); trk_i < electron->nTrackParticles(); ++trk_i){
       auto ele_tp =  electron->trackParticle(trk_i);
 
-      passTTVA.push_back(0);
-      trackPT.push_back(-999);
-      trackD0.push_back(-999);
-      trackZ0.push_back(-999);
-      trackP.push_back(-999);
-      trackD0Sig.push_back(-999);
-      trackZ0Sig.push_back(-999);
-      trackTRT_PID_trans.push_back(-999);
-      trackNPix.push_back(-999);
-      trackNSCT.push_back(-999);
-      trackPassBL.push_back(-999);
-      trackNBL.push_back(-999);
-      trackNIBL.push_back(-999);
-      trackSharedIBL.push_back(-999);
-      trackSharedBL.push_back(-999);
-      trackSplitIBL.push_back(-999);
-      trackSplitBL.push_back(-999);
-      trackPdgID.push_back(-999);
-      trackBarcode.push_back(-999);
-      trackTruthE.push_back(-999);
-      trackFromHiggs.push_back(0);
       if(!ele_tp)
         continue;
+
+      // Get the pointer to the TrackParticle in the output container
+      xAOD::TrackParticle* cont_tp = HG::MapHelpers::FindTrackParticle(&trackContainer,ele_tp);
 
       //auto cov = ele_tp->definingParametersCovMatrix();
       //std::cout << cov << std::endl;
 
-      trackPT.back() = ele_tp->pt();
-      trackD0.back() = ele_tp->d0();
-      trackZ0.back() = ele_tp->z0();
-      trackP.back() = 1./(ele_tp->qOverP());
-      trackD0Sig.back() = xAOD::TrackingHelpers::d0significance(ele_tp);
-      trackZ0Sig.back() = xAOD::TrackingHelpers::z0significance(ele_tp);
-      trackTRT_PID_trans.back() = trackHandler()->calculateTRT_PID(*ele_tp);
+      int nPixPlusDead = HG::TrkAcc::nPixHitsAndDeadSens(*cont_tp) + HG::TrkAcc::nSCTHitsAndDeadSens(*cont_tp);
 
-      uint8_t shared;
-      if( ele_tp->summaryValue(shared, xAOD::numberOfInnermostPixelLayerSharedHits) )
-        trackSharedIBL.back() = (int)shared;
-      if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerSharedHits) )
-        trackSharedBL.back() = (int)shared;
-      if( ele_tp->summaryValue(shared, xAOD::numberOfInnermostPixelLayerSplitHits ) )
-        trackSplitIBL.back() = (int)shared;
-      if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerSplitHits) )
-        trackSplitBL.back() = (int)shared;
-
-      if( ele_tp->summaryValue(shared, xAOD::numberOfInnermostPixelLayerHits) )
-        trackNIBL.back() = (int)shared;
-      if( trackNIBL.back() == 0 && ele_tp->summaryValue(shared, xAOD::expectInnermostPixelLayerHit) )
-        trackNIBL.back() = -(int)shared;
-
-      if( ele_tp->summaryValue(shared, xAOD::numberOfNextToInnermostPixelLayerHits) )
-        trackNBL.back() = (int)shared;
-      if( trackNBL.back() == 0 && ele_tp->summaryValue(shared, xAOD::expectNextToInnermostPixelLayerHit) )
-        trackNBL.back() = -(int)shared;
-
-
-      trackNPix.back() = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(ele_tp);
-      trackNSCT.back() = ElectronSelectorHelpers::numberOfSCTHitsAndDeadSensors(ele_tp);
-      trackPassBL.back() = ElectronSelectorHelpers::passBLayerRequirement(ele_tp);
-      const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*ele_tp);
-      if( trackNPix.back() + trackNSCT.back()  > 7 ){
+      if(nPixPlusDead > 7 ){
         if(trksToFit.size() == 0 )
         {
           trksToFit.push_back( ele_tp );
@@ -859,31 +793,28 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
         }
       }
 
-      if(truthPart){
-        trackPdgID.back()   =  truthPart->pdgId();
-        trackBarcode.back() =  truthPart->barcode();
-        trackTruthE.back()  =  truthPart->p4().E();
-        if(HG::isFromHiggs(truthPart))
-        {
-          trackFromHiggs.back() = 1;
-          sumOfTruthProducts += truthPart->p4();
-          ++nFromHiggs;
-        }
+      if (HG::TrkAcc::isTrueHiggsElectron(*cont_tp))
+      {
+        const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*ele_tp);
+        sumOfTruthProducts += truthPart->p4();
+        ++nFromHiggs;
       }
-      if(nFromHiggs==2){
-        isTrueMergedE=1;
-        trueEnergy = sumOfTruthProducts.E();
-        trueMass = sumOfTruthProducts.M();
-        trueEta = sumOfTruthProducts.Eta();
-        truePhi = sumOfTruthProducts.Phi();
-      }
-
 
       if( !m_trkselTool->accept(*ele_tp, primaryVertex) )
         continue;
       if( !m_ttvaTool->isCompatible(*ele_tp,*primaryVertex) )
         continue;
-      passTTVA.back()=1;
+
+      HG::TrkAcc::PassTTVA(*cont_tp) = 1;
+    }
+
+    // This should be calculated once per electron
+    if(nFromHiggs==2){
+      isTrueMergedE=1;
+      trueEnergy = sumOfTruthProducts.E();
+      trueMass = sumOfTruthProducts.M();
+      trueEta = sumOfTruthProducts.Eta();
+      truePhi = sumOfTruthProducts.Phi();
     }
 
     if( trksToFit.size() == 2 ){
@@ -903,57 +834,26 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       HG::EleAcc::standAloneIndexB(*electron) = -999;
     }
 
-    HG::EleAcc::passTTVA(*electron)      = passTTVA;
-    HG::EleAcc::trackPT(*electron)       = trackPT;
-    HG::EleAcc::trackD0(*electron)       = trackD0;
-    HG::EleAcc::trackZ0(*electron)       = trackZ0;
-    HG::EleAcc::trackP(*electron)        = trackP;
-    HG::EleAcc::trackD0Sig(*electron)    = trackD0Sig;
-    HG::EleAcc::trackZ0Sig(*electron)    = trackZ0Sig;
-    HG::EleAcc::trackTRT_PID_trans(*electron) = trackTRT_PID_trans;
-    HG::EleAcc::trackNPix(*electron)     = trackNPix;
-    HG::EleAcc::trackNSCT(*electron)     = trackNSCT;
-    HG::EleAcc::trackPassBL(*electron)   = trackPassBL;
-    HG::EleAcc::trackNBL(*electron)      = trackNBL;
-    HG::EleAcc::trackNIBL(*electron)     = trackNIBL;
-    HG::EleAcc::trackSharedBL(*electron)  = trackSharedBL;
-    HG::EleAcc::trackSharedIBL(*electron) = trackSharedIBL;
-    HG::EleAcc::trackSplitBL(*electron)   = trackSplitBL;
-    HG::EleAcc::trackSplitIBL(*electron)  = trackSplitIBL;
-
     HG::EleAcc::isTrueMergedE(*electron) = isTrueMergedE;
     HG::EleAcc::trueEnergy(*electron)    = trueEnergy;
     HG::EleAcc::trueMass(*electron)      = trueMass;
     HG::EleAcc::trueEta(*electron)       = trueEta;
     HG::EleAcc::truePhi(*electron)       = truePhi;
-    HG::EleAcc::trackPdgID(*electron)    = trackPdgID;
-    HG::EleAcc::trackBarcode(*electron)  = trackBarcode;
-    HG::EleAcc::trackFromHiggs(*electron)= trackFromHiggs;
 
+    HG::EleAcc::vtxTrkParticleIndex1_MxAOD(*electron) = -999;
+    HG::EleAcc::vtxTrkParticleIndex2_MxAOD(*electron) = -999;
 
     if( HG::EleAcc::vtxTrkIndex1.isAvailable(*electron) && HG::EleAcc::vtxTrkIndex2.isAvailable(*electron)  ){
       int index = HG::EleAcc::vtxTrkIndex1(*electron);
       bool hasIndex = index >= 0;
-      HG::EleAcc::vtxTrk1_PT (*electron)= hasIndex ? trackPT[index] : -999;
-      HG::EleAcc::vtxTrk1_P (*electron) = hasIndex ? trackP[index] : -999;
-      HG::EleAcc::vtxTrk1_D0 (*electron) = hasIndex ? trackD0[index] : -999;
-      HG::EleAcc::vtxTrk1_D0Sig (*electron) = hasIndex ? trackD0Sig[index] : -999;
-      HG::EleAcc::vtxTrk1_Z0 (*electron)  = hasIndex ? trackZ0[index] : -999;
-      HG::EleAcc::vtxTrk1_Z0Sig (*electron) = hasIndex ? trackD0Sig[index] : -999;
-      HG::EleAcc::vtxTrk1_TRT_PID_trans(*electron) = hasIndex ? trackTRT_PID_trans[index] : -999;
-      HG::EleAcc::vtxTrk1_NPix(*electron) = hasIndex ? trackNPix[index] : -999;
-      HG::EleAcc::vtxTrk1_NSCT(*electron) = hasIndex ? trackNSCT[index] : -999;
-      HG::EleAcc::vtxTrk1_PassBL(*electron) = hasIndex ? trackPassBL[index] : -999;
-      HG::EleAcc::vtxTrk1_NBL(*electron) = hasIndex ? trackNBL[index] : -999;
-      HG::EleAcc::vtxTrk1_NIBL(*electron) = hasIndex ? trackNIBL[index] : -999;
-      HG::EleAcc::vtxTrk1_SplitBL(*electron) = hasIndex ? trackSplitBL[index] : -999;
-      HG::EleAcc::vtxTrk1_SharedBL(*electron) = hasIndex ? trackSharedBL[index] : -999;
-      HG::EleAcc::vtxTrk1_SplitIBL(*electron) = hasIndex ? trackSplitIBL[index] : -999;
-      HG::EleAcc::vtxTrk1_SharedIBL(*electron) = hasIndex ? trackSharedIBL[index] : -999;
-      HG::EleAcc::vtxTrk1_PdgID(*electron) = hasIndex ? trackPdgID[index] : -999;
-      HG::EleAcc::vtxTrk1_Barcode(*electron) = hasIndex ? trackBarcode[index] : -999;
-      HG::EleAcc::vtxTrk1_TruthE(*electron) = hasIndex ? trackTruthE[index] : -999;
-      HG::EleAcc::vtxTrk1_FromHiggs(*electron) = hasIndex ? trackFromHiggs[index] : -999;
+
+      // Connect electrons to the TrackParticleContainer that is written out via indices
+      if (hasIndex) {
+        auto ele_tp = electron->trackParticle(index);
+        int i_tpcont = HG::MapHelpers::FindTrackParticleIndex(&trackContainer,ele_tp);
+        HG::EleAcc::vtxTrkParticleIndex1_MxAOD(*electron) = i_tpcont;
+      }
+
       HG::EleAcc::vtxTrk1_dEta2_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dEta2(*electron)[index] : -999;
       HG::EleAcc::vtxTrk1_dEta1_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dEta1(*electron)[index] : -999;
       HG::EleAcc::vtxTrk1_dPhi2_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dPhi2(*electron)[index] : -999;
@@ -965,26 +865,14 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
 
       index = HG::EleAcc::vtxTrkIndex2(*electron);
       hasIndex = index >= 0;
-      HG::EleAcc::vtxTrk2_PT (*electron)= hasIndex ? trackPT[index] : -999;
-      HG::EleAcc::vtxTrk2_P (*electron) = hasIndex ? trackP[index] : -999;
-      HG::EleAcc::vtxTrk2_D0 (*electron) = hasIndex ? trackD0[index] : -999;
-      HG::EleAcc::vtxTrk2_D0Sig (*electron) = hasIndex ? trackD0Sig[index] : -999;
-      HG::EleAcc::vtxTrk2_Z0 (*electron)  = hasIndex ? trackZ0[index] : -999;
-      HG::EleAcc::vtxTrk2_Z0Sig (*electron) = hasIndex ? trackD0Sig[index] : -999;
-      HG::EleAcc::vtxTrk2_TRT_PID_trans(*electron) = hasIndex ? trackTRT_PID_trans[index] : -999;
-      HG::EleAcc::vtxTrk2_NPix(*electron) = hasIndex ? trackNPix[index] : -999;
-      HG::EleAcc::vtxTrk2_NSCT(*electron) = hasIndex ? trackNSCT[index] : -999;
-      HG::EleAcc::vtxTrk2_PassBL(*electron) = hasIndex ? trackPassBL[index] : -999;
-      HG::EleAcc::vtxTrk2_NBL(*electron) = hasIndex ? trackNBL[index] : -999;
-      HG::EleAcc::vtxTrk2_NIBL(*electron) = hasIndex ? trackNIBL[index] : -999;
-      HG::EleAcc::vtxTrk2_SplitBL(*electron) = hasIndex ? trackSplitBL[index] : -999;
-      HG::EleAcc::vtxTrk2_SharedBL(*electron) = hasIndex ? trackSharedBL[index] : -999;
-      HG::EleAcc::vtxTrk2_SplitIBL(*electron) = hasIndex ? trackSplitIBL[index] : -999;
-      HG::EleAcc::vtxTrk2_SharedIBL(*electron) = hasIndex ? trackSharedIBL[index] : -999;
-      HG::EleAcc::vtxTrk2_PdgID(*electron) = hasIndex ? trackPdgID[index] : -999;
-      HG::EleAcc::vtxTrk2_Barcode(*electron) = hasIndex ? trackBarcode[index] : -999;
-      HG::EleAcc::vtxTrk2_TruthE(*electron) = hasIndex ? trackTruthE[index] : -999;
-      HG::EleAcc::vtxTrk2_FromHiggs(*electron) = hasIndex ? trackFromHiggs[index] : -999;
+
+      // Connect electrons to the TrackParticleContainer that is written out via indices
+      if (hasIndex) {
+        auto ele_tp =  electron->trackParticle(index);
+        int i_tpcont = HG::MapHelpers::FindTrackParticleIndex(&trackContainer,ele_tp);
+        HG::EleAcc::vtxTrkParticleIndex2_MxAOD(*electron) = i_tpcont;
+      }
+
       HG::EleAcc::vtxTrk2_dEta2_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dEta2(*electron)[index] : -999;
       HG::EleAcc::vtxTrk2_dEta1_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dEta1(*electron)[index] : -999;
       HG::EleAcc::vtxTrk2_dPhi2_P(*electron) = hasIndex ? HG::EleAcc::TrackMatchingP_dPhi2(*electron)[index] : -999;
@@ -996,7 +884,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     }
 
 
-    HG::EleAcc::trueType(*electron) = truthType( electron );
+    HG::EleAcc::trueType(*electron) = truthType( electron, trackContainer );
 
 
 
@@ -1023,21 +911,26 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
 }
 
 
-MergedElectronMxAOD::ElectronTruthType MergedElectronMxAOD::truthType( const xAOD::Electron* el ) const
+MergedElectronMxAOD::ElectronTruthType MergedElectronMxAOD::truthType( const xAOD::Electron* el,
+                                                                       const xAOD::TrackParticleContainer& trackContainer) const
 {
-  size_t nTracks = HG::EleAcc::trackPassBL(*el).size();
   int nEl(0);
   int nTot(0);
   int nHiggs(0);
-  for( size_t trk(0); trk <  nTracks; ++trk){
-    if( HG::EleAcc::trackFromHiggs(*el)[trk] > 0 )
+  for(unsigned int trk_i(0); trk_i < el->nTrackParticles(); ++trk_i){
+    auto ele_tp  =  el->trackParticle(trk_i);
+
+    // Get the pointer to the TrackParticle in the output container
+    const xAOD::TrackParticle* cont_tp = HG::MapHelpers::FindTrackParticle(&trackContainer,ele_tp);
+
+    if(HG::TrkAcc::isTrueHiggsElectron(*cont_tp))
     {
       if(nTot<2)
         ++nHiggs;
     }
-    if(HG::EleAcc::trackPassBL(*el)[trk]>0)
+    if(HG::TrkAcc::passBLayerRequirement(*cont_tp) > 0 )
     {
-      if(abs(HG::EleAcc::trackPdgID(*el)[trk]) == 11)
+      if(abs(HG::TrkAcc::PdgID(*cont_tp)) == 11)
       {
         ++nEl;
       }
@@ -1051,13 +944,21 @@ MergedElectronMxAOD::ElectronTruthType MergedElectronMxAOD::truthType( const xAO
     int truthIndexA = HG::EleAcc::truthTrackIndexA(*el);
     int truthIndexB = HG::EleAcc::truthTrackIndexB(*el);
 
-    if( truthIndexA != -999 &&  truthIndexB != -999 &&
-       abs(HG::EleAcc::trackPdgID(*el)[truthIndexA]) == 11 &&
-       abs(HG::EleAcc::trackPdgID(*el)[truthIndexB]) == 11 &&
-       abs(HG::EleAcc::trackBarcode(*el)[truthIndexA]) < 200000 &&
-       abs(HG::EleAcc::trackBarcode(*el)[truthIndexB]) < 200000 )
-    {
-      return SignalGood;
+    if( truthIndexA != -999 &&  truthIndexB != -999) {
+      auto eleA  =  el->trackParticle(truthIndexA);
+      auto eleB  =  el->trackParticle(truthIndexB);
+
+      // Get the pointer to the TrackParticle in the output container
+      const xAOD::TrackParticle* cont_tpA = HG::MapHelpers::FindTrackParticle(&trackContainer,eleA);
+      const xAOD::TrackParticle* cont_tpB = HG::MapHelpers::FindTrackParticle(&trackContainer,eleB);
+
+      if ( abs(HG::TrkAcc::PdgID(*cont_tpA)) == 11 &&
+           abs(HG::TrkAcc::PdgID(*cont_tpB)) == 11 &&
+           abs(HG::TrkAcc::Barcode(*cont_tpA)) < 200000 &&
+           abs(HG::TrkAcc::Barcode(*cont_tpB)) < 200000 )
+      {
+        return SignalGood;
+      }
     }
     return SignalCompromised;
   }
