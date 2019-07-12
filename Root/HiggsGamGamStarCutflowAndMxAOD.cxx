@@ -615,7 +615,8 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // Find the highest-pt pair closest to (13 TeV)
   int sel_muon1 = -1, sel_muon2 = -1;
   double return_mmumu = -1;
-  HG::AssignZbosonIndices(m_preSelMuons,sel_muon1,sel_muon2,return_mmumu,/*sortby_pt*/ true,13000.*HG::GeV);
+  float lead_pt_cut = config()->getNum("MuonHandler.Selection.PtLeadCutGeV",11);
+  HG::AssignZbosonIndices(m_preSelMuons,sel_muon1,sel_muon2,return_mmumu,/*sortby_pt*/ true,13000.*HG::GeV,lead_pt_cut);
 
   xAOD::TrackParticle* sel_trk1 = nullptr;
   xAOD::TrackParticle* sel_trk2 = nullptr;
@@ -628,12 +629,13 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 12 : Whether SF leptons survive OR
   if (return_mmumu < 0 && return_mtrktrk < 0) return ZBOSON_ASSIGNMENT;
 
-  double m_lly = -999, m_ll = -999;
+  double m_lly = -999, m_ll = -999, pt_ll = -999;
 
   if (return_mmumu > 0) {
     m_selMuons.push_back(m_preSelMuons[sel_muon1]);
     m_selMuons.push_back(m_preSelMuons[sel_muon2]);
     m_ll = return_mmumu;
+    pt_ll = (m_selMuons[0]->p4() + m_selMuons[1]->p4()).Pt();
     m_lly = (m_selMuons[0]->p4() + m_selMuons[1]->p4() + m_selPhotons[0]->p4()).M();
     var::yyStarChannel.setValue(HG::DIMUON);
   } else {
@@ -659,12 +661,15 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (m_selElectrons.size() == 1) {
       TLorentzVector merged = HG::MergedEleTLV(*m_selTracks[0],*m_selTracks[1],*m_selElectrons[0]);
       m_ll = merged.M();
+      pt_ll = merged.Pt();
       m_lly = (merged + m_selPhotons[0]->p4()).M();
       // Decorate merged variables as soon as you find out the channel is merged
       m_mergedElectronID->decorateMergedVariables(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1]);
+      // Need to cut on lead track pt in merged case when processing MxAODs, for that need a variable which is defined for each event (i.e. also need it in muon/resolved events where the value is -99)
     }
     else if (m_selElectrons.size() == 2) {
       m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
+      pt_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).Pt();
       m_lly = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4() + m_selPhotons[0]->p4()).M();
     }
 
@@ -787,6 +792,20 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
   //==== CUT 23 : lly window cut ====
   if ( 105.*HG::GeV > m_lly || m_lly > 160.*HG::GeV ) return LLGMASSCUT;
+  
+  //==== CUT 24 : mll window (veto J/Psi and Y) cut ====
+  if(var::yyStarChannel()==HG::DIMUON){
+    if ( (m_ll > 2.9*HG::GeV && m_ll < 3.3*HG::GeV) || (m_ll > 9.1*HG::GeV && m_ll < 10.6*HG::GeV) ) return LLMASSCUT;
+  }
+  else{
+    if (m_ll > 2.5*HG::GeV && m_ll < 3.5*HG::GeV) return LLMASSCUT;
+  }
+  
+  //==== CUT 25 : pt_ll fraction ggF cut ==== 
+  if (pt_ll/m_lly < 0.3) return DILEP_PT_FRAC;
+
+  //==== CUT 26 : pt_y fraction ggF cut ==== 
+  if (m_selPhotons[0]->pt()/m_lly < 0.3) return GAM_PT_FRAC;
 
   return PASSALL;
 }
@@ -896,6 +915,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::deltaR_ll.addToStore(truth);
   var::pt_lly.addToStore(truth);
   var::pt_ll.addToStore(truth);
+  var::yyStarCategory.addToStore(truth);
 
   if (!truth)
   {
@@ -904,6 +924,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
     var::Resolved_dRExtrapTrk12.addToStore(false);
     var::Resolved_deltaPhiRescaled2.addToStore(false);
     var::Resolved_deltaEta2.addToStore(false);
+    var::trk_lead_pt.addToStore(false);
   }
 
   var::N_mu   .addToStore(truth);
@@ -1256,6 +1277,9 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
           if (!electronHandler()->passPIDCut(tmp_eles[0],m_eleIDPreselection)) continue;
           if (!electronHandler()->passPIDCut(tmp_eles[1],m_eleIDPreselection)) continue;
         }
+        
+        float lead_pt_cut = config()->getNum("ElectronHandler.Selection.PtLeadCutGeV", 13);
+        if (tmp_eles[0]->pt() < lead_pt_cut*HG::GeV && tmp_eles[1]->pt() < lead_pt_cut*HG::GeV) continue;
 
         // In order to use standard electron ID, these tracks must be primary tracks!
         bool both_prim = (HG::MapHelpers::getMatchingTrackIndex(tmp_eles[0],tracki) == 0 &&

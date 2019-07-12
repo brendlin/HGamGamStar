@@ -23,11 +23,11 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 | **Get trk container**  | m_preSelTracks, preselected GSF <br> tracks (p<sub>T</sub>>0.3 GeV, &#124;&eta;&#124;<2.47) <br> nSi+DeadSens &ge; 7, nPix+DeadSens &ge; 2 <br>assoc. to a presel ele | TrackHandler.cxx | N/A |
 | **Get muon container** | m_preSelMuons, Medium PID,<br> p<sub>T</sub>>3 GeV, &#124;&eta;&#124;<2.7 | HggStarMxAOD.config<br>&eta; cut is in MuonHandler.cxx | N/A |
 | 9, TWO_SF_LEPTONS        | NpreSelTracks &ge; 2 or<br> NpreSelMuons &ge; 2 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
-| **Get &gamma; container** | m_preSelPhotons, OQ, cleaning, HV,<br> Loose ID, p<sub>T</sub>>10 GeV, &#124;&eta;&#124;<2.37<br> no crack, AuthorAmbiguous allowed | PhotonHandler.cxx | N/A
+| **Get &gamma; container** | m_preSelPhotons, OQ, cleaning, HV,<br> Loose ID, p<sub>T</sub>>20 GeV, &#124;&eta;&#124;<2.37<br> no crack, AuthorAmbiguous allowed | PhotonHandler.cxx | N/A
 |10, ONE_LOOSE_GAM         | Nloose &ge; 1 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 | **Photon choice**      | Selected photon is highest-p<sub>T</sub><br> presel photon | HiggsGamGamStarCutflowAndMxAOD.cxx | N/A |
 | **Z boson assignment** | Pick highest vector-sum p<sub>T</sub> SFOS pair<br>(&mu;s or tracks). Channels: <br>DIMUON=1, RESOLVED_DIELECTRON=2,<br>MERGED_DIELECTRON=3.<br>&mu; preferred. Use preselection below. | HggStarVariables.cxx,<br>HiggsGamGamStarCutflowAndMxAOD.cxx | N/A |
-| **Presel for Z-assignment above** | Res e: VeryLooseLH<br>Mrgd e: Rhad<0.1, NtrkPassBL&geq;1,<br>p<sub>T</sub>>20 GeV<br>&mu;: No additional cuts | " " | N/A |
+| **Presel for Z-assignment above** | Res e: VeryLooseLH,<br>lead p<sub>T</sub>>13 GeV<br>Mrgd e: Rhad<0.1, NtrkPassBL&geq;1,<br>p<sub>T</sub>>20 GeV<br>&mu;: lead p<sub>T</sub>>11 GeV | " " | N/A |
 |12, ZBOSON_ASSIGNMENT     | nSFOS &ge; 1 (muon or track pairs). | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 | **Get jet container**  | Selected jets | JetHandler.cxx | N/A |
 | **Overlap removal**    | Remove e if &Delta;R(e,&gamma;)<0.4<br> Remove jet if &Delta;R(j,&gamma;)<0.4<br>Remove jet if &Delta;R(j,e)<0.2<br>Remove e if &Delta;R(j,e)<0.4<br>Remove &mu; if &Delta;R(&mu;,&gamma;)<0.4<br>Remove &mu; if &Delta;R(&mu;,j)<0.4 | HGamAnalysisFramework/<br>OverlapRemovalHandler.cxx | " " |
@@ -42,7 +42,10 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |21, GAM_ISOLATION         | Photon passes FixedCutLoose | HGamAnalysisFramework/HGamRel21.config | " " |
 |22, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> (see code for merged mass definiton) | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |23, LLGMASSCUT            | 105 < m<sub>ll&gamma;</sub> && m<sub>ll&gamma;</sub> < 160 GeV | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
-|24, PASSALL               | Everything above passes | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+|24, LLMASSCUT             | Res/Mrgd e: m<sub>ll</sub> < 2.5 GeV or<br>m<sub>ll</sub> > 3.5 GeV (J/&Psi; peak veto)<br>&mu;: m<sub>ll</sub> < 2.9 GeV or<br>m<sub>ll</sub> > 3.3 GeV (J/&Psi; peak veto); <br> m<sub>ll</sub> < 9.1 GeV or<br>m<sub>ll</sub> > 10.6 GeV (&Upsilon; peak veto)    | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+|25, DILEP_PT_FRAC         | p<sub>T</sub><sup>ll</sup>/m<sub>ll&gamma;</sub> > 0.3 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+|26, GAM_PT_FRAC           | p<sub>T</sub><sup>&gamma;</sup>/m<sub>ll&gamma;</sub> > 0.3 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+|27, PASSALL               | Everything above passes | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 
 How to select events passing up to a certain cutflow point
 -----------------------

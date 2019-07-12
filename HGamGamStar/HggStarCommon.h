@@ -15,6 +15,16 @@ namespace HG {
     OTHER=6, //// Other Decay
     OUT_OF_ACCEPTANCE=7
   };
+  
+  enum CategoryEnum {
+    CATEGORYUNKNOWN=0,
+    GGF_DIMUON=1,
+    GGF_RESOLVED_DIELECTRON=2,
+    GGF_MERGED_DIELECTRON=3,
+    VBF_DIMUON=4,
+    VBF_RESOLVED_DIELECTRON=5,
+    VBF_MERGED_DIELECTRON=6,
+  };
 
   namespace TrkAcc {
     static SG::AuxElement::Accessor< std::vector<int> > MatchedElectrons("MatchedElectrons");
