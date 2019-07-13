@@ -55,7 +55,8 @@ namespace HG {
     float calculateIPSig(const xAOD::TrackParticle& trk) const;
     void decorateIPCut(xAOD::TrackParticle& trk);
     float calculateTRT_PID(const xAOD::TrackParticle& trk)const;
-    void decorateTRT_PID(xAOD::TrackParticle& trk);
+
+    void decorateAdditionalCuts(xAOD::TrackParticle& trk);
 
     size_t nMatchedElectrons(const xAOD::TrackParticle& trk) const;
 

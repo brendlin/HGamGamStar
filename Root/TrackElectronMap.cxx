@@ -3,7 +3,7 @@
 #include "xAODTruth/xAODTruthHelpers.h"
 
 #include "xAODBase/IParticleHelpers.h"
-#include "HGamAnalysisFramework/HgammaUtils.h"
+#include "HGamAnalysisFramework/HGamCommon.h"
 
 //______________________________________________________________________________
 float HG::MapHelpers::getTruthMatchProbability(const xAOD::TrackParticle* trackParticle)
@@ -155,4 +155,41 @@ xAOD::TrackParticle* HG::MapHelpers::FindTrackParticle(xAOD::TrackParticleContai
 
   HG::fatal("FindTrackParticle: Could not find a pointer in the container.");
   return nullptr;
+}
+
+//______________________________________________________________________________
+const xAOD::TrackParticle* HG::MapHelpers::FindTrackParticle(const xAOD::TrackParticleContainer* cont,
+                                                             const xAOD::TrackParticle* toFind)
+{
+  // Find a container TrackParticle corresponding to the specified TrackParticle pointer.
+
+  if (!cont) HG::fatal("FindTrackParticle: Passed the function a null container.");
+
+  for (auto tp : *cont)
+  {
+    const xAOD::TrackParticle* tp_p = (xAOD::TrackParticle*)getTheOriginalPointer(*tp);
+    if (tp_p == toFind) return tp;
+  }
+
+  HG::fatal("FindTrackParticle: Could not find a (const) pointer in the container.");
+  return nullptr;
+}
+
+//______________________________________________________________________________
+int HG::MapHelpers::FindTrackParticleIndex(const xAOD::TrackParticleContainer* cont,
+                                           const xAOD::TrackParticle* toFind)
+{
+  // Find a container TrackParticle corresponding to the specified TrackParticle pointer.
+
+  if (!cont) HG::fatal("FindTrackParticle: Passed the function a null container.");
+
+  for (unsigned int i=0;i<cont->size();i++)
+  {
+    const xAOD::TrackParticle* tp = (*cont)[i];
+    const xAOD::TrackParticle* tp_p = (xAOD::TrackParticle*)getTheOriginalPointer(*tp);
+    if (tp_p == toFind) return (int)i;
+  }
+
+  HG::fatal("FindTrackParticleIndex: Could not find a pointer in the container.");
+  return -1;
 }

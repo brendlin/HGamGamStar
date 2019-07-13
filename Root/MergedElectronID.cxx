@@ -59,7 +59,7 @@ void HG::MergedElectronID::decorateMergedVariables(xAOD::Electron &ele,xAOD::Tra
 }
 
 //______________________________________________________________________________
-bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::TrackParticle &/*trk1*/,const xAOD::TrackParticle &/*trk2*/){
+bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::TrackParticle &trk1,const xAOD::TrackParticle &trk2){
 
     // calculate shower shapes and other discriminating variables
     float deltaEta1 = ele.trackCaloMatchValue(xAOD::EgammaParameters::TrackCaloMatchType::deltaEta1);
@@ -159,11 +159,11 @@ bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::Trac
 
     // ninth cut: FHT2 / eta
     const std::vector<std::string> cutFHT2InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
-    if (!passCut(EleAcc::vtxTrk2_TRT_PID_trans(ele), cutFHT2InEta[iEta])) return(false);
+    if (!passCut(TrkAcc::TRT_PID_trans(trk2), cutFHT2InEta[iEta])) return(false);
 
     // tenth cut: FHT1 / eta
     const std::vector<std::string> cutFHT1InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
-    if (!passCut(EleAcc::vtxTrk1_TRT_PID_trans(ele), cutFHT1InEta[iEta])) return(false);
+    if (!passCut(TrkAcc::TRT_PID_trans(trk1), cutFHT1InEta[iEta])) return(false);
 
     // eleventh cut: EOverP / eta
     // const std::vector<std::string> cutEOverPInPt({"", ">0.2", ">0.2", ">0.2", ">0.2", ">0.2", ">0.25", "", "", ""});
@@ -180,11 +180,11 @@ bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::Trac
 
     // thirteenth cut: d0SigmaTrk1
     const std::vector<std::string> cutD0SigmaTrk1({"<5.0"});
-    if (!passCut(EleAcc::vtxTrk1_D0Sig(ele), cutD0SigmaTrk1[0])) return(false);
+    if (!passCut(TrkAcc::d0significance(trk1), cutD0SigmaTrk1[0])) return(false);
 
     // fourteenth cut: d0SigmaTrk2
     const std::vector<std::string> cutD0SigmaTrk2({"<5.0"});
-    if (!passCut(EleAcc::vtxTrk2_D0Sig(ele), cutD0SigmaTrk2[0])) return(false);
+    if (!passCut(TrkAcc::d0significance(trk2), cutD0SigmaTrk2[0])) return(false);
 
 
     // fSide: if (f1 > 0.005 && )

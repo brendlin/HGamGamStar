@@ -42,8 +42,6 @@ namespace HG {
 
     bool passPIDCut(const xAOD::Electron &ele) const ;
 
-    bool passPreselection(const xAOD::Electron &ele) const;
-
   };
 
 } // namespace HG

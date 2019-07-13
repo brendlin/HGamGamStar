@@ -217,27 +217,3 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
 
     return(false);
 }
-
-
-//______________________________________________________________________________
-bool HG::MergedElectronID_v2::passPreselection(const xAOD::Electron &ele) const{
-
-  if (HG::EleAcc::calibratedPhotonEnergy(ele) < m_mergedElePtCut) return false;
-
-  if (HG::EleAcc::RhadForPID(ele) > m_PreselRhad) return false;
-
-  int trk1_index =  HG::EleAcc::vtxTrkIndex1(ele);
-  int trk2_index =  HG::EleAcc::vtxTrkIndex2(ele);
-
-  // Two tracks are found
-  if(trk1_index < 0 || trk2_index < 0)
-    return false;
-
-
-  int nPassBlayer = 0;
-  nPassBlayer += HG::TrkAcc::passBLayerRequirement(*ele.trackParticle(trk1_index)) ? 1 : 0;
-  nPassBlayer += HG::TrkAcc::passBLayerRequirement(*ele.trackParticle(trk2_index)) ? 1 : 0;
-  if (nPassBlayer < m_PreselNPassBlayer) return false;
-
-  return true;
-}

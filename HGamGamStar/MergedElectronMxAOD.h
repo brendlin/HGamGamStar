@@ -75,6 +75,7 @@ private:
   // Containers
 
   xAOD::ElectronContainer m_selElectrons; //!
+  xAOD::TrackParticleContainer m_selTracks; //!
 
 
   std::map<HG::Iso::IsolationType, CP::IsolationCloseByCorrectionTool*> m_isoCloseByTools_Ele; //!
@@ -110,14 +111,16 @@ private:
   EL::StatusCode doTruth();
 
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons);
-  void AddElectronDecorations(xAOD::ElectronContainer& electrons);
+  void AddElectronDecorations(xAOD::ElectronContainer& electrons,
+                              xAOD::TrackParticleContainer& trackContainer);
 
   HG::ChannelEnum truthClass();
   HG::ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
                                                       const xAOD::TrackParticle* trk1,
                                                       const HG::TrackElectronMap& trkEleMap);
 
-  ElectronTruthType truthType( const xAOD::Electron* el ) const;
+  ElectronTruthType truthType( const xAOD::Electron* el,
+                               const xAOD::TrackParticleContainer& trackContainer) const;
 
 
 
