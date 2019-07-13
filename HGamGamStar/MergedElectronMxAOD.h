@@ -114,11 +114,6 @@ private:
   void AddElectronDecorations(xAOD::ElectronContainer& electrons,
                               xAOD::TrackParticleContainer& trackContainer);
 
-  HG::ChannelEnum truthClass();
-  HG::ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
-                                                      const xAOD::TrackParticle* trk1,
-                                                      const HG::TrackElectronMap& trkEleMap);
-
   ElectronTruthType truthType( const xAOD::Electron* el,
                                const xAOD::TrackParticleContainer& trackContainer) const;
 
