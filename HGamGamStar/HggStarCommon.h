@@ -7,6 +7,7 @@
 #include "xAODEgamma/PhotonContainer.h"
 #include "xAODTracking/VertexContainer.h"
 
+#include "HGamGamStar/TrackElectronMap.h"
 
 #include <vector>
 
@@ -172,6 +173,15 @@ namespace HG {
   void setPhotonConversionVertex( const xAOD::Electron* el,
                              xAOD::Photon* ph, float vtxR,
                              xAOD::VertexContainer* vertexContainer ) ;
+
+  ChannelEnum truthChannel(const xAOD::TruthParticleContainer& childleps,
+                           const xAOD::ElectronContainer& all_elecs);
+
+  ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
+                                                  const xAOD::TrackParticle* trk1,
+                                                  const HG::TrackElectronMap& trkEleMap,
+                                                  xAOD::ElectronContainer* inEleCont=nullptr,
+                                                  xAOD::ElectronContainer* outEleCont=nullptr);
 
 } // namespace HG
 
