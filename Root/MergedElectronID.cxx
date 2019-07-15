@@ -222,14 +222,14 @@ bool HG::MergedElectronID::passCut(const float obsValue, const std::string cutSt
       else if (cutSign == "=="){pass = pass && (obsValue == cutValue);}
       else if (cutSign == ">="){pass = pass && (obsValue >= cutValue);}
       else if (cutSign == ">"){pass = pass && (obsValue > cutValue);}
-      
+
     }
 
     return(pass);
 
 }
 unsigned HG::MergedElectronID::getPtBin(const xAOD::Electron * const el) const {
-    
+
     double pt = el->pt() / 1000.0;
 
     if (pt < 20.0){return(0);}
@@ -259,7 +259,7 @@ unsigned HG::MergedElectronID::getEtaBin(const xAOD::Electron * const el) const 
     else if (eta < 2.37){return(7);}
     else if (eta < 2.47){return(8);}
     else {return(9);}
-    
+
 }
 AngularPosition HG::MergedElectronID::getExtrapolatedTrackPosition(
     const xAOD::TrackParticle * track,
@@ -341,18 +341,18 @@ AngularPosition HG::MergedElectronID::getExtrapolatedTrackPosition(
 //lines below commented out since kalmanUpdate is not used -- to enable it, should also pass (a pointer to) xAOD::eventInfo here
 //         double sx = eventInfo->beamPosSigmaX();
 //         double sy = eventInfo->beamPosSigmaY();
-// 
+//
 //         const double measPar = 0.0;             // Constrain d0 to 0
 //         // const double measCov = 1e-12;        // Uncertainty on d0 1 nm -- something small
 //         const double measCov = 0.5 * (sx + sy);
-// 
+//
 //         const int mk = 0; // d0 is the first entry in the track parameter matrix
 //         double r = measPar - trkPar(mk);
 //         double R = measCov + trkCov(mk,mk); R = 1./R;
-// 
+//
 //         // compute updated state, here = TP + K * r = TP + TCov*H.T*R * r
 //         AmgVector(5) trkParNew = trkPar + trkCov.col(mk) * R * r;
-// 
+//
 //         d0 = trkParNew(0) / 1000.0;      // std::cout << "d0      = " << d0 << std::endl;
 //         z0 = trkParNew(1) / 1000.0;      // std::cout << "z0      = " << z0 << std::endl;
 //         phi = trkParNew(2);              // std::cout << "phi     = " << phi << std::endl;

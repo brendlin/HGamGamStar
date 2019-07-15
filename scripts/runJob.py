@@ -430,9 +430,9 @@ def main (options,args) :
 
         for ds in griddsets :
             
-            if 'TeV' not in ds :
-                print 'The dataset ' + ds + ' is in the wrong format, or there\'s an empty line(s) in your input file. Skipping it.'
-                continue
+            #if 'TeV' not in ds :
+            #    print 'The dataset ' + ds + ' is in the wrong format, or there\'s an empty line(s) in your input file. Skipping it.'
+            #    continue
             
             #remove white spaces from the beginning of string, slash from end of string (SH convention)
             ds = ds.lstrip().rstrip('/')

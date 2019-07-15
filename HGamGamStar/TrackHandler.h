@@ -20,7 +20,7 @@ namespace HG {
 
     double  m_etaCut;
     double  m_ptCut;
-    
+
     double m_d0BySigd0Cut;
     double m_z0Cut;
 
@@ -51,8 +51,12 @@ namespace HG {
     TruthTrackMap MakeTruthTrackMapFromElectronContainer(const xAOD::ElectronContainer& elecs);
 
     bool passIPCuts(xAOD::TrackParticle& trk);
+
+    float calculateIPSig(const xAOD::TrackParticle& trk) const;
     void decorateIPCut(xAOD::TrackParticle& trk);
-    void decorateTRT_PID(xAOD::TrackParticle& trk);
+    float calculateTRT_PID(const xAOD::TrackParticle& trk)const;
+
+    void decorateAdditionalCuts(xAOD::TrackParticle& trk);
 
     size_t nMatchedElectrons(const xAOD::TrackParticle& trk) const;
 

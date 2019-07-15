@@ -38,7 +38,7 @@ EL::StatusCode HG::TrackHandler::initialize(Config &config)
 
   m_etaCut     = config.getNum(m_name + ".Selection.MaxAbsEta", 2.47);
   m_ptCut      = config.getNum(m_name + ".Selection.PtPreCutGeV", 0.3) * GeV;
-  
+
   m_d0BySigd0Cut = config.getNum("ElectronHandler.Selection.d0BySigd0Max", 5.0);
   m_z0Cut = config.getNum("ElectronHandler.Selection.z0Max", 0.5);
 
@@ -53,10 +53,14 @@ xAOD::TrackParticleContainer HG::TrackHandler::getCorrectedContainer()
 
   // sort the tracks
   shallowContainer.sort(comparePt);
-  
+
   for (auto trk : shallowContainer){
+
+    // If we already decorated everything, then do not decorate again!
+    if (TrkAcc::TRT_PID_trans.isAvailable(*trk)) break;
+
     decorateIPCut(*trk);
-    decorateTRT_PID(*trk);
+    decorateAdditionalCuts(*trk);
   }
 
   return shallowContainer;
@@ -154,18 +158,6 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
       xAOD::TrackParticle* container_tp = HG::MapHelpers::FindTrackParticle(&container,ele_tp);
       selected.push_back(container_tp);
 
-      // Add reco-level decorators
-      TrkAcc::passBLayerRequirement(*container_tp) = ElectronSelectorHelpers::passBLayerRequirement(container_tp);
-      TrkAcc::pt(*container_tp) = container_tp->pt();
-
-      // Add default decorators
-      TrkAcc::mergedTrackParticleIndex(*container_tp) = -1;
-
-      // Decorate MC particles with some truth information:
-      if (HG::isMC()) {
-        const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*container_tp);
-        TrkAcc::isTrueHiggsElectron(*container_tp) = truthPart && HG::isFromHiggs(truthPart) && HG::isGoodTruthElectron(truthPart);
-      }
     }
   }
 
@@ -278,18 +270,26 @@ bool HG::TrackHandler::passIPCuts(xAOD::TrackParticle& trk)
 }
 
 //______________________________________________________________________________
-void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
+float HG::TrackHandler::calculateIPSig(const xAOD::TrackParticle& trk) const
 {
-  TrkAcc::passIPCut(trk) = true;
   const xAOD::EventInfo *eventInfo = 0;
 
   if (m_event->retrieve(eventInfo, "EventInfo").isFailure()) {
     fatal("Cannot access EventInfo");
   }
 
-  double d0sig = xAOD::TrackingHelpers::d0significance(&trk, eventInfo->beamPosSigmaX(), eventInfo->beamPosSigmaY(), eventInfo->beamPosSigmaXY());
-  
-  TrkAcc::d0significance(trk) = fabs(d0sig);
+  float d0sig = xAOD::TrackingHelpers::d0significance(&trk, eventInfo->beamPosSigmaX(), eventInfo->beamPosSigmaY(), eventInfo->beamPosSigmaXY());
+  return d0sig;
+}
+
+//______________________________________________________________________________
+void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
+{
+  TrkAcc::passIPCut(trk) = true;
+
+  float d0sig  = calculateIPSig(trk);
+   
+  TrkAcc::d0significance(trk) = d0sig;
 
   if (fabs(d0sig) > m_d0BySigd0Cut) { TrkAcc::passIPCut(trk) = false; }
 
@@ -309,12 +309,60 @@ void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
 
   if (fabs(z0sinTheta) > m_z0Cut) { TrkAcc::passIPCut(trk) = false; }
 }
-void HG::TrackHandler::decorateTRT_PID(xAOD::TrackParticle& trk)
+
+float HG::TrackHandler::calculateTRT_PID(const xAOD::TrackParticle& trk) const
 {
-    float t_TRT_PID(0.0);
-    trk.summaryValue(t_TRT_PID, xAOD::eProbabilityHT);
-    const double tau = 15.0;
-    if (t_TRT_PID >= 1.0) t_TRT_PID = 1.0 - 1.0e-15;
-    if (t_TRT_PID < 1.0e-30) t_TRT_PID = 1.0e-30;
-    TrkAcc::TRT_PID_trans(trk) = - log(1.0/t_TRT_PID - 1.0) / tau;
+  float t_TRT_PID(0.0);
+  trk.summaryValue(t_TRT_PID, xAOD::eProbabilityHT);
+  const double tau = 15.0;
+  if (t_TRT_PID >= 1.0) t_TRT_PID = 1.0 - 1.0e-15;
+  if (t_TRT_PID < 1.0e-30) t_TRT_PID = 1.0e-30;
+  return  - log(1.0/t_TRT_PID - 1.0) / tau;
+}
+
+void HG::TrackHandler::decorateAdditionalCuts(xAOD::TrackParticle& trk)
+{
+  // Add reco-level decorators
+  TrkAcc::TRT_PID_trans(trk) = calculateTRT_PID(trk);
+  TrkAcc::passBLayerRequirement(trk) = ElectronSelectorHelpers::passBLayerRequirement(&trk);
+  TrkAcc::pt(trk) = trk.pt();
+  TrkAcc::p(trk) = 1./(trk.qOverP());
+
+  // Add default decorators
+  TrkAcc::mergedTrackParticleIndex(trk) = -1;
+
+  TrkAcc::nPixHitsAndDeadSens(trk) = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(&trk);
+  TrkAcc::nSCTHitsAndDeadSens(trk) = ElectronSelectorHelpers::numberOfSCTHitsAndDeadSensors(&trk);
+
+  uint8_t arg;
+  TrkAcc::SharedIBL(trk) = trk.summaryValue(arg, xAOD::numberOfInnermostPixelLayerSharedHits      ) ? (int)arg : -999;
+  TrkAcc::SharedBL(trk)  = trk.summaryValue(arg, xAOD::numberOfNextToInnermostPixelLayerSharedHits) ? (int)arg : -999;
+  TrkAcc::SplitIBL(trk)  = trk.summaryValue(arg, xAOD::numberOfInnermostPixelLayerSplitHits       ) ? (int)arg : -999;
+  TrkAcc::SplitBL(trk)   = trk.summaryValue(arg, xAOD::numberOfNextToInnermostPixelLayerSplitHits ) ? (int)arg : -999;
+
+  TrkAcc::NIBL(trk) = trk.summaryValue(arg, xAOD::numberOfInnermostPixelLayerHits ) ? (int)arg : -999;
+  // If NIBL is 0 and expectInnermostPixelLayerHit variable is defined,
+  // fill NIBL with -(expectIBLHit) (0 = do not expect a hit or -1 = expected a hit)
+  if (TrkAcc::NIBL(trk) == 0 && trk.summaryValue(arg, xAOD::expectInnermostPixelLayerHit)) {
+    TrkAcc::NIBL(trk) = -(int)arg;
+  }
+
+  TrkAcc::NBL(trk) = trk.summaryValue(arg, xAOD::numberOfNextToInnermostPixelLayerHits) ? (int)arg : -999;
+  if ( TrkAcc::NBL(trk) == 0 && trk.summaryValue(arg, xAOD::expectNextToInnermostPixelLayerHit)) {
+    TrkAcc::NBL(trk) = -(int)arg;
+  }
+
+  // Make passTTVA branch (default is -1)
+  TrkAcc::PassTTVA(trk) = 0;
+
+  // Decorate MC particles with some truth information:
+  if (HG::isMC()) {
+    const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(trk);
+    TrkAcc::isTrueHiggsElectron(trk) = truthPart && HG::isFromHiggs(truthPart) && HG::isGoodTruthElectron(truthPart);
+
+    TrkAcc::PdgID(trk)   = truthPart ? truthPart->pdgId()   : -999;
+    TrkAcc::Barcode(trk) = truthPart ? truthPart->barcode() : -999;
+    TrkAcc::TruthE(trk)  = truthPart ? truthPart->p4().E()  : -999;
+  }
+
 }

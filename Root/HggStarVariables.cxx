@@ -32,6 +32,7 @@ namespace var {
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
+  HG::vertexTruthFitRadius vertexTruthFitRadius;
   HG::trk_lead_pt trk_lead_pt;
   HG::yyStarCategory yyStarCategory;
   HG::Dphi_lly_jj Dphi_lly_jj;
@@ -68,7 +69,7 @@ int HG::yyStarCategory::calculateValue(bool truth)
   return CategoryEnum::CATEGORYUNKNOWN;
 }
 
-float HG::Resolved_dRExtrapTrk12::calculateValue(bool truth)
+float HG::Resolved_dRExtrapTrk12::calculateValue(bool /* truth*/)
 {
   if (var::yyStarChannel() != ChannelEnum::RESOLVED_DIELECTRON) return m_default;
   float deta_e1e2 = var::Resolved_deltaEta2();

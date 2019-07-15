@@ -85,7 +85,7 @@ namespace HG {
       return m_default;
     }
   };
-  
+
   //____________________________________________________________________________
   class deltaR_ll : public VarBase<float> {
   public:
@@ -518,6 +518,14 @@ namespace HG {
   };
   
   //____________________________________________________________________________
+  class vertexTruthFitRadius : public VarBase<float> {
+    public:
+     vertexTruthFitRadius() : VarBase("vertexTruthFitRadius") { m_default = -99; }
+     ~vertexTruthFitRadius() { }
+  //
+  };
+
+
   class Dphi_lly_jj : public VarBase<float> {
   public:
     Dphi_lly_jj() : VarBase("Dphi_lly_jj") { m_default = -99; }
@@ -791,8 +799,9 @@ namespace var {
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
+  extern HG::vertexTruthFitRadius vertexTruthFitRadius;
   extern HG::trk_lead_pt trk_lead_pt;
-  extern HG::yyStarCategory yyStarCategory;  
+  extern HG::yyStarCategory yyStarCategory;
   extern HG::Dphi_lly_jj Dphi_lly_jj;
   extern HG::Zepp_lly Zepp_lly;
   extern HG::pTt_lly pTt_lly;

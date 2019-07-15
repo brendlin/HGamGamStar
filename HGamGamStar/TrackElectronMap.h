@@ -13,6 +13,8 @@ namespace HG
   typedef std::map<const xAOD::TruthParticle*, const xAOD::TrackParticle*> TruthTrackMap;
   typedef std::multimap<const xAOD::TrackParticle*, const xAOD::Electron*> TrackElectronMap;
 
+
+
   namespace MapHelpers
   {
 
@@ -45,6 +47,10 @@ namespace HG
 
    /** Find the TrackParticle in a particular container */
    xAOD::TrackParticle* FindTrackParticle(xAOD::TrackParticleContainer* cont, const xAOD::TrackParticle* toFind);
+
+   /** const version **/
+   const xAOD::TrackParticle* FindTrackParticle(const xAOD::TrackParticleContainer* cont, const xAOD::TrackParticle* toFind);
+   int FindTrackParticleIndex(const xAOD::TrackParticleContainer* cont,const xAOD::TrackParticle* toFind);
 
   }// End namespace
 

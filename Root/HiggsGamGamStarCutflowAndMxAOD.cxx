@@ -5,6 +5,8 @@
 
 #include "HGamGamStar/ExtraHggStarObjects.h"
 #include "HGamGamStar/TrackElectronMap.h"
+#include "xAODTracking/VertexAuxContainer.h"
+
 
 
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
@@ -38,6 +40,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 
   m_mergedElectronID = new HG::MergedElectronID();
   ANA_CHECK(m_mergedElectronID->initialize(*config()));
+
+  m_mergedElectronID_v2 = new HG::MergedElectronID_v2();
+  ANA_CHECK(m_mergedElectronID_v2->initialize(*config()));
 
   // We will evaluate the close-by correction for every working point, provided that it falls
   // into the Resovled category.
@@ -282,215 +287,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 }
 
 
-HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::truthClass()
-{
-  // Get Higgs Final State Decay Products
-
-  if (!HG::isMC())
-    return HG::CHANNELUNKNOWN;
-
-  // Get Leptons from Higgs decay products
-  const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
-  if (childleps->size() != 2)
-    return HG::OTHER;
-
-  // Check for out-of-acceptance
-  for(const auto& lepton: *childleps){
-    if (fabs(lepton->pdgId()) == 11) {
-      if (lepton->pt()/1000. < 0.3) return HG::OUT_OF_ACCEPTANCE;
-      if (fabs(lepton->eta()) > 2.5) return HG::OUT_OF_ACCEPTANCE;
-    }
-    else if (fabs(lepton->pdgId()) == 13) {
-      if (lepton->pt()/1000. < 3.0) return HG::OUT_OF_ACCEPTANCE;
-      if (fabs(lepton->eta()) > 2.7) return HG::OUT_OF_ACCEPTANCE;
-    }
-  }
-
-  // Check if there are electrons in the decay
-  bool isElectron = true;
-  bool isMuon =  false;
-  for(const auto& lepton: *childleps){
-    if( fabs(lepton->pdgId()) != 11 )
-      isElectron =  false;
-    if( fabs(lepton->pdgId()) == 13 )
-      isMuon  = true;
-  }
-
-  if(isMuon)
-    return HG::DIMUON;
-
-  if(!isElectron)
-    return HG::OTHER;
-
-  // Fill maps linking truth particle and track and track and electron
-  // To be used to work out how many times a truth particle matches an electron candidate
-  const xAOD::ElectronContainer all_elecs = electronHandler()->getCorrectedContainer();
-  xAOD::TrackParticleContainer all_tracks = trackHandler()->getCorrectedContainer();
-
-  // Truth-track map
-  HG::TruthTrackMap trkTruthMap = trackHandler()->MakeTruthTrackMapFromElectronContainer(all_elecs);
-
-  // Track-electron map
-  HG::TrackElectronMap trkEleMap;
-  trackHandler()->findTracksFromElectrons(all_tracks,all_elecs,trkEleMap,true);
-
-  // Get the track assoicated to the two leptons
-  std::vector<const xAOD::TrackParticle*> leptonTracks;
-  for(const auto& lepton: *childleps){
-    auto leptonTrack  =  HG::MapHelpers::getTrackMatchingTruth( lepton, trkTruthMap );
-    if(leptonTrack)
-      leptonTracks.push_back(leptonTrack);
-  }
-
-  // If the the two tracks are not reconstructed then the truth matching has failed, exit
-  if(leptonTracks.size()!=2)
-    return HG::FAILEDTRKELECTRON;
-
-
-  // Electron disambiguation is continued below in (reco-only) function
-  return ClassifyElectronChannelsByBestMatch(leptonTracks[0],leptonTracks[1],trkEleMap);
-}
-
-
-HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
-                                                                                    const xAOD::TrackParticle* trk1,
-                                                                                    const HG::TrackElectronMap& trkEleMap,
-                                                                                    xAOD::ElectronContainer* inEleCont,
-                                                                                    xAOD::ElectronContainer* outEleCont)
-{
-
-  // Find the electrons associated to the tracks
-  auto Trk0_Electrons = HG::MapHelpers::getElectronsMatchingTrack( trk0, trkEleMap );
-  auto Trk1_Electrons = HG::MapHelpers::getElectronsMatchingTrack( trk1, trkEleMap );
-
-  // Count the number of electrons a track matches to
-  int Trk0_nElectron = Trk0_Electrons.size();
-  int Trk1_nElectron = Trk1_Electrons.size();
-
-  // If each track only matches to 1 electron each then it is quite simple
-  if( Trk0_nElectron == 1 &&  Trk1_nElectron == 1){
-    // Match the same electron --  Merged
-    if( Trk0_Electrons.front() == Trk1_Electrons.front() )
-    {
-      if (inEleCont)
-        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,Trk0_Electrons.front()));
-      return HG::MERGED_DIELECTRON;
-    }
-    else
-    {
-      // Match different electrons  -- Resolved
-      if (inEleCont) {
-        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,Trk0_Electrons.front()));
-        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,Trk1_Electrons.front()));
-      }
-      return HG::RESOLVED_DIELECTRON;
-    }
-  }
-
-  // Tracks match more than one electron each - lets see if they are the best match for any electron
-  // Determine the match ranking for the track to each electron
-  std::vector<int> Trk0_TrackNo = HG::MapHelpers::getMatchingTrackIndices(Trk0_Electrons,trk0);
-
-  // Check if the track is ever the primary track
-  int Trk0_PrimaryE(-1);
-  for( unsigned int i(0); i < Trk0_TrackNo.size(); ++i){
-    if( Trk0_TrackNo[i] == 0 ){
-      // If the track is the primary track for multiple electrons 
-      // choose the one with higher pT
-      if( Trk0_PrimaryE > -1 ){
-        if( Trk0_Electrons[i]->pt() > Trk0_Electrons[Trk0_PrimaryE]->pt() )
-          Trk0_PrimaryE = i; 
-      }else{ 
-        Trk0_PrimaryE = i;
-      }
-    }
-  }
-
-  // Same again for the other electron
-  std::vector<int> Trk1_TrackNo = HG::MapHelpers::getMatchingTrackIndices(Trk1_Electrons,trk1);
-
-  int Trk1_PrimaryE(-1);
-  for( unsigned int i(0); i < Trk1_TrackNo.size(); ++i){
-    if( Trk1_TrackNo[i] == 0 ){
-      // If the track is the primary track for multiple electrons 
-      // choose the one with higher pT
-      if( Trk1_PrimaryE > -1 ){
-        if( Trk1_Electrons[i]->pt() > Trk1_Electrons[Trk1_PrimaryE]->pt() )
-          Trk1_PrimaryE = i; 
-      }else{ 
-        Trk1_PrimaryE = i;
-      }
-    }
-  }
-
-  // If both tracks are the primary track for an electron the it is resolved
-  if( Trk0_PrimaryE > -1 && Trk1_PrimaryE > -1 ){
-    // Get to the correct pair iterator
-    // This is a pair of TrackParticle , Electron
-    auto el0 = Trk0_Electrons[Trk0_PrimaryE];
-    auto el1 = Trk1_Electrons[Trk1_PrimaryE];
-
-    // Compare if the electrons are the same
-    if( el0 == el1 )
-    {
-      HG::fatal("Electron classification truth error!");
-      return HG::AMBIGUOUS_DIELECTRON;
-    }
-    if (inEleCont) {
-      outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el0));
-      outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el1));
-    }
-    return HG::RESOLVED_DIELECTRON;
-  }
-
-  // If either are primary
-  if( Trk0_PrimaryE > -1 || Trk1_PrimaryE > -1 ){
-    const xAOD::Electron*  el = nullptr;
-    const xAOD::Electron*  elOther = nullptr;
-    const xAOD::TrackParticle* otherTrack = nullptr;
-    int nEleOther = 0;
-    if( Trk0_PrimaryE >= 0 ){
-      el = Trk0_Electrons[Trk0_PrimaryE];
-      otherTrack = trk1;
-      nEleOther = Trk1_nElectron;
-      if (nEleOther == 1) elOther = Trk1_Electrons[0];
-    }else{
-      el = Trk1_Electrons[Trk1_PrimaryE];
-      otherTrack = trk0;
-      nEleOther = Trk0_nElectron;
-      if (nEleOther == 1) elOther = Trk0_Electrons[0];
-    }
-
-    // Search for the other track in the electron
-    for( unsigned int trk_i(0); trk_i < el->nTrackParticles(); ++trk_i){
-      if( el->trackParticle(trk_i) == otherTrack )
-      {
-        if (inEleCont)
-          outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el));
-        return HG::MERGED_DIELECTRON;
-      }
-    }
-    //If the other track is only matched to one electron and its not the primary track
-    //We assume the reco has made a mistake so we will call it resolved
-    if(nEleOther == 1)
-    {
-      if (inEleCont) {
-        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,el));
-        outEleCont->push_back(HG::MapHelpers::FindElectron(inEleCont,elOther));
-      }
-      return HG::RESOLVED_DIELECTRON;
-    }
-  }
-
-  //Tracks are not primary for any electron candidate, tracks match to mutiple candiates
-  // --  generally the reco has made a mess.
-  // Might want to keep looking for candidates
-
-
-  return HG::AMBIGUOUS_DIELECTRON;
-}
-
-
 // Returns value of the last cut passed in the cut sequence
 HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow()
 {
@@ -664,8 +460,13 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       pt_ll = merged.Pt();
       m_lly = (merged + m_selPhotons[0]->p4()).M();
       // Decorate merged variables as soon as you find out the channel is merged
-      m_mergedElectronID->decorateMergedVariables(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1]);
+      xAOD::Electron ele = *m_selElectrons[0];
+      xAOD::TrackParticle trk0 = *m_selTracks[0];
+      xAOD::TrackParticle trk1 = *m_selTracks[1];
+      m_mergedElectronID->decorateMergedVariables(ele,trk0,trk1);
       // Need to cut on lead track pt in merged case when processing MxAODs, for that need a variable which is defined for each event (i.e. also need it in muon/resolved events where the value is -99)
+      HG::EleAcc::passPID(ele) = m_mergedElectronID->passPIDCut(ele,trk0,trk1);
+      HG::EleAcc::passTMVAPID(ele) = m_mergedElectronID_v2->passPIDCut(ele);
     }
     else if (m_selElectrons.size() == 2) {
       m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
@@ -674,7 +475,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     }
 
   }
-  
+
   decorateCorrectedIsoCut(m_selElectrons, m_selMuons);
 
   m_allJets = jetHandler()->getCorrectedContainer();
@@ -1054,10 +855,11 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
   HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(all_particles);
 
-  var::yyStarChannel.setTruthValue( (int) truthClass() );
-
- 
-
+  // Code for the Truth Channel determination
+  const xAOD::ElectronContainer all_reco_elecs = electronHandler()->getCorrectedContainer();
+  auto childleps = *(HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons());
+  HG::ChannelEnum truthChannel = HG::truthChannel(childleps,all_reco_elecs);
+  var::yyStarChannel.setTruthValue( (int)truthChannel );
 
   // Adds event-level variables to TStore (this time using truth containers)
   bool truth = true;
@@ -1068,10 +870,10 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
     writeTruthOnlyVars();
     if (m_saveDetailed)
     { writeDetailedVars(truth); }
-    //   
+    //
     const xAOD::TruthParticleContainer *higgsLeptons = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
     const xAOD::TruthParticleContainer *higgsPhotons = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsPhotons();
-    
+
     bool isFiducial = true;
     int nFidLeptons=0;
     int nFidPhotons=0;
@@ -1083,7 +885,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
         if( abs(part->pdgId()) == 11 ){
           if( part->pt() < 4.5 * HG::GeV )
             continue;
-          if( fabs(part->eta() ) < 2.5 )  
+          if( fabs(part->eta() ) < 2.5 )
             continue;
         } else if ( abs(part->pdgId()) == 13 ){
           if( part->pt() < 3. * HG::GeV )
@@ -1095,16 +897,16 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
         }
         ++nFidLeptons;
       }
-      
+
       for( const auto& part: *higgsPhotons){
         if( part->pt() < 30. * HG::GeV  )
           continue;
-        if( fabs(part->eta() ) < 2.37 )  
+        if( fabs(part->eta() ) < 2.37 )
           continue;
         ++nFidPhotons;
       }
     }
-  
+
     if( nFidPhotons !=1 || nFidLeptons !=2 ){
       isFiducial = false;
     }
@@ -1176,9 +978,9 @@ void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronConta
       (*dec.second)(*electron) = electronHandler()->passIsoCut(electron,dec.first);
     }
   }
-    
+
   if(var::yyStarChannel()==HG::DIMUON){
-    std::vector<const xAOD::IParticle*> muonsVec; 
+    std::vector<const xAOD::IParticle*> muonsVec;
     for(auto muon: muons) muonsVec.push_back((const xAOD::IParticle*) muon);
     for(auto muon: muons)
     {
@@ -1325,6 +1127,12 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
 
 void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
 
+  xAOD::VertexContainer* outVerticies = new xAOD::VertexContainer();
+  xAOD::VertexAuxContainer* outVerticiesAux = new xAOD::VertexAuxContainer();
+  outVerticies->setStore(outVerticiesAux);
+  eventHandler()->evtStore()->record( outVerticies, "TempVerticies" );
+  eventHandler()->evtStore()->record( outVerticiesAux, "TempVerticiesAux." );
+
   for (auto electron : electrons) {
 
     // NEED TO initialize merged electron ID variables here!
@@ -1333,6 +1141,9 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::EleAcc::dRExtrapTrk12_LM(*electron) = -999;
     HG::EleAcc::delta_z0sinTheta_tracks(*electron) = -999;
     HG::EleAcc::delta_z0_tracks(*electron) = -999;
+    HG::EleAcc::passPID(*electron) = false;
+    HG::EleAcc::passTMVAPID(*electron) = false;
+
     // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_P_L1(*electron) = -999;
@@ -1343,6 +1154,26 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::EleAcc::RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
       electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
       electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+
+
+
+    int index1 = HG::EleAcc::vtxTrkIndex1(*electron);
+    int index2 = HG::EleAcc::vtxTrkIndex2(*electron);
+    HG::EleAcc::vtxTrk1_TRT_PID_trans(*electron) = index1<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index1)) ;
+    HG::EleAcc::vtxTrk2_TRT_PID_trans(*electron) = index2<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index2)) ;
+
+    xAOD::Photon* photon = HG::createPhotonFromElectron(electron);
+
+
+    if(photon)
+    {
+      HG::setPhotonConversionVertex( electron, photon, 20, outVerticies);
+      HG::EleAcc::calibratedPhotonEnergy(*electron) = photon->e();
+
+      delete photon;
+    } else {
+      HG::EleAcc::calibratedPhotonEnergy(*electron) = -999;
+    }
 
   }
 

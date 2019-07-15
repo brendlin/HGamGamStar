@@ -1,21 +1,31 @@
-#ifndef HGamGamStar_HiggsGamGamStarCutflowAndMxAOD_H
-#define HGamGamStar_HiggsGamGamStarCutflowAndMxAOD_H
+#ifndef HGamGamStar_MergedElectronMxAOD_H
+#define HGamGamStar_MergedElectronMxAOD_H
 
 #include "HGamGamStar/HggStarCommon.h"
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
 #include "HGamGamStar/MxAODTool.h"
 /* #include "FsrUtils/FsrPhotonTool.h" */
 #include "AsgTools/ToolHandle.h"
+#include <AsgTools/AnaToolHandle.h>
+
+
 /* #include "ZMassConstraint/IConstraintFit.h" */
 #include "HGamGamStar/HggStarVariables.h"
 #include "HGamGamStar/TrackHandler.h"
 #include "HGamGamStar/MergedElectronID.h"
-#include "HGamGamStar/MergedElectronID_v2.h"
 
 #include "IsolationSelection/IsolationCloseByCorrectionTool.h"
 #include "IsolationSelection/IsolationSelectionTool.h"
 
-class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
+namespace InDet {
+    class IInDetTrackSelectionTool;
+}
+
+namespace CP {
+    class ITrackVertexAssociationTool;
+}
+
+class MergedElectronMxAOD : public MxAODTool
 {
 
 private:
@@ -23,20 +33,18 @@ private:
   // Cut-flow - need to keep the same order!
   enum CutEnum {
     // Covered in MxAODTool: NxAOD=0, NDxAOD=1, ALLEVTS=2
-    HIGGS_LEP_DALITZ=3, DUPLICATE=4, GRL=5, TRIGGER=6, DQ=7, VERTEX=8,
-    TWO_SF_LEPTONS=9,ONE_LOOSE_GAM=10, AMBIGUITY=11,
-    ZBOSON_ASSIGNMENT=12,TWO_SF_LEPTONS_POSTOR=13,BAD_MUON=14,ONE_PHOTON_POSTOR=15,
-    TRIG_MATCH=16, LEP_MEDID=17, LEP_IP=18, LEP_ISO=19, GAM_TIGHTID=20, GAM_ISOLATION=21, 
-    ZMASSCUT=22, LLGMASSCUT=23, LLMASSCUT=24, DILEP_PT_FRAC=25, GAM_PT_FRAC=26, PASSALL=27
+    DUPLICATE=3, GRL=4,  DQ=5, VERTEX=6, ELECTRON=7, PASSALL=8
   };
 
+  //
+  enum ElectronTruthType{
+    SignalGood, SignalCompromised, BackgroundHad, BackgroundHadHad, BackgroundElHad, BackgroundElEl
+  };
+
+
   // names of all cuts (do not includ "pass all")
-  const std::vector<TString> s_cutDescs =
-    {"Lepton Dalitz truth","No duplicates","GRL","Pass trigger","Detector DQ","Has PV",
-     "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity","Z-boson assignment",
-     "2 same-flavor leptons (post-OR)","Bad muon","1 loose photon (post-OR)",
-     "Trigger match","tight ID","isolation","#it{m}_{ll} < 45 GeV",
-     "#it{m}_{ll#gamma} #in [105,160] GeV", "#it{m}_{ll} J/#Psi/#Upsilon window", "p^{ll}_{T}/#it{m}_{ll#gamma} > 0.3", "p^{#gamma}_{T}/#it{m}_{ll#gamma} > 0.3" };
+  const std::vector<TString> s_cutDescs =  {"No duplicates","GRL","Detector DQ",
+                                            "Has PV","Electron","Pass"};
 
   /// value of cut that fail selection: PASSALL if all cuts passed
   CutEnum m_cutFlow;
@@ -65,25 +73,10 @@ private:
   bool m_applySystematics, m_saveObjects, m_saveTruthObjects, m_saveTruthVars;
 
   // Containers
-  xAOD::PhotonContainer m_allPhotons; //!
-  xAOD::PhotonContainer m_preSelPhotons; //!
-  xAOD::PhotonContainer m_selPhotons; //!
 
-  xAOD::JetContainer m_allJets; //!
-  xAOD::JetContainer m_selJets; //!
-  xAOD::JetContainer m_jvtJets; //!
-
-  xAOD::ElectronContainer m_allElectrons; //!
   xAOD::ElectronContainer m_selElectrons; //!
-  // xAOD::ElectronContainer m_preSelElectrons; //!
-
-  xAOD::TrackParticleContainer m_allTracks; //!
-  xAOD::TrackParticleContainer m_preSelTracks; //!
   xAOD::TrackParticleContainer m_selTracks; //!
 
-  xAOD::MuonContainer m_allMuons; //!
-  xAOD::MuonContainer m_selMuons; //!
-  xAOD::MuonContainer m_preSelMuons; //!
 
   std::map<HG::Iso::IsolationType, CP::IsolationCloseByCorrectionTool*> m_isoCloseByTools_Ele; //!
   std::map<HG::Iso::IsolationType, CP::IsolationCloseByCorrectionTool*> m_isoCloseByTools_Muon; //!
@@ -97,15 +90,14 @@ private:
   TH1F* getCutFlowHisto(bool onlyDalitz=false) {
     int ID = getSampleID()*(onlyDalitz?-1:1);
     if (TH1F *h = m_cFlowHistos[ID]) return h;
-    m_cFlowHistos[ID] = makeCutFlowHisto(ID, s_cutDescs, onlyDalitz?"_onlyDalitz":"");
+    m_cFlowHistos[ID] = makeCutFlowHisto(ID, s_cutDescs, "");
     return m_cFlowHistos[ID];
   }
 
   TH1F* getCutFlowWeightedHisto(bool onlyDalitz=false) {
     int ID = getSampleID()*(onlyDalitz?-1:1);
     if (TH1F *h = m_cFlowHistosWeighted[ID]) return h;
-    m_cFlowHistosWeighted[ID] = makeCutFlowHisto(ID, s_cutDescs,
-                                                 onlyDalitz?"_onlyDalitz_weighted":"_weighted");
+    m_cFlowHistosWeighted[ID] = makeCutFlowHisto(ID, s_cutDescs,"_weighted");
     return m_cFlowHistosWeighted[ID];
   }
 
@@ -118,28 +110,22 @@ private:
   EL::StatusCode doReco(bool isSys = false);
   EL::StatusCode doTruth();
 
-  void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
-  void AddElectronDecorations(xAOD::ElectronContainer& electrons);
+  void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons);
+  void AddElectronDecorations(xAOD::ElectronContainer& electrons,
+                              xAOD::TrackParticleContainer& trackContainer);
 
-  HG::ChannelEnum ClassifyElectronsOld(xAOD::TrackParticle* trk0,
-                                       xAOD::TrackParticle* trk1,
-                                       const HG::TrackElectronMap& trkEleMap,
-                                       xAOD::ElectronContainer* inEleCont=nullptr,
-                                       xAOD::ElectronContainer* outEleCont=nullptr);
+  ElectronTruthType truthType( const xAOD::Electron* el,
+                               const xAOD::TrackParticleContainer& trackContainer) const;
 
-  HG::ChannelEnum FindZboson_ElectronChannelAware(xAOD::TrackParticleContainer* inTracks,
-                                                  xAOD::TrackParticle*& sel_trk1,
-                                                  xAOD::TrackParticle*& sel_trk2,
-                                                  double& return_mll,
-                                                  const HG::TrackElectronMap& trkEleMap,
-                                                  xAOD::ElectronContainer* inEleCont,
-                                                  xAOD::ElectronContainer* outEleCont);
+
 
 private:
 #ifndef __CINT__
   HG::TrackHandler *m_trackHandler; //!
   HG::MergedElectronID * m_mergedElectronID; //!
-  HG::MergedElectronID_v2 * m_mergedElectronID_v2; //!
+
+  asg::AnaToolHandle<InDet::IInDetTrackSelectionTool> m_trkselTool; //!
+  asg::AnaToolHandle<CP::ITrackVertexAssociationTool> m_ttvaTool; //!
 #endif // __CINT__
 
 protected:
@@ -148,9 +134,9 @@ protected:
 public:
 
   // this is a standard constructor
-  HiggsGamGamStarCutflowAndMxAOD() { }
-  HiggsGamGamStarCutflowAndMxAOD(const char *name);
-  virtual ~HiggsGamGamStarCutflowAndMxAOD();
+  MergedElectronMxAOD() { }
+  MergedElectronMxAOD(const char *name);
+  virtual ~MergedElectronMxAOD();
 
   // these are the functions inherited from HgammaAnalysis
   virtual EL::StatusCode createOutput();
@@ -174,15 +160,13 @@ public:
   void writeDetailed();
 
   // Functions for writing variables (E.g. "writeBlahVars" is called by "writeBlah")
-  // Use these for variables for which a truth and a reco variable exists.
-  void writePhotonAllSysVars(bool truth = false);
   void writeNominalAndSystematicVars(bool truth = false);
   void writeNominalOnlyVars(bool truth = false);
   void writeDetailedVars(bool truth = false);
   void writeTruthOnlyVars();
 
   // this is needed to distribute the algorithm to the workers
-  ClassDef(HiggsGamGamStarCutflowAndMxAOD, 1);
+  ClassDef(MergedElectronMxAOD, 1);
 };
 
-#endif // HGamGamStar_HiggsGamGamStarCutflowAndMxAOD_H
+#endif // HGamGamStar_MergedElectronMxAOD_H
