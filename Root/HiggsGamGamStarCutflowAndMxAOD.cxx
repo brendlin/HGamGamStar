@@ -1062,7 +1062,7 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
       if (tracki->charge() == trackj->charge()) continue;
 
       xAOD::ElectronContainer tmp_eles(SG::VIEW_ELEMENTS);
-      HG::ChannelEnum tmp_chan = ClassifyElectronChannelsByBestMatch(tracki,trackj,trkEleMap,inEleCont,&tmp_eles);
+      HG::ChannelEnum tmp_chan = HG::ClassifyElectronChannelsByBestMatch(tracki,trackj,trkEleMap,inEleCont,&tmp_eles);
 
       if (tmp_chan != HG::RESOLVED_DIELECTRON &&
           tmp_chan != HG::MERGED_DIELECTRON) continue;
@@ -1119,7 +1119,7 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
   if (return_mll > 0)
   {
     // Re-do, but fill electron containers
-    return_chan = ClassifyElectronChannelsByBestMatch(sel_trk1,sel_trk2,trkEleMap,inEleCont,outEleCont);
+    return_chan = HG::ClassifyElectronChannelsByBestMatch(sel_trk1,sel_trk2,trkEleMap,inEleCont,outEleCont);
   }
 
   return return_chan;
