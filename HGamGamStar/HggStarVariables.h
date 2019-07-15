@@ -267,6 +267,24 @@ namespace HG {
       return ((*trks)[0]->p4() + (*trks)[1]->p4()).M();
     }
   };
+  
+  //____________________________________________________________________________
+  class trk_lead_pt : public VarBase<float> {
+  public:
+    trk_lead_pt() : VarBase("trk_lead_pt") { m_default = -99; m_recoOnly = true; }
+    ~trk_lead_pt() { }
+    
+    float calculateValue(bool truth)
+    {
+      if (truth)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *trks = ExtraHggStarObjects::getInstance()->getElectronTracks();
+      if (!trks->size()) return m_default;
+
+      return (*trks)[0]->pt();
+    }
+  };
 
   //____________________________________________________________________________
   class pt_llyy : public VarBase<float> {
@@ -489,7 +507,16 @@ namespace HG {
     // Set the reco  value by specifying var::yyStarChannel.setValue(val)
     // Set the truth value by specifying var::yyStarChannel.setTruthValue(val)
   };
-
+  
+  //____________________________________________________________________________
+  class yyStarCategory : public VarBase<int> {
+  public:
+  yyStarCategory() : VarBase("yyStarCategory") { m_default = -99; }
+    ~yyStarCategory() { }
+    
+    int calculateValue(bool truth); // See cxx file
+  };
+  
   //____________________________________________________________________________
   class vertexTruthFitRadius : public VarBase<float> {
     public:
@@ -737,7 +764,7 @@ namespace HG {
   //____________________________________________________________________________
 
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
-                           double& return_mll,bool sortby_pt,double closest_to); // Z = 91188
+                           double& return_mll,bool sortby_pt,double closest_to,float lead_pt_cut); // Z = 91188
 
   bool eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
   bool isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl);
@@ -773,6 +800,8 @@ namespace var {
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
   extern HG::vertexTruthFitRadius vertexTruthFitRadius;
+  extern HG::trk_lead_pt trk_lead_pt;
+  extern HG::yyStarCategory yyStarCategory;
   extern HG::Dphi_lly_jj Dphi_lly_jj;
   extern HG::Zepp_lly Zepp_lly;
   extern HG::pTt_lly pTt_lly;
