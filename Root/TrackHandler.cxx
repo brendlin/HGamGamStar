@@ -30,14 +30,20 @@ EL::StatusCode HG::TrackHandler::initialize(Config &config)
   // Read in configuration information
   m_containerName = config.getStr(m_name + ".ContainerName", "GSFTrackParticles");
 
-  //electron selection
+  //track selection
+  // NOTE: if using track-based selection, these are applied on top of that, after
+  // the indices are chosen.
   m_nSiMin     = config.getInt (m_name + ".Selection.nSiMin",7);
-  m_nPixMin    = config.getInt (m_name + ".Selection.nPixMin",2);
+  m_nPixMin    = config.getInt (m_name + ".Selection.nPixMin",0);
+
+  // do index-based track selection (see related function)
+  // BE CAREFUL - this selection has hard-coded values to match the DAOD!
+  m_doIndexBasedTrackSelection = config.getBool (m_name + ".Selection.IndexBasedTrackSelection",true);
 
   m_truth_nSiMin = config.getInt (m_name + ".TruthSelection.nSiMin",3);
 
   m_etaCut     = config.getNum(m_name + ".Selection.MaxAbsEta", 2.47);
-  m_ptCut      = config.getNum(m_name + ".Selection.PtPreCutGeV", 0.3) * GeV;
+  m_ptCut      = config.getNum(m_name + ".Selection.PtPreCutGeV", 0.5) * GeV;
 
   m_d0BySigd0Cut = config.getNum("ElectronHandler.Selection.d0BySigd0Max", 5.0);
   m_z0Cut = config.getNum("ElectronHandler.Selection.z0Max", 0.5);
@@ -88,10 +94,96 @@ CP::SystematicCode HG::TrackHandler::applySystematicVariation(const CP::Systemat
 }
 
 //______________________________________________________________________________
+bool HG::TrackHandler::passTrackPreselection(const xAOD::TrackParticle* trk,bool doTruthClassify) const
+{
+
+  if (doTruthClassify) {
+    // (Truth-level) track preselection for truth classification
+
+    int nSi = xAOD::EgammaHelpers::numberOfSiHits( trk );
+    if( nSi < m_truth_nSiMin ) return false;
+  }
+  else {
+
+    // (Reco-level) track preselection
+
+    int nSiHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfSiliconHitsAndDeadSensors(trk);
+    int nPixHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(trk);
+
+    if ( std::abs(trk->eta()) > m_etaCut ) return false;
+    if ( trk->pt() < m_ptCut ) return false;
+
+    if (nSiHitsPlusDeadSensors  < m_nSiMin) return false;
+    if (nPixHitsPlusDeadSensors < m_nPixMin) return false;
+  }
+
+    return true;
+}
+
+
+//______________________________________________________________________________
+bool HG::TrackHandler::passIndexBasedTrackSelection(xAOD::Electron* ele,int i,
+                                                    int& tmp_vtxTrkIndex1,int& tmp_vtxTrkIndex2) const
+{
+  // This function checks the indices of the objects as well as the tracking properties.
+  // It is intended to match what is in the DOAD.
+  // Start by giving it (by reference) tmp_vtxTrkIndex1 and tmp_vtxTrkIndex2 as -999, and it will
+  // fill them in for you. Consistency between the DAOD result and this function is done later.
+
+  const xAOD::TrackParticle* ele_tp = ele->trackParticle(i);
+
+  int nSiHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfSiliconHitsAndDeadSensors(ele_tp);
+  bool passBL = ElectronSelectorHelpers::passBLayerRequirement(ele_tp);
+
+  bool passIndexRequirement = false;
+
+  // Merged-ID track selection, intended to mirror the DAOD
+  if (ele->caloCluster()->pt() > 5000)
+  {
+    // must pass preselection
+    if (nSiHitsPlusDeadSensors >= 7 && passBL)
+    {
+
+      if (tmp_vtxTrkIndex1 < 0) {
+        // First good track is assigned to the first "vertex" index
+        tmp_vtxTrkIndex1 = i;
+        passIndexRequirement = true;
+      }
+      else if (tmp_vtxTrkIndex2 < 0 &&
+               ele_tp->charge() != ele->trackParticle(tmp_vtxTrkIndex1)->charge())
+      {
+        // If index2 has not been assigned yet, and this track is OS compared to index1, assign it.
+        tmp_vtxTrkIndex2 = i;
+        passIndexRequirement = true;
+      }
+    }
+    // Two tracks were already assigned. Track is not eligible for Merged object.
+  }
+
+  // In any case, if it is the best-matched electron, we consider it for the merged ID
+  if (i == 0) passIndexRequirement = true;
+
+  if (!passIndexRequirement) return false;
+
+  int nPixHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(ele_tp);
+
+  if ( std::abs(ele_tp->eta()) > m_etaCut ) return false;
+  if ( ele_tp->pt() < m_ptCut ) return false;
+
+  if (nSiHitsPlusDeadSensors  < m_nSiMin) return false;
+  if (nPixHitsPlusDeadSensors < m_nPixMin) return false;
+
+  return true;
+
+  // For the resolved case, the 0th index is taken.
+  if (i == 0) return true;
+  return false;
+}
+
+//______________________________________________________________________________
 xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::TrackParticleContainer& container,
-                                                                       const xAOD::ElectronContainer& elecs,
-                                                                       TrackElectronMap& trkEleMap,
-                                                                       bool doTruthClassify)
+                                                                       xAOD::ElectronContainer& elecs,
+                                                                       TrackElectronMap& trkEleMap)
 {
 
   xAOD::TrackParticleContainer selected(SG::VIEW_ELEMENTS);
@@ -106,33 +198,26 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
     //                   electron->caloCluster()->etaBE(2),
     //                   electron->nTrackParticles()) << std::endl;
 
+    // For the new code wherein we select only two OS tracks
+    int tmp_vtxTrkIndex1 = -999;
+    int tmp_vtxTrkIndex2 = -999;
+
     for (unsigned int i=0; i<electron->nTrackParticles(); ++i) {
 
       const xAOD::TrackParticle* ele_tp = electron->trackParticle(i);
 
-      if (doTruthClassify) {
-        // (Truth-level) track preselection for truth classification
-
-        int nSi = xAOD::EgammaHelpers::numberOfSiHits( ele_tp );
-        if( nSi < m_truth_nSiMin ) continue;
-
-      }
-      else {
-        // (Reco-level) track preselection
-
-        int nSiHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfSiliconHitsAndDeadSensors(ele_tp);
-        int nPixHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfPixelHitsAndDeadSensors(ele_tp);
-        // int passBLayerRequirement = ElectronSelectorHelpers::passBLayerRequirement(ele_tp);
-
-        if ( std::abs(ele_tp->eta()) > m_etaCut ) continue;
-        if ( ele_tp->pt() < m_ptCut ) continue;
-
-        if (nSiHitsPlusDeadSensors  < m_nSiMin) continue;
-        if (nPixHitsPlusDeadSensors < m_nPixMin) continue;
-        // if (!passBLayerRequirement) continue;
-      }
+      if (!ele_tp) continue;
 
       // std::cout << Form("Electron tp; pt: %.0f eta: %.3f",ele_tp->pt(),ele_tp->eta()) << std::endl;
+
+      if (m_doIndexBasedTrackSelection) {
+        // Index-based track selection
+        if (!passIndexBasedTrackSelection(electron,i,tmp_vtxTrkIndex1,tmp_vtxTrkIndex2)) continue;
+      }
+      else {
+        // Non-index-based track selection
+        if (!passTrackPreselection(ele_tp,false)) continue;
+      }
 
       // Add track and electron to map
       MapHelpers::AddTrackElectronMapEntry(ele_tp,electron,trkEleMap);
@@ -159,6 +244,25 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
       selected.push_back(container_tp);
 
     }
+
+    // Electron: Check consistency between DAOD code and this code
+    if (m_doIndexBasedTrackSelection) {
+      if (tmp_vtxTrkIndex2 < 0) tmp_vtxTrkIndex1 = -999; // to maintain consistency with DAOD version
+
+      if (EleAcc::vtxTrkIndex1.isAvailable(*electron)) {
+        if (tmp_vtxTrkIndex1 != EleAcc::vtxTrkIndex1(*electron))
+          HG::fatal(Form("Local vtxTrkIndex1 does not match DAOD! %d vs %d",
+                         tmp_vtxTrkIndex1,EleAcc::vtxTrkIndex1(*electron)));
+        if (tmp_vtxTrkIndex2 != EleAcc::vtxTrkIndex2(*electron))
+          HG::fatal(Form("Local vtxTrkIndex2 does not match DAOD! %d vs %d",
+                         tmp_vtxTrkIndex2,EleAcc::vtxTrkIndex2(*electron)));
+      }
+      else {
+        EleAcc::vtxTrkIndex1(*electron) = tmp_vtxTrkIndex1;
+        EleAcc::vtxTrkIndex2(*electron) = tmp_vtxTrkIndex2;
+      }
+    }
+
   }
 
   // std::cout << "Number of elecss in Total: " << elecs.size() << std::endl;

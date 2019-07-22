@@ -19,8 +19,8 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 | 6, TRIGGER               | eventHandler()->passTriggers() | HGamAnalysisFramework/EventHandler.cxx | " " |
 | 7, DQ                    | pass LAr, Tile, SCT DQ         | HGamAnalysisFramework/EventHandler.cxx | " " |
 | 8, VERTEX                | eventHandler()->passVertex()   | HGamAnalysisFramework/EventHandler.cxx | " " |
-| **Get ele container**  | m_preSelElectrons, pass OQ, HV,<br> p<sub>T</sub> > 4.5 GeV, &#124;&eta;&#124;<2.47, | ElectronHandler.cxx<br>PtPreCutGeV in HggStarMxAOD.config | N/A |
-| **Get trk container**  | m_preSelTracks, preselected GSF <br> tracks (p<sub>T</sub>>0.3 GeV, &#124;&eta;&#124;<2.47) <br> nSi+DeadSens &ge; 7, nPix+DeadSens &ge; 2 <br>assoc. to a presel ele | TrackHandler.cxx | N/A |
+| **Get ele container**  | m_preSelElectrons, pass OQ, HV,<br> p<sub>T</sub> > 4.5 GeV, &#124;&eta;&#124;<2.47 | ElectronHandler.cxx<br>PtPreCutGeV in HggStarMxAOD.config | N/A |
+| **Get trk container**  | m_preSelTracks, Assoc. to a presel elec<br>**See note below for other cuts** | TrackHandler.cxx | N/A |
 | **Get muon container** | m_preSelMuons, Medium PID,<br> p<sub>T</sub>>3 GeV, &#124;&eta;&#124;<2.7 | HggStarMxAOD.config<br>&eta; cut is in MuonHandler.cxx | N/A |
 | 9, TWO_SF_LEPTONS        | NpreSelTracks &ge; 2 or<br> NpreSelMuons &ge; 2 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 | **Get &gamma; container** | m_preSelPhotons, OQ, cleaning, HV,<br> Loose ID, p<sub>T</sub>>20 GeV, &#124;&eta;&#124;<2.37<br> no crack, AuthorAmbiguous allowed | PhotonHandler.cxx | N/A
@@ -46,6 +46,23 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |25, DILEP_PT_FRAC         | p<sub>T</sub><sup>ll</sup>/m<sub>ll&gamma;</sub> > 0.3 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |26, GAM_PT_FRAC           | p<sub>T</sub><sup>&gamma;</sup>/m<sub>ll&gamma;</sub> > 0.3 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |27, PASSALL               | Everything above passes | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+
+Notes on track selection above
+-----------------------
+
+The track selection has been harmonized to match the selection in the DAOD. This introduces an **"index requirement"** as
+described below:
+
+If the track is the **best-matched track** to an electron, it **automatically passes the index requirement** (this is for resolved electrons.)
+
+Tracks considered for merged electrons must be **associated to a >5 GeV electron, have nSi+DeadSens &ge; 7 and passBLayerRequirement**.
+Implicitly they have a p<sub>T</sub>>0.5 GeV (as they are associated to an electron) and &#124;&eta;&#124;<2.50.
+If the track is the first (based on electron-track-matching ordering) to pass these requirements, then it
+passes the index requirement, and it is assigned to `vtxTrkIndex1`. The next track (`electron->trackParticle(i)`) that (a) passes the selection, and
+(b) is opposite-charge to the first track, is considered to have passed the index requirement, and assigned `vtxTrkIndex2`. No other tracks are accepted
+(unless they are accepted due to their association with another track).
+
+**Tracks that pass this index requirement are further required** to have p<sub>T</sub>>0.3 GeV, &#124;&eta;&#124;<2.47, nSi+DeadSens &ge; 7.
 
 How to select events passing up to a certain cutflow point
 -----------------------
