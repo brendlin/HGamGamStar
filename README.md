@@ -174,13 +174,13 @@ first **make sure the code is fully committed, tagged in git, and that the event
 Then do (specifying an appropriate ProdTag):
 
     prodtag=ysy00X
-    for DS in data15_13TeV data16_13TeV data17_13TeV data18_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2; do
+    for DS in data15_13TeV data16_13TeV data17_13TeV data18_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2 mc16e_HIGG1D2; do
     runJob.py --InputList HGamGamStar/input/$DS.txt --OutputDir ${DS}_${prodtag} --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000 --ProdTag $prodtag;
     done;
 
 Wait for all jobs to complete. Then merge using the following commands (it is recommended to run these one-by-one; in case a job failed, follow the rerun procedure outlined above):
 
-    for DS in data15_13TeV data16_13TeV data17_13TeV data18_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2; do
+    for DS in data15_13TeV data16_13TeV data17_13TeV data18_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2 mc16e_HIGG1D2; do
         runJob_merge ${DS}_${prodtag}
     done;
 
