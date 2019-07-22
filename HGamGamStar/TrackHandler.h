@@ -16,6 +16,9 @@ namespace HG {
     int m_nSiMin;
     int m_nPixMin;
 
+    // Perform the index-based track selection, as in the DAOD
+    bool m_doIndexBasedTrackSelection;
+
     int m_truth_nSiMin;
 
     double  m_etaCut;
@@ -39,9 +42,8 @@ namespace HG {
     virtual CP::SystematicCode    applySystematicVariation(const CP::SystematicSet &sys);
 
     xAOD::TrackParticleContainer findTracksFromElectrons(xAOD::TrackParticleContainer& container,
-                                                         const xAOD::ElectronContainer& elecs,
-                                                         TrackElectronMap& trkEleMap,
-                                                         bool doTruthClassify=false);
+                                                         xAOD::ElectronContainer& elecs,
+                                                         TrackElectronMap& trkEleMap);
 
     xAOD::ElectronContainer GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
                                                        xAOD::TrackParticle& trk2,
@@ -49,6 +51,10 @@ namespace HG {
 
     TruthTrackMap MakeTruthTrackMapFromGSFContainer(xAOD::TrackParticleContainer& tracks);
     TruthTrackMap MakeTruthTrackMapFromElectronContainer(const xAOD::ElectronContainer& elecs);
+
+    bool passTrackPreselection(const xAOD::TrackParticle* trk,bool doTruthClassify) const;
+    bool passIndexBasedTrackSelection(xAOD::Electron* ele,int i,
+                                      int& tmp_vtxTrkIndex1,int& tmp_vtxTrkIndex2) const;
 
     bool passIPCuts(xAOD::TrackParticle& trk);
 
