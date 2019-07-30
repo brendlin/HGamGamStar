@@ -94,20 +94,36 @@ private:
 private:
   /// helper methods to create, fill and print the cut flow
 
-  TH1F* getCutFlowHisto(bool onlyDalitz=false) {
-    int ID = getSampleID()*(onlyDalitz?-1:1);
-    if (TH1F *h = m_cFlowHistos[ID]) return h;
-    m_cFlowHistos[ID] = makeCutFlowHisto(ID, s_cutDescs, onlyDalitz?"_onlyDalitz":"");
-    return m_cFlowHistos[ID];
+  TH1F* getCutFlowHisto(bool weighted,
+                        bool onlyDalitz,
+                        HG::ChannelEnum truthChannel=HG::CHANNELUNKNOWN) {
+
+    // 2147483647
+    // 1000000000 onlyDalitz
+    //  100000000 weighted
+    //   XX000000 channel (up to 99 channels apparently)
+    //     345678 sample ID
+
+    // We are just looking to get a unique integer here, to keep track of individual histos.
+    int ID = getSampleID();
+
+    int map_i = ID;
+    if (onlyDalitz)   map_i += (int)1e9;
+    if (weighted)     map_i += (int)1e8;
+    if (truthChannel) map_i += (int)(1e6 * (int)truthChannel);
+
+    if (TH1F *h = m_cFlowHistos[map_i]) return h;
+
+    TString suffix = "";
+    if (onlyDalitz) suffix += "_onlyDalitz";
+    if (truthChannel != HG::CHANNELUNKNOWN) suffix += TString("_") + GetChannelName(truthChannel);
+    if (weighted) suffix += "_weighted";
+
+    m_cFlowHistos[map_i] = makeCutFlowHisto(ID, s_cutDescs, suffix);
+    return m_cFlowHistos[map_i];
   }
 
-  TH1F* getCutFlowWeightedHisto(bool onlyDalitz=false) {
-    int ID = getSampleID()*(onlyDalitz?-1:1);
-    if (TH1F *h = m_cFlowHistosWeighted[ID]) return h;
-    m_cFlowHistosWeighted[ID] = makeCutFlowHisto(ID, s_cutDescs,
-                                                 onlyDalitz?"_onlyDalitz_weighted":"_weighted");
-    return m_cFlowHistosWeighted[ID];
-  }
+  void printCutFlowHistos(void);
 
   /// \brief fill the cut flow histograms
   void fillCutFlow(CutEnum cut, double w);
@@ -117,6 +133,9 @@ private:
   CutEnum cutflow();
   EL::StatusCode doReco(bool isSys = false);
   EL::StatusCode doTruth();
+
+  // Need to be able to set the truth channel earlier, for cutflow purposes.
+  void SetTruthHiggsInformation(void);
 
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);

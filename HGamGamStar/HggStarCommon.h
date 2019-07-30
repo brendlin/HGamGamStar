@@ -23,6 +23,8 @@ namespace HG {
     OTHER=6, //// Other Decay
     OUT_OF_ACCEPTANCE=7
   };
+
+  TString GetChannelName(ChannelEnum channel);
   
   enum CategoryEnum {
     CATEGORYUNKNOWN=0,

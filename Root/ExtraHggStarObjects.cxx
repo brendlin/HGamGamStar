@@ -88,6 +88,9 @@ const TLorentzVector *HG::ExtraHggStarObjects::getMergedElectronTLV(bool truth) 
 void HG::ExtraHggStarObjects::setTruthHiggsDecayProducts(const xAOD::TruthParticleContainer* all_particles)
 {
 
+  // if we have already set them, skip.
+  if (m_higgsPhotonsAvail && m_higgsLepsAvail) return;
+
   // // We are going to make a "deep" copy of these, in order to save them in the store:
   xAOD::TruthParticleContainer* photonCopy = new xAOD::TruthParticleContainer();
   xAOD::AuxContainerBase* photonCopyAux = new xAOD::AuxContainerBase();
