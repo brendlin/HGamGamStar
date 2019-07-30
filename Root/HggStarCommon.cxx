@@ -5,6 +5,17 @@
 
 #include "HGamAnalysisFramework/HGamCommon.h"
 
+TString HG::GetChannelName(ChannelEnum channel){
+  if (channel == DIMUON              ) return "Dimuon";
+  if (channel == RESOLVED_DIELECTRON ) return "ResolvedDielectron";
+  if (channel == MERGED_DIELECTRON   ) return "MergedDielectron";
+  if (channel == AMBIGUOUS_DIELECTRON) return "AmbiguousDielectron";
+  if (channel == FAILEDTRKELECTRON   ) return "FailedTrackElectron";
+  if (channel == OTHER               ) return "Other";
+  if (channel == OUT_OF_ACCEPTANCE   ) return "OutOfAcceptance";
+  return "";
+}
+
 xAOD::Photon*  HG::createPhotonFromElectron (const xAOD::Electron* el)
 {
 

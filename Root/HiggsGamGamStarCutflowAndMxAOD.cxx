@@ -185,11 +185,21 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   if (m_newFileMetaData) {
 
     // Initialize cutflow histograms by calling them.
-    getCutFlowHisto();
+    getCutFlowHisto(false /*weighted*/, false /*onlyDalitz*/);
+
+    // per-channel cutflows (mainly for debugging)
+    getCutFlowHisto(false, false, HG::DIMUON);
+    getCutFlowHisto(false, false, HG::RESOLVED_DIELECTRON);
+    getCutFlowHisto(false, false, HG::MERGED_DIELECTRON);
+
     if (HG::isMC()) {
-      getCutFlowHisto(true);
-      getCutFlowWeightedHisto();
-      getCutFlowWeightedHisto(true);
+      getCutFlowHisto(true, false);
+      getCutFlowHisto(true, true );
+
+      getCutFlowHisto(true, true , HG::DIMUON);
+      getCutFlowHisto(true, true , HG::RESOLVED_DIELECTRON);
+      getCutFlowHisto(true, true , HG::MERGED_DIELECTRON);
+
     }
 
     // Fill the AOD and DAOD entries of the cutflow histograms.
@@ -237,6 +247,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 
   // apply cuts. Returned value will be the last passed cut
   m_cutFlow = cutflow();
+
+  // Need to set the truth channel in order to be able to use it in the cutflow
+  SetTruthHiggsInformation();
 
   // fill the cut-flow histograms up to tight selection
   double wi = weightInitial();
@@ -816,6 +829,24 @@ void HiggsGamGamStarCutflowAndMxAOD::writeDetailedVars(bool /*truth*/)
 
 }
 
+void HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsInformation(void)
+{
+  xAOD::TruthParticleContainer all_higgs = truthHandler()->getHiggsBosons();
+  HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);
+
+  // Set the truth decay product containers in ExtraHggStarObjects
+  const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
+  HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(all_particles);
+
+  // Code for the Truth Channel determination
+  const xAOD::ElectronContainer all_reco_elecs = electronHandler()->getCorrectedContainer();
+  auto childleps = *(HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons());
+
+  HG::ChannelEnum truthChannel = HG::truthChannel(childleps,all_reco_elecs);
+  var::yyStarChannel.setTruthValue( (int)truthChannel );
+  return;
+}
+
 EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
 {
   // Truth particles
@@ -849,17 +880,15 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   }
 
   HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, &jets);
-  HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);
+
+  // Now done in HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsParticles()
+  // HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);
 
   // Set the truth decay product containers in ExtraHggStarObjects
-  const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
-  HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(all_particles);
-
-  // Code for the Truth Channel determination
-  const xAOD::ElectronContainer all_reco_elecs = electronHandler()->getCorrectedContainer();
-  auto childleps = *(HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons());
-  HG::ChannelEnum truthChannel = HG::truthChannel(childleps,all_reco_elecs);
-  var::yyStarChannel.setTruthValue( (int)truthChannel );
+  // Now done in HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsParticles()
+  //
+  //const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
+  //HG::ExtraHggStarObjects::getInstance()->setTruthHiggsDecayProducts(all_particles);
 
   // Adds event-level variables to TStore (this time using truth containers)
   bool truth = true;
@@ -922,12 +951,30 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
 
 
 void HiggsGamGamStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
-  getCutFlowHisto()->Fill(cut);
+
+  getCutFlowHisto(false /*weighted*/, false /*onlyDalitz*/)->Fill(cut);
+
   if (HG::isData()) return;
-  getCutFlowWeightedHisto()->Fill(cut,w);
+
+  getCutFlowHisto(true, false /*onlyDalitz*/)->Fill(cut,w);
+
+  // per-channel cutflows (mainly for debugging)
+  HG::ChannelEnum truthChan = (HG::ChannelEnum)var::yyStarChannel.truth();
+
+  // unweighted MC, per channel:
+  if (truthChan == HG::DIMUON) getCutFlowHisto(false, false, HG::DIMUON)->Fill(cut);
+  if (truthChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(false, false, HG::RESOLVED_DIELECTRON)->Fill(cut);
+  if (truthChan == HG::MERGED_DIELECTRON) getCutFlowHisto(false, false, HG::MERGED_DIELECTRON)->Fill(cut);
+
   if (m_isNonHyyStarHiggs) return;
-  getCutFlowHisto(true)->Fill(cut);
-  getCutFlowWeightedHisto(true)->Fill(cut,w);
+
+  getCutFlowHisto(true, true /*onlyDalitz*/)->Fill(cut,w);
+
+  if (truthChan == HG::DIMUON) getCutFlowHisto(true, true , HG::DIMUON)->Fill(cut,w);
+  if (truthChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(true, true , HG::RESOLVED_DIELECTRON)->Fill(cut,w);
+  if (truthChan == HG::MERGED_DIELECTRON) getCutFlowHisto(true, true , HG::MERGED_DIELECTRON)->Fill(cut,w);
+
+  return;
 }
 
 
@@ -1178,4 +1225,43 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
   }
 
     return;
+}
+
+void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
+  for ( auto entry : m_cFlowHistos ) {
+
+    TString isMC = HG::isMC()?"MC sample":"Data run";
+
+    int cutFlowID = entry.first;
+
+    TString typeOfEvents = "all events";
+    if (cutFlowID > (int)1e9) {
+      typeOfEvents = "only Dalitz events";
+      cutFlowID -= (int)1e9;
+    }
+
+    // Weighted / unweighted
+    TString weighted = "";
+    int nDecimals = 0; // for unweighted
+    if (cutFlowID > (int)1e8) {
+      weighted = "(weighted)";
+      nDecimals = 2;
+      cutFlowID -= (int)1e8;
+    }
+
+    // figure out channel
+    TString truthChannel = "All channels";
+    for (auto chan : {HG::MERGED_DIELECTRON,HG::RESOLVED_DIELECTRON,HG::DIMUON}) {
+      if (cutFlowID > (int)(1e6 * (int)chan))
+      {
+        truthChannel = GetChannelName(chan) + TString(" truth channel");
+        cutFlowID -= (int)(1e6 * (int)chan);
+        break;
+      }
+    }
+
+    printf("\n%s %d, %s, %s %s\n",isMC.Data(),cutFlowID,typeOfEvents.Data(),
+           truthChannel.Data(),weighted.Data());
+    printCutFlowHisto(entry.second,nDecimals);
+  }
 }
