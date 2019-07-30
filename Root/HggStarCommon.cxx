@@ -62,7 +62,10 @@ void   HG::setPhotonConversionVertex( const xAOD::Electron* el,
     return;
   }
 
-
+  // If the merged ID acceptors do not exist, then stop (pre-p3877)
+  if (!HG::EleAcc::vtxPhi.isAvailable(*el)) {
+    return;
+  }
 
   float vtxX = vtxR * cos(HG::EleAcc::vtxPhi(*el));
   float vtxY = vtxR * sin(HG::EleAcc::vtxPhi(*el));

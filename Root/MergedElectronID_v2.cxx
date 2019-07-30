@@ -35,6 +35,10 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
     if(trk1_index < 0 || trk2_index < 0)
       return false;
 
+    // Old MxAOD ( < p3877 ) that does not save the necessary information
+    if ( !HG::EleAcc::vtxE.isAvailable(ele) )
+      return false;
+
     // Vertex Fit failed
     if( HG::EleAcc::vtxE(ele) < 0)
       return false;
