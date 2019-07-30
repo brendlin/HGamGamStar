@@ -245,18 +245,18 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
     if (m_doIndexBasedTrackSelection) {
       if (tmp_vtxTrkIndex2 < 0) tmp_vtxTrkIndex1 = -999; // to maintain consistency with DAOD version
 
-      if (EleAcc::vtxTrkIndex1.isAvailable(*electron)) {
-        if (tmp_vtxTrkIndex1 != EleAcc::vtxTrkIndex1(*electron))
-          HG::fatal(Form("Local vtxTrkIndex1 does not match DAOD! %d vs %d",
-                         tmp_vtxTrkIndex1,EleAcc::vtxTrkIndex1(*electron)));
-        if (tmp_vtxTrkIndex2 != EleAcc::vtxTrkIndex2(*electron))
-          HG::fatal(Form("Local vtxTrkIndex2 does not match DAOD! %d vs %d",
-                         tmp_vtxTrkIndex2,EleAcc::vtxTrkIndex2(*electron)));
-      }
-      else {
-        EleAcc::vtxTrkIndex1(*electron) = tmp_vtxTrkIndex1;
-        EleAcc::vtxTrkIndex2(*electron) = tmp_vtxTrkIndex2;
-      }
+      // Test code, incompatible with running in the case that you are missing the decorator ( < p3877)
+      //
+      // if (tmp_vtxTrkIndex1 != EleAcc::vtxTrkIndex1(*electron))
+      //   HG::fatal(Form("Local vtxTrkIndex1 does not match DAOD! %d vs %d",
+      //                  tmp_vtxTrkIndex1,EleAcc::vtxTrkIndex1(*electron)));
+      // if (tmp_vtxTrkIndex2 != EleAcc::vtxTrkIndex2(*electron))
+      //   HG::fatal(Form("Local vtxTrkIndex2 does not match DAOD! %d vs %d",
+      //                  tmp_vtxTrkIndex2,EleAcc::vtxTrkIndex2(*electron)));
+      // }
+
+      EleAcc::vtxTrkIndex1(*electron) = tmp_vtxTrkIndex1;
+      EleAcc::vtxTrkIndex2(*electron) = tmp_vtxTrkIndex2;
     }
 
   }
