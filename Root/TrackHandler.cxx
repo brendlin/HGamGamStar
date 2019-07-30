@@ -61,10 +61,6 @@ xAOD::TrackParticleContainer HG::TrackHandler::getCorrectedContainer()
   shallowContainer.sort(comparePt);
 
   for (auto trk : shallowContainer){
-
-    // If we already decorated everything, then do not decorate again!
-    if (TrkAcc::TRT_PID_trans.isAvailable(*trk)) break;
-
     decorateIPCut(*trk);
     decorateAdditionalCuts(*trk);
   }
