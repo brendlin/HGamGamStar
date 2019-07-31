@@ -24,6 +24,8 @@ HiggsGamGamStarCutflowAndMxAOD::~HiggsGamGamStarCutflowAndMxAOD() {}
 
 EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 {
+  // Make sure that all of our tools here are initialized before calling HgammaAnalysis::initialize()
+  // in order to correctly fillSystematicsList()
   HgammaAnalysis::initialize();
 
   HG::ExtraHggStarObjects::getInstance()->setEventAndStore(event(), store());
@@ -122,14 +124,19 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
 
   StrV trigs = config()->getStrV("EventHandler.RequiredTriggers");
   StrV extra = {};
-  for (auto trig: trigs) extra.push_back(".passTrig_"+trig);
+
+  if (!m_applySystematics) {
+    for (auto trig: trigs) extra.push_back(".passTrig_"+trig);
+  }
 
   declareOutputVariables(m_evtInfoName,"MxAOD.Variables.EventInfo", extra, ignore);
 
   // a.2 TruthEvents variables
   ignore = {};
   extra = {};
-  declareOutputVariables(m_truthEvtsName,"MxAOD.Variables.TruthEvents", extra, ignore);
+  if (m_saveTruthVars) {
+    declareOutputVariables(m_truthEvtsName,"MxAOD.Variables.TruthEvents", extra, ignore);
+  }
 
   // b. Selected objects
 
@@ -163,11 +170,13 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
     m_muonTruthContainerName   = "HGam"+config()->getStr("TruthHandler.MuonContainerName");
     m_jetTruthContainerName    = "HGam"+config()->getStr("TruthHandler.JetContainerName");
 
-    declareOutputVariables(m_photonTruthContainerName  , "MxAOD.Variables.TruthPhotons"    );
-    declareOutputVariables(m_elecTruthContainerName    , "MxAOD.Variables.TruthElectrons"  );
-    declareOutputVariables(m_muonTruthContainerName    , "MxAOD.Variables.TruthMuons"      );
-    declareOutputVariables(m_jetTruthContainerName     , "MxAOD.Variables.TruthJets"       );
-    declareOutputVariables("HGam"+config()->getStr("TruthHandler.HiggsBosonContainerName"), "MxAOD.Variables.TruthHiggsBosons");
+    if (m_saveTruthObjects) {
+      declareOutputVariables(m_photonTruthContainerName  , "MxAOD.Variables.TruthPhotons"    );
+      declareOutputVariables(m_elecTruthContainerName    , "MxAOD.Variables.TruthElectrons"  );
+      declareOutputVariables(m_muonTruthContainerName    , "MxAOD.Variables.TruthMuons"      );
+      declareOutputVariables(m_jetTruthContainerName     , "MxAOD.Variables.TruthJets"       );
+      declareOutputVariables("HGam"+config()->getStr("TruthHandler.HiggsBosonContainerName"), "MxAOD.Variables.TruthHiggsBosons");
+    }
   }
 
   return EL::StatusCode::SUCCESS;
