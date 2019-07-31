@@ -1174,11 +1174,22 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
 
 void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
 
-  xAOD::VertexContainer* outVerticies = new xAOD::VertexContainer();
-  xAOD::VertexAuxContainer* outVerticiesAux = new xAOD::VertexAuxContainer();
-  outVerticies->setStore(outVerticiesAux);
-  eventHandler()->evtStore()->record( outVerticies, "TempVerticies" );
-  eventHandler()->evtStore()->record( outVerticiesAux, "TempVerticiesAux." );
+  // Make a dummy vertex container (does not need to be fancy because we do not save it
+  // but it does need to be safe for running over systematics (i.e. do not make many copies of it)
+  // (to avoid "Trying to overwrite object with key" errors)
+
+  xAOD::VertexContainer* outVertices = nullptr;
+  if (!store()->contains<xAOD::VertexContainer>("TempVertices")) {
+    outVertices = new xAOD::VertexContainer();
+    xAOD::VertexAuxContainer* outVerticesAux = new xAOD::VertexAuxContainer();
+    outVertices->setStore(outVerticesAux);
+    store()->record( outVertices, "TempVertices" );
+    store()->record( outVerticesAux, "TempVerticesAux." );
+  }
+  else if (store()->retrieve( outVertices , "TempVertices" ).isFailure())
+  {
+    HG::fatal("Could not retrieve TempVertices. Exiting.");
+  }
 
   for (auto electron : electrons) {
 
@@ -1214,7 +1225,7 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
 
     if(photon)
     {
-      HG::setPhotonConversionVertex( electron, photon, 20, outVerticies);
+      HG::setPhotonConversionVertex( electron, photon, 20, outVertices);
       HG::EleAcc::calibratedPhotonEnergy(*electron) = photon->e();
 
       delete photon;
