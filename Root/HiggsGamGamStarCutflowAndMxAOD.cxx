@@ -131,6 +131,11 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
 
   declareOutputVariables(m_evtInfoName,"MxAOD.Variables.EventInfo", extra, ignore);
 
+  if (config()->isDefined("MxAOD.Variables.HGamEventInfo")) {
+    TString HGamEvtInfo_str = "HGam"+m_evtInfoName;
+    declareOutputVariables(HGamEvtInfo_str,"MxAOD.Variables.HGamEventInfo", extra, ignore);
+  }
+
   // a.2 TruthEvents variables
   ignore = {};
   extra = {};
@@ -176,6 +181,24 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
       declareOutputVariables(m_muonTruthContainerName    , "MxAOD.Variables.TruthMuons"      );
       declareOutputVariables(m_jetTruthContainerName     , "MxAOD.Variables.TruthJets"       );
       declareOutputVariables("HGam"+config()->getStr("TruthHandler.HiggsBosonContainerName"), "MxAOD.Variables.TruthHiggsBosons");
+    }
+  }
+
+  if (m_applySystematics) {
+    for (auto sys: getSystematics()) {
+      // ignore nominal case, already done!
+      if (sys.name() == "") continue;
+
+      // Copied from VarHandler.cxx
+      TString sysName = sys.name() == "" ? "" : ("_" + sys.name()).c_str();
+      sysName.ReplaceAll(" ", "_");
+
+      TString evtInfoNameSys = TString("HGam") + m_evtInfoName + sysName;
+
+      ignore = {};
+      extra = {};
+      declareOutputVariables(evtInfoNameSys,"MxAOD.Variables.EventInfoSyst", extra, ignore);
+
     }
   }
 
