@@ -282,6 +282,10 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 
       // apply the systmeatic variation and calculate the outupt
       CP_CHECK("HiggsGamGamStarCutflowAndMxAOD::execute()", applySystematicVariation(sys));
+
+      // Set this for every event, just in case.
+      var::yyStarChannel.setValue(HG::CHANNELUNKNOWN);
+
       m_cutFlow = cutflow();
       doReco(true);
     }
@@ -705,13 +709,6 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic()
   // Basic event selection flags
   var::cutFlow.setValue(m_cutFlow);
 
-  if (HG::isMC()) {
-
-    // Basic event weights
-    eventHandler()->pileupWeight();
-    eventHandler()->vertexWeight();
-  }
-
   // Additional variables useful for non-framework analysis
   eventHandler()->storeVar<char>("isPassedEventSelection",m_cutFlow >= PASSALL);
 
@@ -725,26 +722,9 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 
   var::m_lly.addToStore(truth);
   var::m_lly_gev.addToStore(truth);
-  var::m_ll.addToStore(truth);
-  var::deltaR_ll.addToStore(truth);
-  var::pt_lly.addToStore(truth);
-  var::pt_ll.addToStore(truth);
   var::yyStarCategory.addToStore(truth);
 
-  if (!truth)
-  {
-    var::m_lly_track4mom.addToStore(false);
-    var::m_ll_track4mom.addToStore(false);
-    var::Resolved_dRExtrapTrk12.addToStore(false);
-    var::Resolved_deltaPhiRescaled2.addToStore(false);
-    var::Resolved_deltaEta2.addToStore(false);
-    var::trk_lead_pt.addToStore(false);
-  }
-
-  var::N_mu   .addToStore(truth);
-  var::N_e    .addToStore(truth);
 }
-
 
 void HiggsGamGamStarCutflowAndMxAOD::writeTruthOnlyVars()
 {
@@ -794,6 +774,11 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
 
   // Add MC only variables
   if (HG::isMC()) {
+
+    // Basic event weights
+    eventHandler()->pileupWeight();
+    eventHandler()->vertexWeight();
+
     truthHandler()->catCoup();
     eventHandler()->storeVar<float>("crossSectionBRfilterEff", m_crossSectionBRfilterEff);
   }
@@ -804,6 +789,12 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
 {
   // Put here all of the HGamVariables that you want to save in the nominal loop only
   // (not the systematics loops).
+
+  var::m_ll.addToStore(truth);
+  var::deltaR_ll.addToStore(truth);
+  var::pt_lly.addToStore(truth);
+  var::pt_ll.addToStore(truth);
+
   var::m_jj.addToStore(truth);
   var::Deta_j_j.addToStore(truth);
   var::Dphi_lly_jj.addToStore(truth);
@@ -812,6 +803,17 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
   var::pT_llyjj.addToStore(truth);
   var::DRmin_y_ystar_2jets.addToStore(truth);
   var::DRmin_y_leps_2jets.addToStore(truth);
+
+  if (!truth)
+  {
+    var::m_lly_track4mom.addToStore(false);
+    var::m_ll_track4mom.addToStore(false);
+    var::Resolved_dRExtrapTrk12.addToStore(false);
+    var::Resolved_deltaPhiRescaled2.addToStore(false);
+    var::Resolved_deltaEta2.addToStore(false);
+    var::trk_lead_pt.addToStore(false);
+  }
+
   return;
 }
 
