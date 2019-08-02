@@ -72,7 +72,7 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
     float vtx_deta  = HG::EleAcc::vtxdEta(ele);
     float vtx_dphi  = HG::EleAcc::vtxdPhi(ele);
 
-    float pte  = ele.pt();
+    float pte  = ele.pt()/1000.;
     float etae = ele.eta();
 
     float Rhad = HG::EleAcc::RhadForPID(ele);

@@ -42,7 +42,7 @@ EL::StatusCode HG::TrackHandler::initialize(Config &config)
 
   m_truth_nSiMin = config.getInt (m_name + ".TruthSelection.nSiMin",3);
 
-  m_etaCut     = config.getNum(m_name + ".Selection.MaxAbsEta", 2.47);
+  m_etaCut     = config.getNum(m_name + ".Selection.MaxAbsEta", 2.50);
   m_ptCut      = config.getNum(m_name + ".Selection.PtPreCutGeV", 0.5) * GeV;
 
   m_d0BySigd0Cut = config.getNum("ElectronHandler.Selection.d0BySigd0Max", 5.0);
@@ -170,10 +170,6 @@ bool HG::TrackHandler::passIndexBasedTrackSelection(xAOD::Electron* ele,int i,
   if (nPixHitsPlusDeadSensors < m_nPixMin) return false;
 
   return true;
-
-  // For the resolved case, the 0th index is taken.
-  if (i == 0) return true;
-  return false;
 }
 
 //______________________________________________________________________________

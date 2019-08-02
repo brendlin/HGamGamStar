@@ -473,13 +473,13 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       pt_ll = merged.Pt();
       m_lly = (merged + m_selPhotons[0]->p4()).M();
       // Decorate merged variables as soon as you find out the channel is merged
-      xAOD::Electron ele = *m_selElectrons[0];
-      xAOD::TrackParticle trk0 = *m_selTracks[0];
-      xAOD::TrackParticle trk1 = *m_selTracks[1];
-      m_mergedElectronID->decorateMergedVariables(ele,trk0,trk1);
+      xAOD::Electron* ele = m_selElectrons[0];
+      xAOD::TrackParticle* trk0 = m_selTracks[0];
+      xAOD::TrackParticle* trk1 = m_selTracks[1];
+      m_mergedElectronID->decorateMergedVariables(*ele,*trk0,*trk1);
       // Need to cut on lead track pt in merged case when processing MxAODs, for that need a variable which is defined for each event (i.e. also need it in muon/resolved events where the value is -99)
-      HG::EleAcc::passPID(ele) = m_mergedElectronID->passPIDCut(ele,trk0,trk1);
-      HG::EleAcc::passTMVAPID(ele) = m_mergedElectronID_v2->passPIDCut(ele);
+      HG::EleAcc::passPID(*ele) = m_mergedElectronID->passPIDCut(*ele,*trk0,*trk1);
+      HG::EleAcc::passTMVAPID(*ele) = m_mergedElectronID_v2->passPIDCut(*ele);
     }
     else if (m_selElectrons.size() == 2) {
       m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
@@ -577,7 +577,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   else if(var::yyStarChannel()==HG::MERGED_DIELECTRON){
   //==== CUT 17: Require electrons to pass merged PID
     static bool requireMerged = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
-    if (requireMerged && (!m_mergedElectronID->passPIDCut(*m_selElectrons[0],*m_selTracks[0],*m_selTracks[1])) ) return LEP_MEDID;
+    if (requireMerged && !HG::EleAcc::passTMVAPID(*m_selElectrons[0]) ) return LEP_MEDID;
   //==== CUT 18: Require electrons to pass IP
     static bool requireIP = config()->getBool("ElectronHandler.Selection.ApplyIPCuts", true);
     if (requireIP && (!trackHandler()->passIPCuts(*m_selTracks[0]) || !trackHandler()->passIPCuts(*m_selTracks[1])) ) return LEP_IP;

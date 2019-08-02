@@ -179,12 +179,14 @@ bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::Trac
     // if (!passCut(fSide, cutFSideInEta[iEta])) return(false);
 
     // thirteenth cut: d0SigmaTrk1
-    const std::vector<std::string> cutD0SigmaTrk1({"<5.0"});
-    if (!passCut(TrkAcc::d0significance(trk1), cutD0SigmaTrk1[0])) return(false);
+    // This cut is covered by passIPCut in TrackHandler.cxx
+    // const std::vector<std::string> cutD0SigmaTrk1({"<5.0"});
+    // if (!passCut(TrkAcc::d0significance(trk1), cutD0SigmaTrk1[0])) return(false);
 
     // fourteenth cut: d0SigmaTrk2
-    const std::vector<std::string> cutD0SigmaTrk2({"<5.0"});
-    if (!passCut(TrkAcc::d0significance(trk2), cutD0SigmaTrk2[0])) return(false);
+    // This cut is covered by passIPCut in TrackHandler.cxx
+    // const std::vector<std::string> cutD0SigmaTrk2({"<5.0"});
+    // if (!passCut(TrkAcc::d0significance(trk2), cutD0SigmaTrk2[0])) return(false);
 
 
     // fSide: if (f1 > 0.005 && )
