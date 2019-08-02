@@ -35,7 +35,7 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |14, BAD_MUON              | Reject events with presel BadMuons | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |15, ONE_PHOTON_POSTOR     | Selected photon survives OR | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |16, TRIG_MATCH            | Objects must match for a trigger<br>that fired (see config) | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
-|17, LEP_MEDID             | Resolved e: Medium,<br>Merged e: Merged ID,<br>&mu;: Medium | HGamAnalysisFramework/HGamRel21.config<br>for merged objects | " " |
+|17, LEP_MEDID             | Resolved e: Medium,<br>Merged e: Merged **TMVA** ID,<br>&mu;: Medium | HGamAnalysisFramework/HGamRel21.config<br>for merged objects | " " |
 |18, LEP_IP                | Res/Mrgd e: d<sub>0</sub>/&sigma;<sub>d0</sub> < 5, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5<br>&mu;: d<sub>0</sub>/&sigma;<sub>d0</sub> < 3, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5 | Defaults in ElectronHandler.cxx, MuonHandler.cxx | " " |
 |19, LEP_ISO               | Resolved e: CloseByCorrected FCLoose<br>Merged e: FCLoose<br>&mu;: CloseByCorrected FCLoose_FixedRad | Merged e: specially done in<br>HiggsGamGamStarCutflowAndMxAOD.cxx.<br>Resolved e/&mu;: HGamAnalysisFramework/HGamRel21.config | " " |
 |20, GAM_TIGHTID           | Photon passes Tight | HGamAnalysisFramework/HGamRel21.config | " " |
@@ -62,7 +62,7 @@ passes the index requirement, and it is assigned to `vtxTrkIndex1`. The next tra
 (b) is opposite-charge to the first track, is considered to have passed the index requirement, and assigned `vtxTrkIndex2`. No other tracks are accepted
 (unless they are accepted due to their association with another track).
 
-**Tracks that pass this index requirement are further required** to have p<sub>T</sub>>0.3 GeV, &#124;&eta;&#124;<2.47, nSi+DeadSens &ge; 7.
+**Tracks that pass this index requirement are further required** to have p<sub>T</sub>>0.5 GeV (should be redundant), &#124;&eta;&#124;<2.50 (should be redundant), nSi+DeadSens &ge; 7 (redundant).
 
 How to select events passing up to a certain cutflow point
 -----------------------
