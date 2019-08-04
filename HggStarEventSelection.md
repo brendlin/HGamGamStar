@@ -42,7 +42,7 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |21, GAM_ISOLATION         | Photon passes FixedCutLoose | HGamAnalysisFramework/HGamRel21.config | " " |
 |22, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> (see code for merged mass definiton) | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |23, LLGMASSCUT            | 105 < m<sub>ll&gamma;</sub> && m<sub>ll&gamma;</sub> < 160 GeV | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
-|24, LLMASSCUT             | Res/Mrgd e: m<sub>ll</sub> < 2.5 GeV or<br>m<sub>ll</sub> > 3.5 GeV (J/&Psi; peak veto)<br>&mu;: m<sub>ll</sub> < 2.9 GeV or<br>m<sub>ll</sub> > 3.3 GeV (J/&Psi; peak veto); <br> m<sub>ll</sub> < 9.1 GeV or<br>m<sub>ll</sub> > 10.6 GeV (&Upsilon; peak veto)    | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+|24, LLMASSCUT             | Res/Mrgd e: m<sub>ll</sub> < 2.5 GeV or<br>m<sub>ll</sub> > 3.5 GeV (J/&Psi; peak veto)<br> m<sub>ll</sub> < 8.0 GeV or<br>m<sub>ll</sub> > 11.0 GeV (&Upsilon; peak veto)<br> &mu;: m<sub>ll</sub> < 2.9 GeV or<br>m<sub>ll</sub> > 3.3 GeV (J/&Psi; peak veto); <br> m<sub>ll</sub> < 9.1 GeV or<br>m<sub>ll</sub> > 10.6 GeV (&Upsilon; peak veto)    | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |25, DILEP_PT_FRAC         | p<sub>T</sub><sup>ll</sup>/m<sub>ll&gamma;</sub> > 0.3 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |26, GAM_PT_FRAC           | p<sub>T</sub><sup>&gamma;</sup>/m<sub>ll&gamma;</sub> > 0.3 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |27, PASSALL               | Everything above passes | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
