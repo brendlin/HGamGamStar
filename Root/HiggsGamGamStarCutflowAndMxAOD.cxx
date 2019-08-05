@@ -229,27 +229,15 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
     m_newFileLoaded = false;
   }
 
-  m_isNonHyyStarHiggs = false;
-
-  // flag current event as a MC Dalitz event
-  // (needed for cut-flow histograms)
-  if (HG::isMC()) {
-    const xAOD::TruthParticleContainer *truthParticles = nullptr;
-    TString truthPartContName = config()->getStr("TruthParticles.ContainerName", "TruthParticle");
-    if (event()->retrieve(truthParticles, truthPartContName.Data()).isFailure())
-    { HG::fatal("Can't access TruthParticleContainer"); }
-    m_isNonHyyStarHiggs = HG::isMC() && HG::eventIsNonHyyStarHiggs(truthParticles);
-    var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
-  }
+  // Sets the truth channel,  the truth channel in order to be able to use it in the cutflow
+  // m_isNonHyyStarHiggs is set in SetTruthHiggsInformation().
+  SetTruthHiggsInformation();
 
   // Set this for every event, just in case.
   var::yyStarChannel.setValue(HG::CHANNELUNKNOWN);
 
   // apply cuts. Returned value will be the last passed cut
   m_cutFlow = cutflow();
-
-  // Need to set the truth channel in order to be able to use it in the cutflow
-  SetTruthHiggsInformation();
 
   // fill the cut-flow histograms up to tight selection
   double wi = weightInitial();
@@ -831,6 +819,12 @@ void HiggsGamGamStarCutflowAndMxAOD::writeDetailedVars(bool /*truth*/)
 
 void HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsInformation(void)
 {
+  // For data this is automatically false:
+  m_isNonHyyStarHiggs = false;
+
+  if (!HG::isMC())
+    return;
+
   xAOD::TruthParticleContainer all_higgs = truthHandler()->getHiggsBosons();
   HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);
 
@@ -844,6 +838,12 @@ void HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsInformation(void)
 
   HG::ChannelEnum truthChannel = HG::truthChannel(childleps,all_reco_elecs);
   var::yyStarChannel.setTruthValue( (int)truthChannel );
+
+  // flag current event as a MC Dalitz event
+  // (needed for cut-flow histograms)
+  m_isNonHyyStarHiggs = HG::eventIsNonHyyStarHiggs(all_particles);
+  var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
+
   return;
 }
 
