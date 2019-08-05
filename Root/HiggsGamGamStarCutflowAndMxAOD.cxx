@@ -600,7 +600,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if ( (m_ll > 2.9*HG::GeV && m_ll < 3.3*HG::GeV) || (m_ll > 9.1*HG::GeV && m_ll < 10.6*HG::GeV) ) return LLMASSCUT;
   }
   else{
-    if (m_ll > 2.5*HG::GeV && m_ll < 3.5*HG::GeV  || (m_ll > 8.0*HG::GeV && m_ll < 11.0*HG::GeV) ) return LLMASSCUT;
+    if ( (m_ll > 2.5*HG::GeV && m_ll < 3.5*HG::GeV) || (m_ll > 8.0*HG::GeV && m_ll < 11.0*HG::GeV) ) return LLMASSCUT;
   }
   
   //==== CUT 25 : pt_ll fraction ggF cut ==== 
