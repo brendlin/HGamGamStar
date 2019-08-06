@@ -24,6 +24,8 @@ HiggsGamGamStarCutflowAndMxAOD::~HiggsGamGamStarCutflowAndMxAOD() {}
 
 EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 {
+  // Make sure that all of our tools here are initialized before calling HgammaAnalysis::initialize()
+  // in order to correctly fillSystematicsList()
   HgammaAnalysis::initialize();
 
   HG::ExtraHggStarObjects::getInstance()->setEventAndStore(event(), store());
@@ -122,14 +124,24 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
 
   StrV trigs = config()->getStrV("EventHandler.RequiredTriggers");
   StrV extra = {};
-  for (auto trig: trigs) extra.push_back(".passTrig_"+trig);
+
+  if (!m_applySystematics) {
+    for (auto trig: trigs) extra.push_back(".passTrig_"+trig);
+  }
 
   declareOutputVariables(m_evtInfoName,"MxAOD.Variables.EventInfo", extra, ignore);
+
+  if (config()->isDefined("MxAOD.Variables.HGamEventInfo")) {
+    TString HGamEvtInfo_str = "HGam"+m_evtInfoName;
+    declareOutputVariables(HGamEvtInfo_str,"MxAOD.Variables.HGamEventInfo", extra, ignore);
+  }
 
   // a.2 TruthEvents variables
   ignore = {};
   extra = {};
-  declareOutputVariables(m_truthEvtsName,"MxAOD.Variables.TruthEvents", extra, ignore);
+  if (m_saveTruthVars) {
+    declareOutputVariables(m_truthEvtsName,"MxAOD.Variables.TruthEvents", extra, ignore);
+  }
 
   // b. Selected objects
 
@@ -163,11 +175,31 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
     m_muonTruthContainerName   = "HGam"+config()->getStr("TruthHandler.MuonContainerName");
     m_jetTruthContainerName    = "HGam"+config()->getStr("TruthHandler.JetContainerName");
 
-    declareOutputVariables(m_photonTruthContainerName  , "MxAOD.Variables.TruthPhotons"    );
-    declareOutputVariables(m_elecTruthContainerName    , "MxAOD.Variables.TruthElectrons"  );
-    declareOutputVariables(m_muonTruthContainerName    , "MxAOD.Variables.TruthMuons"      );
-    declareOutputVariables(m_jetTruthContainerName     , "MxAOD.Variables.TruthJets"       );
-    declareOutputVariables("HGam"+config()->getStr("TruthHandler.HiggsBosonContainerName"), "MxAOD.Variables.TruthHiggsBosons");
+    if (m_saveTruthObjects) {
+      declareOutputVariables(m_photonTruthContainerName  , "MxAOD.Variables.TruthPhotons"    );
+      declareOutputVariables(m_elecTruthContainerName    , "MxAOD.Variables.TruthElectrons"  );
+      declareOutputVariables(m_muonTruthContainerName    , "MxAOD.Variables.TruthMuons"      );
+      declareOutputVariables(m_jetTruthContainerName     , "MxAOD.Variables.TruthJets"       );
+      declareOutputVariables("HGam"+config()->getStr("TruthHandler.HiggsBosonContainerName"), "MxAOD.Variables.TruthHiggsBosons");
+    }
+  }
+
+  if (m_applySystematics) {
+    for (auto sys: getSystematics()) {
+      // ignore nominal case, already done!
+      if (sys.name() == "") continue;
+
+      // Copied from VarHandler.cxx
+      TString sysName = sys.name() == "" ? "" : ("_" + sys.name()).c_str();
+      sysName.ReplaceAll(" ", "_");
+
+      TString evtInfoNameSys = TString("HGam") + m_evtInfoName + sysName;
+
+      ignore = {};
+      extra = {};
+      declareOutputVariables(evtInfoNameSys,"MxAOD.Variables.EventInfoSyst", extra, ignore);
+
+    }
   }
 
   return EL::StatusCode::SUCCESS;
@@ -278,6 +310,10 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 
       // apply the systmeatic variation and calculate the outupt
       CP_CHECK("HiggsGamGamStarCutflowAndMxAOD::execute()", applySystematicVariation(sys));
+
+      // Set this for every event, just in case.
+      var::yyStarChannel.setValue(HG::CHANNELUNKNOWN);
+
       m_cutFlow = cutflow();
       doReco(true);
     }
@@ -756,13 +792,6 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematic()
   // Basic event selection flags
   var::cutFlow.setValue(m_cutFlow);
 
-  if (HG::isMC()) {
-
-    // Basic event weights
-    eventHandler()->pileupWeight();
-    eventHandler()->vertexWeight();
-  }
-
   // Additional variables useful for non-framework analysis
   eventHandler()->storeVar<char>("isPassedEventSelection",m_cutFlow >= PASSALL);
 
@@ -776,26 +805,9 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 
   var::m_lly.addToStore(truth);
   var::m_lly_gev.addToStore(truth);
-  var::m_ll.addToStore(truth);
-  var::deltaR_ll.addToStore(truth);
-  var::pt_lly.addToStore(truth);
-  var::pt_ll.addToStore(truth);
   var::yyStarCategory.addToStore(truth);
 
-  if (!truth)
-  {
-    var::m_lly_track4mom.addToStore(false);
-    var::m_ll_track4mom.addToStore(false);
-    var::Resolved_dRExtrapTrk12.addToStore(false);
-    var::Resolved_deltaPhiRescaled2.addToStore(false);
-    var::Resolved_deltaEta2.addToStore(false);
-    var::trk_lead_pt.addToStore(false);
-  }
-
-  var::N_mu   .addToStore(truth);
-  var::N_e    .addToStore(truth);
 }
-
 
 void HiggsGamGamStarCutflowAndMxAOD::writeTruthOnlyVars()
 {
@@ -845,6 +857,11 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
 
   // Add MC only variables
   if (HG::isMC()) {
+
+    // Basic event weights
+    eventHandler()->pileupWeight();
+    eventHandler()->vertexWeight();
+
     truthHandler()->catCoup();
     eventHandler()->storeVar<float>("crossSectionBRfilterEff", m_crossSectionBRfilterEff);
   }
@@ -855,6 +872,12 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
 {
   // Put here all of the HGamVariables that you want to save in the nominal loop only
   // (not the systematics loops).
+
+  var::m_ll.addToStore(truth);
+  var::deltaR_ll.addToStore(truth);
+  var::pt_lly.addToStore(truth);
+  var::pt_ll.addToStore(truth);
+
   var::m_jj.addToStore(truth);
   var::Deta_j_j.addToStore(truth);
   var::Dphi_lly_jj.addToStore(truth);
@@ -863,6 +886,17 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
   var::pT_llyjj.addToStore(truth);
   var::DRmin_y_ystar_2jets.addToStore(truth);
   var::DRmin_y_leps_2jets.addToStore(truth);
+
+  if (!truth)
+  {
+    var::m_lly_track4mom.addToStore(false);
+    var::m_ll_track4mom.addToStore(false);
+    var::Resolved_dRExtrapTrk12.addToStore(false);
+    var::Resolved_deltaPhiRescaled2.addToStore(false);
+    var::Resolved_deltaEta2.addToStore(false);
+    var::trk_lead_pt.addToStore(false);
+  }
+
   return;
 }
 
@@ -1237,11 +1271,22 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
 
 void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
 
-  xAOD::VertexContainer* outVerticies = new xAOD::VertexContainer();
-  xAOD::VertexAuxContainer* outVerticiesAux = new xAOD::VertexAuxContainer();
-  outVerticies->setStore(outVerticiesAux);
-  eventHandler()->evtStore()->record( outVerticies, "TempVerticies" );
-  eventHandler()->evtStore()->record( outVerticiesAux, "TempVerticiesAux." );
+  // Make a dummy vertex container (does not need to be fancy because we do not save it
+  // but it does need to be safe for running over systematics (i.e. do not make many copies of it)
+  // (to avoid "Trying to overwrite object with key" errors)
+
+  xAOD::VertexContainer* outVertices = nullptr;
+  if (!store()->contains<xAOD::VertexContainer>("TempVertices")) {
+    outVertices = new xAOD::VertexContainer();
+    xAOD::VertexAuxContainer* outVerticesAux = new xAOD::VertexAuxContainer();
+    outVertices->setStore(outVerticesAux);
+    store()->record( outVertices, "TempVertices" );
+    store()->record( outVerticesAux, "TempVerticesAux." );
+  }
+  else if (store()->retrieve( outVertices , "TempVertices" ).isFailure())
+  {
+    HG::fatal("Could not retrieve TempVertices. Exiting.");
+  }
 
   for (auto electron : electrons) {
 
@@ -1277,7 +1322,7 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
 
     if(photon)
     {
-      HG::setPhotonConversionVertex( electron, photon, 20, outVerticies);
+      HG::setPhotonConversionVertex( electron, photon, 20, outVertices);
       HG::EleAcc::calibratedPhotonEnergy(*electron) = photon->e();
 
       delete photon;
