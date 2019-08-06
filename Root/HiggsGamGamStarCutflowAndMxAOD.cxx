@@ -239,11 +239,26 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   // apply cuts. Returned value will be the last passed cut
   m_cutFlow = cutflow();
 
-  // fill the cut-flow histograms up to tight selection
+  // fill the cut-flow histograms. For each event, fills the bins up to (excluding) the cut it fails.
   double wi = weightInitial();
-  for (int cut=ALLEVTS;cut<m_cutFlow;++cut) {
-    if (cut <= GAM_TIGHTID)
-      fillCutFlow(CutEnum(cut),wi);
+  for (int cut=ALLEVTS; cut < m_cutFlow; ++cut) {
+
+    // Starting at the pass-leptonID, multiply by ID/IP SFs
+    // (affects all subsequent entries)
+    if (cut == LEP_MEDID) wi *= m_lepIDWeight;
+
+    // Starting at the pass-leptonIso level, multiply by the Iso SF.
+    if (cut == LEP_ISO) wi *= m_lepIsoWeight;
+
+    // Starting at photon tight ID
+    if (cut == GAM_TIGHTID) wi *= HG::PhotonHandler::effSF(*(m_selPhotons[0]));
+
+    // Starting at photon tight iso
+    if (cut == GAM_ISOLATION) wi *= HG::PhotonHandler::isoSF(*(m_selPhotons[0]));
+
+    // Trigger SF?
+
+    fillCutFlow(CutEnum(cut),wi);
   }
 
   // if desired, apply skimming.
@@ -254,13 +269,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   // Selects the objects, does overlap removal, and calculate all
   // variables that will be saved
   doReco();
-
-  // fill the cut-flow histograms after tight selection including SF weights
-  double w = weight();
-  for (int cut=ALLEVTS;cut<m_cutFlow;++cut) {
-    if (cut > GAM_TIGHTID)
-      fillCutFlow(CutEnum(cut),w);
-  }
 
   // check if we should apply systematics or not
   if (m_applySystematics) {
@@ -291,6 +299,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 // Returns value of the last cut passed in the cut sequence
 HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow()
 {
+  m_lepIDWeight = 1.0;
+  m_lepIsoWeight = 1.0;
 
   m_preSelPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
   m_selPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
@@ -521,63 +531,104 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
 
   if(var::yyStarChannel()==HG::DIMUON){
-  //==== CUT 17: Require muons to pass medium PID
+
+    xAOD::Muon* mu0 = m_selMuons[0];
+    xAOD::Muon* mu1 = m_selMuons[1];
+
+    //==== CUT 17: Require muons to pass medium PID
     static bool requireMedium = config()->getBool("MuonHandler.Selection.ApplyPIDCut", true);
-    if (requireMedium && (!muonHandler()->passPIDCut(m_selMuons[0]) || !muonHandler()->passPIDCut(m_selMuons[1])) ) return LEP_MEDID;
-  //==== CUT 18: Require muons to pass IP
+    if (requireMedium) {
+      if (!muonHandler()->passPIDCut(mu0) || !muonHandler()->passPIDCut(mu1)) return LEP_MEDID;
+
+      // ID scale factors for cutflow
+      m_lepIDWeight *= (HG::MuonHandler::effSF(*mu0) * HG::MuonHandler::effSFTTVA(*mu0));
+      m_lepIDWeight *= (HG::MuonHandler::effSF(*mu1) * HG::MuonHandler::effSFTTVA(*mu1));
+    }
+
+    //==== CUT 18: Require muons to pass IP
     static bool requireIP = config()->getBool("MuonHandler.Selection.ApplyIPCuts", true);
-    if (requireIP && (!muonHandler()->passIPCuts(m_selMuons[0]) || !muonHandler()->passIPCuts(m_selMuons[1])) ) return LEP_IP;
-  //==== CUT 19: Require muons to pass isolation
+    if (requireIP) {
+      if (!muonHandler()->passIPCuts(mu0) || !muonHandler()->passIPCuts(mu1)) return LEP_IP;
+    }
+
+    //==== CUT 19: Require muons to pass isolation
     static bool requireIso = config()->getBool("MuonHandler.Selection.ApplyIsoCut", true);
     if(requireIso){
       static bool correctIsolation = config()->getBool("MuonHandler.Selection.UseCorrectedIso", false);
       if(correctIsolation){ //isolation cut taking into account close-by objects
-        if ( !(*m_muIsoAccCorr[m_muonIsoWP])(*m_selMuons[0]) ||
-             !(*m_muIsoAccCorr[m_muonIsoWP])(*m_selMuons[1])) return LEP_ISO;
+        if ( !(*m_muIsoAccCorr[m_muonIsoWP])(*mu0) ||
+             !(*m_muIsoAccCorr[m_muonIsoWP])(*mu1)) return LEP_ISO;
       }
       else {
-        if ( !muonHandler()->passIsoCut(m_selMuons[0]) ||
-             !muonHandler()->passIsoCut(m_selMuons[1])) return LEP_ISO;
+        if ( !muonHandler()->passIsoCut(mu0) ||
+             !muonHandler()->passIsoCut(mu1)) return LEP_ISO;
       }
+
+      // Iso scale factors for cutflow
+      m_lepIsoWeight *= HG::MuonHandler::effSFIso(*mu0);
+      m_lepIsoWeight *= HG::MuonHandler::effSFIso(*mu1);
+
     }
+
   }
+
   else if(var::yyStarChannel()==HG::RESOLVED_DIELECTRON){
-  //==== CUT 17: Require electrons to pass medium PID
+
+    xAOD::Electron* ele0 = m_selElectrons[0];
+    xAOD::Electron* ele1 = m_selElectrons[1];
+
+    //==== CUT 17: Require electrons to pass medium PID
     static bool requireMedium = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
-    if (requireMedium && (!electronHandler()->passPIDCut(m_selElectrons[0]) || !electronHandler()->passPIDCut(m_selElectrons[1])) ) return LEP_MEDID;
-  //==== CUT 18: Require electrons to pass IP
+    if (requireMedium) {
+      if (!electronHandler()->passPIDCut(ele0) || !electronHandler()->passPIDCut(ele1)) return LEP_MEDID;
+
+      // ID / reco scale factors for cutflow
+      m_lepIDWeight *= (HG::ElectronHandler::effIDSF(*ele0) * HG::ElectronHandler::effRecoSF(*ele0));
+      m_lepIDWeight *= (HG::ElectronHandler::effIDSF(*ele1) * HG::ElectronHandler::effRecoSF(*ele1));
+    }
+
+    //==== CUT 18: Require electrons to pass IP
     static bool requireIP = config()->getBool("ElectronHandler.Selection.ApplyIPCuts", true);
-    if (requireIP && (!electronHandler()->passIPCuts(m_selElectrons[0]) || !electronHandler()->passIPCuts(m_selElectrons[1])) ) return LEP_IP;
-  //==== CUT 19: Require electrons to pass isolation
+    if (requireIP) {
+      if (!electronHandler()->passIPCuts(ele0) || !electronHandler()->passIPCuts(ele1)) return LEP_IP;
+    }
+
+    //==== CUT 19: Require electrons to pass isolation
     static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
     if(requireIso){
       static bool correctIsolation = config()->getBool("ElectronHandler.Selection.UseCorrectedIso", false);
       if(correctIsolation){ //isolation cut taking into account close-by objects
-        if ( !(*m_eleIsoAccCorr[m_eleResolvedIsoWP])(*m_selElectrons[0]) ||
-             !(*m_eleIsoAccCorr[m_eleResolvedIsoWP])(*m_selElectrons[1])) return LEP_ISO;
+        if ( !(*m_eleIsoAccCorr[m_eleResolvedIsoWP])(*ele0) ||
+             !(*m_eleIsoAccCorr[m_eleResolvedIsoWP])(*ele1)) return LEP_ISO;
       }
       else {
-        if ( !electronHandler()->passIsoCut(m_selElectrons[0],m_eleResolvedIsoWP) ||
-             !electronHandler()->passIsoCut(m_selElectrons[1],m_eleResolvedIsoWP)) return LEP_ISO;
+        if ( !electronHandler()->passIsoCut(ele0,m_eleResolvedIsoWP) ||
+             !electronHandler()->passIsoCut(ele1,m_eleResolvedIsoWP)) return LEP_ISO;
       }
+
+      // Iso scale factors for cutflow
+      m_lepIsoWeight *= HG::ElectronHandler::effIsoSF(*ele0);
+      m_lepIsoWeight *= HG::ElectronHandler::effIsoSF(*ele1);
+
     }
   }
+
   else if(var::yyStarChannel()==HG::MERGED_DIELECTRON){
-  //==== CUT 17: Require electrons to pass merged PID
+
+    //==== CUT 17: Require electrons to pass merged PID
     static bool requireMerged = config()->getBool("ElectronHandler.Selection.ApplyPIDCut", true);
     if (requireMerged && !HG::EleAcc::passTMVAPID(*m_selElectrons[0]) ) return LEP_MEDID;
-  //==== CUT 18: Require electrons to pass IP
+
+    //==== CUT 18: Require electrons to pass IP
     static bool requireIP = config()->getBool("ElectronHandler.Selection.ApplyIPCuts", true);
     if (requireIP && (!trackHandler()->passIPCuts(*m_selTracks[0]) || !trackHandler()->passIPCuts(*m_selTracks[1])) ) return LEP_IP;
-  //==== CUT 19: Require melectrons to pass isolation
+
+    //==== CUT 19: Require melectrons to pass isolation
     static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
     if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0],m_eleMergedIsoWP)) ) return LEP_ISO;
   }
-  else if(var::yyStarChannel()==HG::AMBIGUOUS_DIELECTRON){
-  //TODO: fill in the ambiguous case; currently they get a "pass" for all cuts above
-  }
   else {
-      HG::fatal("Unknown channel categorization - please check!");
+    HG::fatal("Unknown channel categorization - please check!");
   }
 
   //==== CUT 20 : Require both photons to pass photon ID (isEM) ====
@@ -615,16 +666,28 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
   // Do anything you missed in cutflow, and save the objects.
 
-  // Save JVT weight (needs special overlap removal)
-  m_jvtJets = jetHandler()->applySelectionNoJvt(m_allJets);
-  xAOD::ElectronContainer jvtElecs = m_selElectrons;
-  xAOD::MuonContainer jvtMuons = m_selMuons;
-  overlapHandler()->removeOverlap(m_selPhotons, m_jvtJets, jvtElecs, jvtMuons);
-
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
-  setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, nullptr, &m_jvtJets);
+  HG::VarHandler::getInstance()->setContainers(&m_selPhotons,&m_selElectrons,&m_selMuons,&m_selJets);
   HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&m_selTracks);
+
+  // Weights
+  // total weight (mc, prw, vtx, sf)
+  // Reset every time, since weightInitial() might be updated
+  // for new pileup weighting
+  double myweight = weightInitial();
+
+  // Only apply all scale factors in the case where all objects pass. For all other instances,
+  // you have to figure out exactly what weights you need!
+  if (m_cutFlow > GAM_ISOLATION) {
+    myweight *= m_lepIDWeight;
+    myweight *= m_lepIsoWeight;
+    myweight *= HG::PhotonHandler::effSF(*(m_selPhotons[0]));
+    myweight *= HG::PhotonHandler::isoSF(*(m_selPhotons[0]));
+    // trigger?
+  }
+
+  var::weight.setValue(myweight);
 
   // Set the Merged electron TLV
   if (var::yyStarChannel() == HG::MERGED_DIELECTRON) {
