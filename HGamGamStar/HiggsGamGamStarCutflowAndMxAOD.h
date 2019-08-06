@@ -34,7 +34,7 @@ private:
   // names of all cuts (do not includ "pass all")
   const std::vector<TString> s_cutDescs =
     {"Lepton Dalitz truth","No duplicates","GRL","Pass trigger","Detector DQ","Has PV",
-     "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity",
+     "2 same-flavor leptons","1 loose photon","e-#gamma ambiguity / HV",
      "Z-boson assignment","2 same-flavor leptons (post-OR)","Bad muon","1 loose photon (post-OR)",
      "Trigger match","lepton ID","lepton impact parameter","lepton isolation",
      "photon tight ID","photon isolation",
@@ -46,6 +46,11 @@ private:
 
   /// value of cut that fail selection: PASSALL if all cuts passed
   CutEnum m_cutFlow;
+
+  // Lepton ID and isolation scale factors, used to apply the right weights at the right time in the
+  // cutflow.
+  float m_lepIDWeight;
+  float m_lepIsoWeight;
 
   // names of the output containers
   TString m_photonContainerName, m_jetContainerName, m_elecContainerName, m_muonContainerName, m_trackContainerName;

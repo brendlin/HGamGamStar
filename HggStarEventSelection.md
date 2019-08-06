@@ -30,19 +30,19 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 | **Presel for Z-assignment above** | Res e: VeryLooseLH,<br>lead p<sub>T</sub>>13 GeV<br>Mrgd e: Rhad<0.1, NtrkPassBL&geq;1,<br>p<sub>T</sub>>20 GeV<br>&mu;: lead p<sub>T</sub>>11 GeV | " " | N/A |
 |12, ZBOSON_ASSIGNMENT     | nSFOS &ge; 1 (muon or track pairs). | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 | **Get jet container**  | Selected jets | JetHandler.cxx | N/A |
-| **Overlap removal**    | Remove e if &Delta;R(e,&gamma;)<0.4<br> Remove jet if &Delta;R(j,&gamma;)<0.4<br>Remove jet if &Delta;R(j,e)<0.2<br>Remove e if &Delta;R(j,e)<0.4<br>Remove &mu; if &Delta;R(&mu;,&gamma;)<0.4<br>Remove &mu; if &Delta;R(&mu;,j)<0.4 | HGamAnalysisFramework/<br>OverlapRemovalHandler.cxx | " " |
+| **Overlap removal**    | Remove e if &Delta;R(e,&gamma;)<0.4<br> Remove jet if &Delta;R(j,&gamma;)<0.4<br>Remove jet if &Delta;R(j,e)<0.2<br>Remove e if &Delta;R(j,e)<0.4<br>Remove &mu; if &Delta;R(&mu;,&gamma;)<0.4<br>Remove &mu; if &Delta;R(&mu;,j)<0.4 | HGamAnalysisFramework/<br>OverlapRemovalHandler.cxx | N/A |
 |13, TWO_SF_LEPTONS_POSTOR | &ge; 1 of the SFOS pairs survives OR.<br>At this point, &mu;&mu; is preferred;<br>the remaining channels are exclusive. | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |14, BAD_MUON              | Reject events with presel BadMuons | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |15, ONE_PHOTON_POSTOR     | Selected photon survives OR | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |16, TRIG_MATCH            | Objects must match for a trigger<br>that fired (see config) | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
-|17, LEP_MEDID             | Resolved e: Medium,<br>Merged e: Merged **TMVA** ID,<br>&mu;: Medium | HGamAnalysisFramework/HGamRel21.config<br>for merged objects | " " |
+|17, LEP_MEDID             | Resolved e: Medium,<br>Merged e: Merged **TMVA** ID,<br>&mu;: Medium | HGamAnalysisFramework/HGamRel21.config<br>for merged objects | Muons: add ID x TTVA SFs<br>Resolved e: add ID x Reco SFs |
 |18, LEP_IP                | Res/Mrgd e: d<sub>0</sub>/&sigma;<sub>d0</sub> < 5, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5<br>&mu;: d<sub>0</sub>/&sigma;<sub>d0</sub> < 3, &#124;z<sub>0</sub>sin&theta;&#124; < 0.5 | Defaults in ElectronHandler.cxx, MuonHandler.cxx | " " |
-|19, LEP_ISO               | Resolved e: CloseByCorrected FCLoose<br>Merged e: FCLoose<br>&mu;: CloseByCorrected FCLoose_FixedRad | Merged e: specially done in<br>HiggsGamGamStarCutflowAndMxAOD.cxx.<br>Resolved e/&mu;: HGamAnalysisFramework/HGamRel21.config | " " |
-|20, GAM_TIGHTID           | Photon passes Tight | HGamAnalysisFramework/HGamRel21.config | " " |
-|21, GAM_ISOLATION         | Photon passes FixedCutLoose | HGamAnalysisFramework/HGamRel21.config | " " |
+|19, LEP_ISO               | Resolved e: CloseByCorrected FCLoose<br>Merged e: FCLoose<br>&mu;: CloseByCorrected FCLoose_FixedRad | Merged e: specially done in<br>HiggsGamGamStarCutflowAndMxAOD.cxx.<br>Resolved e/&mu;: HGamAnalysisFramework/HGamRel21.config | Muons and resolved-e: add Iso SFs |
+|20, GAM_TIGHTID           | Photon passes Tight | HGamAnalysisFramework/HGamRel21.config | Add photon ID SF |
+|21, GAM_ISOLATION         | Photon passes FixedCutLoose | HGamAnalysisFramework/HGamRel21.config | Add photon Iso SF |
 |22, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> (see code for merged mass definiton) | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |23, LLGMASSCUT            | 105 < m<sub>ll&gamma;</sub> && m<sub>ll&gamma;</sub> < 160 GeV | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
-|24, LLMASSCUT             | Res/Mrgd e: m<sub>ll</sub> < 2.5 GeV or<br>m<sub>ll</sub> > 3.5 GeV (J/&Psi; peak veto)<br> m<sub>ll</sub> < 8.0 GeV or<br>m<sub>ll</sub> > 11.0 GeV (&Upsilon; peak veto)<br> &mu;: m<sub>ll</sub> < 2.9 GeV or<br>m<sub>ll</sub> > 3.3 GeV (J/&Psi; peak veto); <br> m<sub>ll</sub> < 9.1 GeV or<br>m<sub>ll</sub> > 10.6 GeV (&Upsilon; peak veto)    | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+|24, LLMASSCUT             | Res/Mrgd e: !(2.5 < m<sub>ll</sub> < 3.5 GeV) (J/&Psi; veto)<br> !(8.0 < m<sub>ll</sub> < 11.0 GeV) (&Upsilon; veto)<br> &mu;: !(2.9 < m<sub>ll</sub> < 3.3 GeV) (J/&Psi; veto); <br> !(9.1 < m<sub>ll</sub> < 10.6 GeV) (&Upsilon; veto)  | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |25, DILEP_PT_FRAC         | p<sub>T</sub><sup>ll</sup>/m<sub>ll&gamma;</sub> > 0.3 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |26, GAM_PT_FRAC           | p<sub>T</sub><sup>&gamma;</sup>/m<sub>ll&gamma;</sub> > 0.3 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |27, PASSALL               | Everything above passes | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
@@ -86,4 +86,31 @@ For convenience, a few predefined booleans are also saved:
 | -------- | ---------- | ------ |
 | isPassedObjPreselection | m_cutFlow > TRIG_MATCH    | For bkg CRs - basic event selection passes, but objects are still "Loose" |
 | isPassedObjSelection    | m_cutFlow > GAM_ISOLATION | All object selection passes at this point |
-| isPassedEventSelection  | m_cutFlow >= PASSALL      | All event selection passes (including m<sub>ll</sub> and m<sub>ll&gamma;</sub> cuts) |
+| isPassedEventSelection  | m_cutFlow >= PASSALL      | All event selection passes (including m<sub>ll</sub>, m<sub>ll&gamma;</sub>, and relative pt cuts) |
+
+Weights
+-----------------------
+
+Pre-signal selection, a weight variable exists which covers the event-level weights:
+ 
+- **weightInitial**: Includes mc, prw, vtx weights.
+
+For the signal selection, we have the "weight" variable in the MxAOD.
+
+ - **weight**: includes two cases:
+    - In the case where all object selection is passed, this variable is set to the weightInitial times
+      the ID and isolation scale factors of the leptons and photon.
+    - If you do not require all object selection to be passed, then the "weight" variable is simply a copy
+      of weightInitial.
+
+**If you apply _some, but not all_ object selection, you must construct the correct weight** using "weightInitial"
+and the scale factors from the individual objects that you need, depending on what selection
+you use. (You should only apply the scale factors for the selection that you apply.)
+The object-level scale factor variables are:
+ - "SF_eff", "SF_eff_iso", "SF_eff_TTVA" (muons -- all combined in "scaleFactor");
+ - "SF_IDeff", "SF_Recoeff", "SF_Isoeff" (resolved electrons -- all combined in "scaleFactor");
+ - "SF_IDeff", "SF_IsoEff" (photons - all combined in "scaleFactor").
+
+**Note that merged ID/isolation scale factors are missing - to be derived soon.**
+
+**Trigger scale factors are also missing - to be added soon.**
