@@ -393,8 +393,10 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // Apply muon preselection.
   // HGamCore does not have a muon preselection step, so we make our own here:
   m_allMuons = muonHandler()->getCorrectedContainer();
-  xAOD::MuonContainer m_preSelMuons(SG::VIEW_ELEMENTS);
 
+  AddMuonDecorations(m_allMuons);
+
+  xAOD::MuonContainer m_preSelMuons(SG::VIEW_ELEMENTS);
   for (auto muon : m_allMuons) {
     if (!muonHandler()->passPtCuts(muon)) { continue; }
     if (!muonHandler()->passPIDCut(muon)) { continue; } // This includes MaxEta cut
@@ -1111,18 +1113,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::changeInput(bool firstFile) {
 
 void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons){
 
-  //set corrected iso decision same as non-corrected by default
-  for(auto muon: muons){
-    for (auto dec : m_muIsoAccCorr){
-      (*dec.second)(*muon) = muonHandler()->passIsoCut(muon,dec.first);
-    }
-  }
-  for(auto electron: electrons){
-    for (auto dec : m_eleIsoAccCorr){
-      (*dec.second)(*electron) = electronHandler()->passIsoCut(electron,dec.first);
-    }
-  }
-
   if(var::yyStarChannel()==HG::DIMUON){
     std::vector<const xAOD::IParticle*> muonsVec;
     for(auto muon: muons) muonsVec.push_back((const xAOD::IParticle*) muon);
@@ -1269,6 +1259,18 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
   return return_chan;
 }
 
+void HiggsGamGamStarCutflowAndMxAOD::AddMuonDecorations(xAOD::MuonContainer& muons) {
+
+  //set corrected iso decision same as non-corrected by default
+  for(auto muon: muons){
+    for (auto dec : m_muIsoAccCorr){
+      (*dec.second)(*muon) = muonHandler()->passIsoCut(muon,dec.first);
+    }
+  }
+
+  return;
+}
+
 void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
 
   // Make a dummy vertex container (does not need to be fancy because we do not save it
@@ -1289,6 +1291,11 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
   }
 
   for (auto electron : electrons) {
+
+    //set corrected iso decision same as non-corrected by default
+    for (auto dec : m_eleIsoAccCorr){
+      (*dec.second)(*electron) = electronHandler()->passIsoCut(electron,dec.first);
+    }
 
     // NEED TO initialize merged electron ID variables here!
     HG::EleAcc::EOverP0P1(*electron) = -999;
