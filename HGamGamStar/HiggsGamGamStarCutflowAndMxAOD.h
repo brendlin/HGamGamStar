@@ -150,6 +150,7 @@ private:
 
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
+  void AddMuonDecorations(xAOD::MuonContainer& muons);
 
   HG::ChannelEnum ClassifyElectronsOld(xAOD::TrackParticle* trk0,
                                        xAOD::TrackParticle* trk1,
