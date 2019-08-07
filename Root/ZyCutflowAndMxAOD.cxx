@@ -56,6 +56,9 @@ EL::StatusCode ZyCutflowAndMxAOD::createOutput()
   //select opposite flavour instead of same flavour
   m_checkemu = config()->getBool("SelectOppFlavour", false);
 
+  // Ignore photon selection and save inclusive Z events
+  m_saveAllZ = config()->getBool("SaveAllZ",false);
+
   // Whether we are running with yybb-tool in detailed mode.
   m_detailedHHyybb = config()->getBool("HHyybb.DetailedInfo",false);
 
@@ -208,6 +211,9 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   m_allJets = xAOD::JetContainer(SG::VIEW_ELEMENTS);
   m_selJets = xAOD::JetContainer(SG::VIEW_ELEMENTS);
 
+  m_isZ = false;
+  bool c_oneLooseGam=true, c_ambiguity=true, c_onePhotonPostor=true;
+
   //Check if there are two good fakes. Needed so we dont slim the event at trigger.
   m_goodFakeComb = false;
   if(HG::isMC() && m_enableFakePhotons){
@@ -280,12 +286,14 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   }
 
   //==== CUT 6 : Require one loose photons, pT>15 GeV ====
-  if (nloose<1) return ONE_LOOSE_GAM;
+  if (nloose<1 && !m_saveAllZ) return ONE_LOOSE_GAM;
+  if (nloose<1 && m_saveAllZ) c_oneLooseGam = false;
 
   //==== CUT 7 : Ambiguity
   // - Require two loose photons that also pass e-gamma ambiguity ====
   static bool requireAmbiguity = config()->getBool("PhotonHandler.Selection.ApplyAmbiguityCut", false);
-  if (requireAmbiguity && namb<1) return AMBIGUITY;
+  if (requireAmbiguity && namb<1 && !m_saveAllZ) return AMBIGUITY;
+  if (requireAmbiguity && namb<1 && m_saveAllZ) c_ambiguity = false;
 
   // static bool requireHV = config()->getBool("PhotonHandler.Selection.ApplyHVCut", false);
   // if (requireHV && nHV<1) return AMBIGUITY;
@@ -348,7 +356,8 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   else if (!m_checkemu && nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
 
   //==== CUT 9 : 1 photon after OR ====
-  if (m_selPhotons.size()==0) return ONE_PHOTON_POSTOR;
+  if (m_selPhotons.size()==0 && !m_saveAllZ) return ONE_PHOTON_POSTOR;
+  if (m_selPhotons.size()==0 && m_saveAllZ) c_onePhotonPostor=false;
 
   //==== CUT 10 : Trigger matching ====
   //trigger matching
@@ -374,6 +383,14 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   if (m_checkemu && m_emu<40*HG::GeV ) return MASSCUT;
   else if (!m_checkemu && m_ll<40*HG::GeV ) return MASSCUT;
 
+  // isZ flag set properly whilst not influincing the original cutflow decision
+  m_isZ = true;
+  if(m_saveAllZ){
+    if(!c_oneLooseGam) return ONE_LOOSE_GAM;
+    if(!c_ambiguity) return AMBIGUITY;
+    if(!c_onePhotonPostor) return ONE_PHOTON_POSTOR;
+  }
+  //return GAM_TIGHTID;
   //==== CUT 13 : tight ID for photon ====
 
   if (!photonHandler()->passPIDCut(m_selPhotons[0])) return GAM_TIGHTID;
@@ -544,8 +561,14 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   passAll = passPre && passPID && passIso;
   eventHandler()->storeVar<char>("isPassedZyPreSel", passPre);
   eventHandler()->storeVar<char>("isPassedZy", passAll);
+
+  if(m_saveAllZ){
+    eventHandler()->storeVar<char>("isPassedZ",m_isZ);
+  }
+
   var::isPassed.setValue(passAll);
 
+  
   writeNominalAndSystematicVars();
 }
 
