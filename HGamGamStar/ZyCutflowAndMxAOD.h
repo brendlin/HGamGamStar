@@ -48,6 +48,10 @@ private:
   // option for different flavour lepton pair
   bool m_checkemu;
 
+  // option to save inclusive Z events
+  bool m_saveAllZ;
+  bool m_isZ;
+
   //If we have two good fakes then we need to pass the slimming
   bool m_goodFakeComb;
 
