@@ -547,6 +547,17 @@ namespace HG {
   };
   
   //____________________________________________________________________________
+  class ZyChannel : public VarBase<int> {
+  public:
+  ZyChannel() : VarBase("ZyChannel") { m_default = -99; }
+    ~ZyChannel() { }
+
+    // Set by hand in CutflowAndMxAOD
+    // Set the reco  value by specifying var::ZyChannel.setValue(val)
+    // Set the truth value by specifying var::ZyChannel.setTruthValue(val)
+  };
+
+  //____________________________________________________________________________
   class yyStarCategory : public VarBase<int> {
   public:
   yyStarCategory() : VarBase("yyStarCategory") { m_default = -99; }
@@ -802,7 +813,8 @@ namespace HG {
   //____________________________________________________________________________
 
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
-                           double& return_mll,bool sortby_pt,double closest_to,float lead_pt_cut); // Z = 91188
+                           double& return_mll,bool sortby_pt,
+                           double closest_to_mev,float lead_pt_cut_gev=0); // Z = 91188
 
   bool eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
   bool isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl);
@@ -839,6 +851,7 @@ namespace var {
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
+  extern HG::ZyChannel ZyChannel;
   extern HG::vertexTruthFitRadius vertexTruthFitRadius;
   extern HG::trk_lead_pt trk_lead_pt;
   extern HG::yyStarCategory yyStarCategory;

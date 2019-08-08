@@ -34,6 +34,7 @@ namespace var {
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
+  HG::ZyChannel ZyChannel;
   HG::vertexTruthFitRadius vertexTruthFitRadius;
   HG::trk_lead_pt trk_lead_pt;
   HG::yyStarCategory yyStarCategory;
@@ -80,7 +81,8 @@ float HG::Resolved_dRExtrapTrk12::calculateValue(bool /* truth*/)
 }
 
 void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
-                             double& return_mll,bool sortby_pt,double closest_to, float lead_pt_cut){
+                             double& return_mll,bool sortby_pt,
+                             double closest_to_mev, float lead_pt_cut_gev){
 
   double min_delta = DBL_MAX;
 
@@ -93,7 +95,7 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
 
       if (lepi->pt() < lepj->pt()) continue;
       
-      if(lepi->pt() < lead_pt_cut*HG::GeV) continue;
+      if(lepi->pt() < lead_pt_cut_gev*HG::GeV) continue;
 
       if (lepi->type() == xAOD::Type::TrackParticle &&
           ((xAOD::TrackParticle*)lepi)->charge() == ((xAOD::TrackParticle*)lepj)->charge()) continue;
@@ -108,8 +110,8 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
 
       double metric = (sortby_pt ? tmp.Pt() : tmp.M() );
 
-      if ( fabs( metric - closest_to ) < min_delta) {
-        min_delta = fabs( metric - closest_to );
+      if ( fabs( metric - closest_to_mev ) < min_delta) {
+        min_delta = fabs( metric - closest_to_mev );
         return_lep1i = i;
         return_lep2i = j;
         return_mll = tmp.M();
