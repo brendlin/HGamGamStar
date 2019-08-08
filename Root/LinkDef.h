@@ -2,6 +2,7 @@
 #include <HGamGamStar/ZyCutflowAndMxAOD.h>
 #include <HGamGamStar/HiggsGamGamStarCutflowAndMxAOD.h>
 #include <HGamGamStar/MergedElectronMxAOD.h>
+#include <HGamGamStar/RadiativeZCutflowAndMxAOD.h>
 
 #ifdef __CINT__
 
@@ -16,6 +17,7 @@
 #ifdef __CINT__
 #pragma link C++ class MxAODTool+;
 #pragma link C++ class ZyCutflowAndMxAOD+;
+#pragma link C++ class RadiativeZCutflowAndMxAOD+;
 #pragma link C++ class HiggsGamGamStarCutflowAndMxAOD+;
 #pragma link C++ class MergedElectronMxAOD+;
 #endif
