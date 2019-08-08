@@ -87,6 +87,44 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_l1y : public VarBase<float> {
+  public:
+  m_l1y() : VarBase("m_l1y") { m_default = -99; }
+    ~m_l1y() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      if (mus->size() >= 2 && gams->size() >= 1)
+        return ((*mus)[0]->p4() + (*gams)[0]->p4()).M();
+      if (eles->size() >= 2 && gams->size() >= 1)
+        return ((*eles)[0]->p4() + (*gams)[0]->p4()).M();
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class m_l2y : public VarBase<float> {
+  public:
+  m_l2y() : VarBase("m_l2y") { m_default = -99; }
+    ~m_l2y() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      if (mus->size() >= 2 && gams->size() >= 1)
+        return ((*mus)[1]->p4() + (*gams)[0]->p4()).M();
+      if (eles->size() >= 2 && gams->size() >= 1)
+        return ((*eles)[1]->p4() + (*gams)[0]->p4()).M();
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
   class deltaR_ll : public VarBase<float> {
   public:
   deltaR_ll() : VarBase("deltaR_ll") { m_default = -99; }
@@ -777,6 +815,8 @@ namespace var {
   extern HG::m_lly m_lly;
   extern HG::m_lly_gev m_lly_gev;
   extern HG::m_ll m_ll;
+  extern HG::m_l1y m_l1y;
+  extern HG::m_l2y m_l2y;
   extern HG::deltaR_ll deltaR_ll;
   extern HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
   extern HG::Resolved_deltaPhiRescaled2 Resolved_deltaPhiRescaled2;
