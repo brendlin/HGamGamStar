@@ -987,14 +987,15 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   // Save truth containers, if configured
   if (m_saveTruthObjects) {
     truthHandler()->writePhotons    (all_photons  );
-    truthHandler()->writeElectrons  (all_electrons);
-    truthHandler()->writeMuons      (all_muons    );
+    if (!m_skipElectronObjects) truthHandler()->writeElectrons  (all_electrons);
+    if (!m_skipMuonObjects)     truthHandler()->writeMuons      (all_muons    );
     truthHandler()->writeJets       (all_jets     );
     truthHandler()->writeHiggsBosons(all_higgs    );
     truthHandler()->writeTruthEvents(             );
 
     addTruthLinks(m_photonContainerName.Data(), m_photonTruthContainerName.Data());
-    addTruthLinks(m_elecContainerName.Data()  , m_elecTruthContainerName.Data());
+    if (!m_skipElectronObjects)
+    { addTruthLinks(m_elecContainerName.Data()  , m_elecTruthContainerName.Data()); }
   }
 
   HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, &jets);
