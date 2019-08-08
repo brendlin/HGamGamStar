@@ -110,6 +110,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
 
   // Whether to save objects (photons, jets ...)
   m_saveObjects = config()->getBool("SaveObjects",false);
+  m_skipElectronObjects = false; // to be filled in execute, when the mcChannelNumber is known
+  m_skipMuonObjects = false; // to be filled in execute, when the mcChannelNumber is known
 
   // Whether to save the list of differential variables
   m_saveDetailed = config()->getBool("SaveDetailedVariables",false);
@@ -256,6 +258,19 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 
       if (config()->isDefined(Form("GeneratorEfficiency.%d", eventInfo()->mcChannelNumber())))
       { m_crossSectionBRfilterEff *= getGeneratorEfficiency(); }
+
+      StrV skipMuonsV = config()->getStrV("SkipSavingMuonObjects",{});
+      for (auto mcChanNum : skipMuonsV) {
+        if ( std::atoi(mcChanNum.Data()) == (int)eventInfo()->mcChannelNumber() )
+        { m_skipMuonObjects = true; }
+      }
+
+      StrV skipElectronsV = config()->getStrV("SkipSavingElectronObjects",{});
+      for (auto mcChanNum : skipElectronsV) {
+        if ( std::atoi(mcChanNum.Data()) == (int)eventInfo()->mcChannelNumber() )
+        { m_skipElectronObjects = true; }
+      }
+
     }
 
     m_newFileLoaded = false;
@@ -750,10 +765,14 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
 
     if (m_saveObjects) {
       CP_CHECK("execute()", photonHandler  ()->writeContainer(m_selPhotons  ));
-      CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
       CP_CHECK("execute()", trackHandler   ()->writeContainer(m_selTracks   ));
       CP_CHECK("execute()", jetHandler     ()->writeContainer(m_selJets     ));
-      CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
+      if (!m_skipElectronObjects) {
+        CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
+      }
+      if (!m_skipMuonObjects) {
+        CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
+      }
     }
   }
 

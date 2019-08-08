@@ -60,6 +60,7 @@ private:
 
   // whether to apply systematics, save the differential variables and the truth
   bool m_applySystematics, m_saveObjects, m_saveTruthObjects, m_saveTruthVars;
+  bool m_skipElectronObjects, m_skipMuonObjects;
 
   // Containers
   xAOD::PhotonContainer m_allPhotons; //!
