@@ -452,6 +452,8 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
     var::weightSF.setValue(myweight*var::weightTrigSF());
     var::weight.setValue(weightInitial()*var::weightSF());
   }
+  if (photonHandler()->getPointingTool()->updatePointingAuxdata(m_selPhotons).isFailure())
+  { HG::fatal("Couldn't retrieve PrimaryVertices, exiting!"); }
 
   if (not m_photonAllSys) {
     // Must come before writing out containers (Detailed mode decorates objects for studying)
@@ -578,6 +580,8 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::pT_y1.addToStore(truth);
   var::m_lly.addToStore(truth);
   var::m_ll.addToStore(truth);
+  var::m_l1y.addToStore(truth);
+  var::m_l2y.addToStore(truth);
   var::pt_lly.addToStore(truth);
   var::pt_ll.addToStore(truth);
   var::pt_llyy.addToStore(truth);
@@ -724,6 +728,23 @@ EL::StatusCode  ZyCutflowAndMxAOD::doTruth()
   }
   HG::DecorateLeptonDressing(all_muons, *truthMuons);
   HG::DecorateLeptonDressing(all_electrons, *truthElectrons);
+
+  //lepton particle isolation
+  const xAOD::TruthParticleContainer *truthParts = nullptr;
+  if (event()->retrieve(truthParts, "TruthParticles").isFailure()) {
+    HG::fatal("Can't access TruthParticles Container");
+  }
+  SG::AuxElement::Accessor<float> etcone20("etcone20");
+  SG::AuxElement::Accessor<float> ptcone20("ptcone20");
+  static std::vector<int> ignorePdgIds = { 13, 12, 14, 16, 18 }; // mu, nus
+  for (auto part : all_electrons) {
+    etcone20(*part) = HG::getTruthIsolation(part, truthParts, 0.2, false, ignorePdgIds);
+    ptcone20(*part) = HG::getTruthIsolation(part, truthParts, 0.2, true, {}, 1.0 * HG::GeV);
+  }
+  for (auto part : all_muons) {
+    etcone20(*part) = HG::getTruthIsolation(part, truthParts, 0.2, false, ignorePdgIds);
+    ptcone20(*part) = HG::getTruthIsolation(part, truthParts, 0.2, true, {}, 1.0 * HG::GeV);
+  }
 
   // Save truth containers, if configured
   if (m_saveTruthObjects) {

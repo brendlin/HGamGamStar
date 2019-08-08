@@ -10,6 +10,8 @@ namespace var {
   HG::m_lly m_lly;
   HG::m_lly_gev m_lly_gev;
   HG::m_ll m_ll;
+  HG::m_l1y m_l1y;
+  HG::m_l2y m_l2y;
   HG::deltaR_ll deltaR_ll;
   HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
   HG::Resolved_deltaPhiRescaled2 Resolved_deltaPhiRescaled2;
