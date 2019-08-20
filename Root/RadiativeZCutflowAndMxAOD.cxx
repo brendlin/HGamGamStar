@@ -382,6 +382,7 @@ RadiativeZCutflowAndMxAOD::CutEnum RadiativeZCutflowAndMxAOD::cutflow()
 
   // Get object containers
   m_allPhotons = photonHandler()->getCorrectedContainer();
+  AddPhotonDecorations(m_allPhotons);
 
   // This section is just for the cutflow purposes.
   int nquality=0, namb=0, nHV=0;
@@ -967,6 +968,22 @@ void RadiativeZCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& 
   }
 
     return;
+}
+
+void RadiativeZCutflowAndMxAOD::AddPhotonDecorations(xAOD::PhotonContainer& photons) {
+
+
+  for (auto photon : photons) {
+
+    double feta = fabs(photon->eta());
+
+    HG::EleAcc::RhadForPID(*photon) = (0.8 < feta && feta < 1.37) ?
+      photon->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
+      photon->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+  }
+
+
+  return;
 }
 
 void RadiativeZCutflowAndMxAOD::printCutFlowHistos() {

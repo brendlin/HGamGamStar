@@ -122,6 +122,7 @@ private:
   void SetTruthZBosonInformation(void);
 
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
+  void AddPhotonDecorations(xAOD::PhotonContainer& photons);
 
 private:
 #ifndef __CINT__
