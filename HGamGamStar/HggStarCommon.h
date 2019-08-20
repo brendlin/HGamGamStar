@@ -36,6 +36,14 @@ namespace HG {
     VBF_MERGED_DIELECTRON=6,
   };
 
+  namespace PhAcc {
+    static SG::AuxElement::Accessor<float> RhadForPID("RhadForPID");
+    static SG::AuxElement::Accessor<float> ambiguousE_deltaEta1("ambiguousE_deltaEta1");
+    static SG::AuxElement::Accessor<float> vtxE("vtxE");
+    static SG::AuxElement::Accessor< float > vtxTrk1_TRT_PID_trans("vtxTrk1_TRT_PID_trans");
+    static SG::AuxElement::Accessor< float > vtxTrk2_TRT_PID_trans("vtxTrk2_TRT_PID_trans");
+  }
+
   namespace TrkAcc {
     static SG::AuxElement::Accessor< std::vector<int> > MatchedElectrons("MatchedElectrons");
     static SG::AuxElement::Accessor<char>  passIPCut("passIPCut");

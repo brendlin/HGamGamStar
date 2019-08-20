@@ -382,6 +382,7 @@ RadiativeZCutflowAndMxAOD::CutEnum RadiativeZCutflowAndMxAOD::cutflow()
 
   // Get object containers
   m_allPhotons = photonHandler()->getCorrectedContainer();
+  AddPhotonDecorations(m_allPhotons);
 
   // This section is just for the cutflow purposes.
   int nquality=0, namb=0, nHV=0;
@@ -967,6 +968,49 @@ void RadiativeZCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& 
   }
 
     return;
+}
+
+void RadiativeZCutflowAndMxAOD::AddPhotonDecorations(xAOD::PhotonContainer& photons) {
+
+
+  for (auto photon : photons) {
+
+    double feta = fabs(photon->eta());
+
+    HG::PhAcc::RhadForPID(*photon) = (0.8 < feta && feta < 1.37) ?
+      photon->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
+      photon->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+
+    HG::PhAcc::ambiguousE_deltaEta1(*photon) = -999;
+
+    if (photon->ambiguousObject()) {
+      const xAOD::Electron* el = dynamic_cast<const xAOD::Electron*>( photon->ambiguousObject() );
+      HG::PhAcc::ambiguousE_deltaEta1(*photon) = el->trackCaloMatchValue(xAOD::EgammaParameters::deltaEta1);
+    }
+
+    Amg::Vector3D vtxMom = xAOD::EgammaHelpers::momentumAtVertex(photon);
+    HG::PhAcc::vtxE(*photon) = sqrt(vtxMom.x()*vtxMom.x() + vtxMom.y()*vtxMom.y() + vtxMom.z()*vtxMom.z());
+
+    HG::PhAcc::vtxTrk1_TRT_PID_trans(*photon) = -999;
+    HG::PhAcc::vtxTrk2_TRT_PID_trans(*photon) = -999;
+
+    const xAOD::Vertex *vxPh = photon->vertex();
+
+    if (vxPh){
+      const xAOD::TrackParticle *trk1 = ( vxPh->nTrackParticles() ? vxPh->trackParticle(0) : 0 );
+      const xAOD::TrackParticle *trk2 = ( vxPh->nTrackParticles() > 1 ? vxPh->trackParticle(1) : 0 );
+
+      if (trk1) {
+        HG::PhAcc::vtxTrk1_TRT_PID_trans(*photon) = trackHandler()->calculateTRT_PID(*trk1);
+      }
+      if (trk2) {
+        HG::PhAcc::vtxTrk2_TRT_PID_trans(*photon) = trackHandler()->calculateTRT_PID(*trk2);
+      }
+    }
+
+  }
+
+  return;
 }
 
 void RadiativeZCutflowAndMxAOD::printCutFlowHistos() {
