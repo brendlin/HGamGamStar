@@ -19,6 +19,7 @@ EL::StatusCode HG::MergedElectronID::initialize(Config &config)
   m_PreselNPassBlayer = config.getInt("MergedElectrons.Preselection.NtracksPassingBlayer",1);
   m_PreselRhad        = config.getNum("MergedElectrons.Preselection.RhadMin",0.10);
   m_mergedElePtCut    = config.getNum("MergedElectrons.Selection.PtPreCutGeV",20.) * GeV;
+  m_mergedEleEtaCut   = config.getNum("MergedElectrons.Selection.MaxAbsEta"  ,2.37);
 
   return EL::StatusCode::SUCCESS;
 }
@@ -249,7 +250,7 @@ unsigned HG::MergedElectronID::getPtBin(const xAOD::Electron * const el) const {
 
 unsigned HG::MergedElectronID::getEtaBin(const xAOD::Electron * const el) const {
 
-    double eta = fabs(el->eta());
+    float eta = fabs(el->caloCluster()->etaBE(2));
 
     if (eta < 0.6){return(0);}
     else if (eta < 0.8){return(1);}
@@ -407,6 +408,7 @@ bool HG::MergedElectronID::passPreselection(const xAOD::Electron &ele,
                                             const xAOD::TrackParticle &trk2){
 
   if (ele.pt() < m_mergedElePtCut) return false;
+  if (fabs(ele.caloCluster()->etaBE(2)) > m_mergedEleEtaCut) return false;
 
   if (HG::EleAcc::RhadForPID(ele) > m_PreselRhad) return false;
 

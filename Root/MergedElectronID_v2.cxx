@@ -16,9 +16,11 @@ HG::MergedElectronID_v2::~MergedElectronID_v2()
 
 EL::StatusCode HG::MergedElectronID_v2::initialize(Config &config)
 {
-  m_PreselNPassBlayer = config.getInt("MergedElectrons.Preselection.NtracksPassingBlayer",1);
-  m_PreselRhad        = config.getNum("MergedElectrons.Preselection.RhadMin",0.10);
-  m_mergedElePtCut    = config.getNum("MergedElectrons.Selection.PtPreCutGeV",20.) * GeV;
+  // These are enforced via the original MergedElectronID passPreselection cut!
+  // m_PreselNPassBlayer = config.getInt("MergedElectrons.Preselection.NtracksPassingBlayer",1);
+  // m_PreselRhad        = config.getNum("MergedElectrons.Preselection.RhadMin",0.10);
+  // m_mergedElePtCut    = config.getNum("MergedElectrons.Selection.PtPreCutGeV",20.) * GeV;
+  // m_mergedEleEtaCut   = config.getNum("MergedElectrons.Selection.MaxAbsEta"  ,2.37);
 
   return EL::StatusCode::SUCCESS;
 }
@@ -73,7 +75,7 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
     float vtx_dphi  = HG::EleAcc::vtxdPhi(ele);
 
     float pte  = ele.pt()/1000.;
-    float etae = ele.eta();
+    float etae = ele.caloCluster()->etaBE(2);
 
     float Rhad = HG::EleAcc::RhadForPID(ele);
     float trk_TRT_PID1 = HG::EleAcc::vtxTrk1_TRT_PID_trans(ele);
@@ -112,10 +114,10 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
 
      //signal efficiency: 4095/6649=0.615882
      //bkg efficiency: 113/40809=0.002769
-    // if((wTotS1>-100. && pte>60.000000 && pte<800.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.007715 && Eratio>0.911347 && Rphi>0.591312 && Reta>0.920665 && f3<0.037214 && wEta2<0.012723 && wTotS1<1.402248 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.475802 && trk_dEta1<0.004850)) return true;
+    // if((wTotS1>-100. && pte>60.000000 && pte<800.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.007715 && Eratio>0.911347 && Rphi>0.591312 && Reta>0.920665 && f3<0.037214 && wEta2<0.012723 && wTotS1<1.402248 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.375802 && trk_dEta1<0.004850)) return true;
     //signal efficiency: 3437/6649=0.51692
     //bkg efficiency: 87/40809=0.00213188
-    if((wTotS1>-100. && pte>60.000000 && pte<8000.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.005030 && Eratio>0.902925 && Rphi>0.742276 && Reta>0.928840 && f3<0.035636 && wEta2<0.015539 && wTotS1<1.783990 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<6.231330 && trk_dEta1<0.001250)) return true;
+    if((wTotS1>-100. && pte>60.000000 && pte<8000.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.005030 && Eratio>0.902925 && Rphi>0.742276 && Reta>0.928840 && f3<0.035636 && wEta2<0.015539 && wTotS1<1.783990 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<6.231330 && trk_dEta1<0.001250)) return true;
 
 
     // 50-60 GeV - at 55% WP
@@ -137,10 +139,10 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
 
      //signal efficiency: 2215/4011=0.552231
      //bkg efficiency: 88/32942=0.00267136
-    // if((wTotS1>-100. && pte>50.000000 && pte<60.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.006816 && Eratio>0.943300 && Rphi>0.716474 && Reta>0.921586 && f3<0.036596 && wEta2<0.018066 && wTotS1<1.819416 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.179533 && trk_dEta1<0.007114)) return true;
+    // if((wTotS1>-100. && pte>50.000000 && pte<60.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.006816 && Eratio>0.943300 && Rphi>0.716474 && Reta>0.921586 && f3<0.036596 && wEta2<0.018066 && wTotS1<1.819416 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.179533 && trk_dEta1<0.007114)) return true;
     //signal efficiency: 1992/4011=0.496634
     //bkg efficiency: 70/32942=0.00212495
-    if((wTotS1>-100. && pte>50.000000 && pte<60.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.009297 && Eratio>0.514015 && Rphi>0.847031 && Reta>0.927671 && f3<0.077539 && wEta2<0.012936 && wTotS1<2.191503 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.105054 && trk_dEta1<0.003560)) return true;
+    if((wTotS1>-100. && pte>50.000000 && pte<60.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.009297 && Eratio>0.514015 && Rphi>0.847031 && Reta>0.927671 && f3<0.077539 && wEta2<0.012936 && wTotS1<2.191503 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.105054 && trk_dEta1<0.003560)) return true;
 
 
     // 40-50 GeV
@@ -162,10 +164,10 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
 
      //signal efficiency: 1614/2940=0.54898
      //bkg efficiency: 165/200137=0.000824435
-    // if((wTotS1>-100. && pte>40.000000 && pte<50.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.009445 && Eratio>0.855301 && Rphi>0.832559 && Reta>0.915871 && f3<0.028457 && wEta2<0.012498 && wTotS1<1.668140 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<3.852275 && trk_dEta1<0.001508)) return true;
+    // if((wTotS1>-100. && pte>40.000000 && pte<50.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.009445 && Eratio>0.855301 && Rphi>0.832559 && Reta>0.915871 && f3<0.028457 && wEta2<0.012498 && wTotS1<1.668140 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<3.852275 && trk_dEta1<0.001508)) return true;
     //signal efficiency: 1231/2940=0.418707
     //bkg efficiency: 80/200137=0.000399726
-    if((wTotS1>-100. && pte>40.000000 && pte<50.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.007800 && Eratio>0.960342 && Rphi>0.743595 && Reta>0.920413 && f3<0.038835 && wEta2<0.012347 && wTotS1<1.411089 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.369355 && trk_dEta1<0.001652)) return true;
+    if((wTotS1>-100. && pte>40.000000 && pte<50.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.007800 && Eratio>0.960342 && Rphi>0.743595 && Reta>0.920413 && f3<0.038835 && wEta2<0.012347 && wTotS1<1.411089 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.369355 && trk_dEta1<0.001652)) return true;
 
 
     // 30-40 GeV
@@ -188,10 +190,10 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
 
      //signal efficiency: 839/1872=0.448184
      //bkg efficiency: 113/36215=0.00312025
-    // if((wTotS1>-100. && pte>30.000000 && pte<40.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.009827 && Eratio>0.286698 && Rphi>0.690578 && Reta>0.924369 && f3<0.032053 && wEta2<0.013278 && wTotS1<1.627911 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<4.401609 && trk_dEta1<0.001417)) return true;
+    // if((wTotS1>-100. && pte>30.000000 && pte<40.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.009827 && Eratio>0.286698 && Rphi>0.690578 && Reta>0.924369 && f3<0.032053 && wEta2<0.013278 && wTotS1<1.627911 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<4.401609 && trk_dEta1<0.001417)) return true;
     //signal efficiency: 715/1872=0.381944
     //bkg efficiency: 74/36215=0.00204335
-    if((wTotS1>-100. && pte>30.000000 && pte<40.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.008061 && Eratio>0.871364 && Rphi>0.634550 && Reta>0.916855 && f3<0.034073 && wEta2<0.012036 && wTotS1<1.487706 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.079409 && trk_dEta1<0.001821)) return true;
+    if((wTotS1>-100. && pte>30.000000 && pte<40.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.020000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.008061 && Eratio>0.871364 && Rphi>0.634550 && Reta>0.916855 && f3<0.034073 && wEta2<0.012036 && wTotS1<1.487706 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.079409 && trk_dEta1<0.001821)) return true;
 
 
     // 20-30 GeV
@@ -214,10 +216,10 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
 
      //signal efficiency: 394/986=0.399594
      //bkg efficiency: 395/123543=0.00319727
-    // if((wTotS1>-100. && pte>20.000000 && pte<30.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.030000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.013270 && Eratio>0.933329 && Rphi>0.672153 && Reta>0.914604 && f3<0.103046 && wEta2<0.013576 && wTotS1<1.546700 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.026565 && trk_dEta1<0.001696)) return true;
+    // if((wTotS1>-100. && pte>20.000000 && pte<30.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.030000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.013270 && Eratio>0.933329 && Rphi>0.672153 && Reta>0.914604 && f3<0.103046 && wEta2<0.013576 && wTotS1<1.546700 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<2.026565 && trk_dEta1<0.001696)) return true;
     //signal efficiency: 320/986=0.324544
     //bkg efficiency: 253/123543=0.00204787
-    if((wTotS1>-100. && pte>20.000000 && pte<30.000000 && fabs(etae)>2.010000 && fabs(etae)<2.470000 && fabs(vtx_dphi)<0.030000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.026704 && Eratio>0.903645 && Rphi>0.678678 && Reta>0.919190 && f3<0.007630 && wEta2<0.013965 && wTotS1<1.467929 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<1.889961 && trk_dEta1<0.001359)) return true;
+    if((wTotS1>-100. && pte>20.000000 && pte<30.000000 && fabs(etae)>2.010000 && fabs(etae)<2.370000 && fabs(vtx_dphi)<0.030000 && fabs(vtx_deta)<0.010000)&&(Rhad<0.026704 && Eratio>0.903645 && Rphi>0.678678 && Reta>0.919190 && f3<0.007630 && wEta2<0.013965 && wTotS1<1.467929 && trk_TRT_PID1>-100.000000 && trk_TRT_PID2>-100.000000 && EoP<1.889961 && trk_dEta1<0.001359)) return true;
 
     return(false);
 }
