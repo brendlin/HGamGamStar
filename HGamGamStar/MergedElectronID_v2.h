@@ -22,9 +22,10 @@ namespace HG {
 
 
     // Preselection cuts
-    int m_PreselNPassBlayer;
-    double m_PreselRhad;
-    double m_mergedElePtCut;
+    // These are applied via the original MergedElectronID passPreselection function!
+    /* int m_PreselNPassBlayer; */
+    /* float m_PreselRhad; */
+    /* flaot m_mergedElePtCut; */
 
 
 

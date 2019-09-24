@@ -31,8 +31,9 @@ namespace HG {
 
     // Preselection cuts
     int m_PreselNPassBlayer;
-    double m_PreselRhad;
-    double m_mergedElePtCut;
+    float m_PreselRhad;
+    float m_mergedElePtCut;
+    float m_mergedEleEtaCut;
     
     AngularPosition getExtrapolatedTrackPosition(
 	const xAOD::TrackParticle * track,
