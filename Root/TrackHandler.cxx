@@ -231,10 +231,10 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
       // If it does not exist in the output TrackParticleContainer, add it.
       if (found) continue;
-
+      
       xAOD::TrackParticle* container_tp = HG::MapHelpers::FindTrackParticle(&container,ele_tp);
       selected.push_back(container_tp);
-
+      
     }
 
     // Electron: Check consistency between DAOD code and this code
@@ -384,7 +384,7 @@ void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
   TrkAcc::passIPCut(trk) = true;
 
   float d0sig  = calculateIPSig(trk);
-   
+
   TrkAcc::d0significance(trk) = d0sig;
 
   if (fabs(d0sig) > m_d0BySigd0Cut) { TrkAcc::passIPCut(trk) = false; }

@@ -77,6 +77,10 @@ private:
   xAOD::ElectronContainer m_selElectrons; //!
   xAOD::TrackParticleContainer m_selTracks; //!
 
+  xAOD::PhotonContainer m_allPhotons; //!
+  xAOD::PhotonContainer m_preSelPhotons; //!
+  xAOD::PhotonContainer m_selPhotons; //!
+
 
   std::map<HG::Iso::IsolationType, CP::IsolationCloseByCorrectionTool*> m_isoCloseByTools_Ele; //!
   std::map<HG::Iso::IsolationType, CP::IsolationCloseByCorrectionTool*> m_isoCloseByTools_Muon; //!

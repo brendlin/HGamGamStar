@@ -18,6 +18,8 @@ namespace HG
   namespace MapHelpers
   {
 
+   void DumpMapInfo(  const  TrackElectronMap&  trkEleMap);
+
    /** Find track best matched to the truth particle*/
    const xAOD::TrackParticle* getTrackMatchingTruth( const xAOD::TruthParticle* truth, const TruthTrackMap& trkTruthMap );
 

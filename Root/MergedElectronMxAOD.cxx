@@ -3,6 +3,7 @@
 #include <EventLoop/Worker.h>
 #include "HGamAnalysisFramework/TruthUtils.h"
 #include "xAODEgamma/EgammaxAODHelpers.h"
+#include "HGamGamStar/HggStarCommon.h"
 
 #include "HGamGamStar/ExtraHggStarObjects.h"
 #include "HGamGamStar/TrackElectronMap.h"
@@ -318,6 +319,9 @@ MergedElectronMxAOD::CutEnum MergedElectronMxAOD::cutflow()
   // Track container will contain any track needed later
   m_selTracks = xAOD::TrackParticleContainer(SG::VIEW_ELEMENTS);
 
+  m_preSelPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
+  m_selPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
+
   //==== CUT 4 : Remove duplicate events (only for data) ====
   static bool checkDuplicates = config()->getBool("EventHandler.CheckDuplicates");
   if ( checkDuplicates && eventHandler()->isDuplicate() ) return DUPLICATE;
@@ -352,12 +356,14 @@ MergedElectronMxAOD::CutEnum MergedElectronMxAOD::cutflow()
       }
 
       int nSiHitsPlusDeadSensors = ElectronSelectorHelpers::numberOfSiliconHitsAndDeadSensors(ele_tp);
-      if(nSiHitsPlusDeadSensors >= 7)
+      if(nSiHitsPlusDeadSensors >= 7){
         ++nSiTrack;
+      }
     }
     //If 2 or more the electron is selected
-    if(nSiTrack>1)
+    if(nSiTrack>1){
       m_selElectrons.push_back(electron);
+    }
   }
 
   // Get all tracks
@@ -366,6 +372,9 @@ MergedElectronMxAOD::CutEnum MergedElectronMxAOD::cutflow()
   // Track-electron map - get all of the tracks from selected electrons
   HG::TrackElectronMap trkEleMap;
   m_selTracks = trackHandler()->findTracksFromElectrons(all_tracks,m_selElectrons,trkEleMap);
+
+  //HG::MapHelpers::DumpMapInfo(trkEleMap);
+
   m_selTracks.sort(HG::TrackHandler::comparePt);
 
   // Do this after doing your electron selection, to avoid running on the electrons you throw away.
@@ -376,6 +385,15 @@ MergedElectronMxAOD::CutEnum MergedElectronMxAOD::cutflow()
   if (m_selElectrons.size() == 0 )
     return ELECTRON;
 
+
+  // Get object containers
+  m_allPhotons = photonHandler()->getCorrectedContainer();
+
+  // photon applyPreSelection applies OQ, cleaning, PtEta, Loose PID, ambiguity and HV cuts
+  m_preSelPhotons = photonHandler()->applyPreSelection(m_allPhotons);
+
+  // Our *Higgs candidate photon* is the leading pre-selected (Loose) photon
+  if (m_preSelPhotons.size()  ) m_selPhotons.push_back(m_preSelPhotons[0]);
 
   return PASSALL;
 
@@ -388,10 +406,9 @@ EL::StatusCode  MergedElectronMxAOD::doReco(bool /*isSys*/){
 
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
-  xAOD::PhotonContainer noPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
   xAOD::MuonContainer noMuons = xAOD::MuonContainer(SG::VIEW_ELEMENTS);
 
-  setSelectedObjects(&noPhotons, &m_selElectrons, &noMuons, nullptr, nullptr, nullptr);
+  setSelectedObjects(&m_selPhotons, &m_selElectrons, &noMuons, nullptr, nullptr, nullptr);
 
   xAOD::TrackParticleContainer noTracks = xAOD::TrackParticleContainer(SG::VIEW_ELEMENTS);
   HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&m_selTracks);
@@ -411,6 +428,7 @@ EL::StatusCode  MergedElectronMxAOD::doReco(bool /*isSys*/){
   }
 
   CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
+  CP_CHECK("execute()", photonHandler  ()->writeContainer(m_selPhotons  ));
   CP_CHECK("execute()", trackHandler   ()->writeContainer(m_selTracks   ));
 
 
@@ -554,7 +572,7 @@ EL::StatusCode  MergedElectronMxAOD::doTruth()
   if (m_saveTruthObjects) {
     truthHandler()->writeElectrons  (all_electrons);
     truthHandler()->writeHiggsBosons(all_higgs    );
-    //truthHandler()->writePhotons    (all_photons  );
+    truthHandler()->writePhotons    (all_photons  );
     //truthHandler()->writeMuons      (all_muons    );
     //truthHandler()->writeJets       (all_jets     );
     //truthHandler()->writeTruthEvents(             );
@@ -766,6 +784,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
 
     std::vector <const xAOD::TrackParticle*> trksToFit;
     std::vector <int>  indexToFit;
+    std::vector <int>  trackParticleIndex_MxAOD;
 
     for( unsigned int trk_i(0); trk_i < electron->nTrackParticles(); ++trk_i){
       auto ele_tp =  electron->trackParticle(trk_i);
@@ -773,9 +792,14 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       if(!ele_tp)
         continue;
 
+      if( ! m_trackHandler->passTrackPreselection( ele_tp, false ) )
+        continue;
+
+
       // Get the pointer to the TrackParticle in the output container
       xAOD::TrackParticle* cont_tp = HG::MapHelpers::FindTrackParticle(&trackContainer,ele_tp);
-
+      int i_tpcont = HG::MapHelpers::FindTrackParticleIndex(&trackContainer,ele_tp);
+      trackParticleIndex_MxAOD.push_back(i_tpcont);
       //auto cov = ele_tp->definingParametersCovMatrix();
       //std::cout << cov << std::endl;
 
@@ -841,6 +865,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     HG::EleAcc::trueEta(*electron)       = trueEta;
     HG::EleAcc::truePhi(*electron)       = truePhi;
 
+    HG::EleAcc::trkParticleIndex_MxAOD(*electron) = trackParticleIndex_MxAOD;
     HG::EleAcc::vtxTrkParticleIndex1_MxAOD(*electron) = -999;
     HG::EleAcc::vtxTrkParticleIndex2_MxAOD(*electron) = -999;
 
