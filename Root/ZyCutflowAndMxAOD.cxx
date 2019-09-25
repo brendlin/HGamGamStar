@@ -454,6 +454,11 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
   }
   if (photonHandler()->getPointingTool()->updatePointingAuxdata(m_selPhotons).isFailure())
   { HG::fatal("Couldn't retrieve PrimaryVertices, exiting!"); }
+  SG::AuxElement::Accessor<float> cluster_time("cluster_time");
+  for (auto photon: m_selPhotons) {
+    cluster_time(*photon) = photon->caloCluster()->time();
+    std::cout << "time " << photon->auxdata<float>("cluster_time") << std::endl;
+  }
 
   if (not m_photonAllSys) {
     // Must come before writing out containers (Detailed mode decorates objects for studying)
