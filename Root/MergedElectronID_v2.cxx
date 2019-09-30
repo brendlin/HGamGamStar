@@ -1,4 +1,5 @@
 #include "HGamGamStar/MergedElectronID_v2.h"
+#include "PathResolver/PathResolver.h"
 
 //______________________________________________________________________________
 HG::MergedElectronID_v2::MergedElectronID_v2()
@@ -12,6 +13,11 @@ HG::MergedElectronID_v2::~MergedElectronID_v2()
 
 }
 
+
+
+
+
+
 //______________________________________________________________________________
 
 EL::StatusCode HG::MergedElectronID_v2::initialize(Config &config)
@@ -21,13 +27,21 @@ EL::StatusCode HG::MergedElectronID_v2::initialize(Config &config)
   // m_PreselRhad        = config.getNum("MergedElectrons.Preselection.RhadMin",0.10);
   // m_mergedElePtCut    = config.getNum("MergedElectrons.Selection.PtPreCutGeV",20.) * GeV;
   // m_mergedEleEtaCut   = config.getNum("MergedElectrons.Selection.MaxAbsEta"  ,2.37);
+  m_deltaEtaHistName  = config.getStr("MergedElectrons.Selection.deltaEtaHistName","sdetaRun2") ;
+  m_deltaEtaFileName  = config.getStr("MergedElectrons.Selection.deltaEtaFileName","HGamGamStar/DeltaEtaRun2.root") ;
+
+  auto detaFile= TFile::Open( PathResolverFindCalibFile( m_deltaEtaFileName ).data() );
+  m_sdetaCorr =  (TH2*) detaFile->Get(m_deltaEtaHistName.data());
+  m_sdetaCorr->SetDirectory(0);
+  detaFile->Close();
+  delete detaFile;
 
   return EL::StatusCode::SUCCESS;
 }
 
 
 //______________________________________________________________________________
-bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
+bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele, bool isMC) const{
 
 
     int trk1_index =  HG::EleAcc::vtxTrkIndex1(ele);
@@ -46,7 +60,7 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
       return false;
 
     // calculate shower shapes and other discriminating variables
-    float trk_dEta1 = ele.trackCaloMatchValue(xAOD::EgammaParameters::TrackCaloMatchType::deltaEta1);
+    float trk_dEta1 =  correctDeta1( ele, isMC);
 
 //    double f1 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f1);
 //     double fSide = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::fracs1);
@@ -90,8 +104,6 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
     float Rphi = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rphi);
     float wEta2 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::weta2);
     float f3 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f3);
-
-
 
 
 
@@ -223,3 +235,17 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele) const{
 
     return(false);
 }
+
+float HG::MergedElectronID_v2::correctDeta1(const xAOD::Electron &ele, bool isMC) const{
+
+  double corr =  0;
+  if(!isMC){
+    double eta = ele.caloCluster()->etaBE(1);
+    double phi = ele.caloCluster()->phiBE(2);
+    int    bin = m_sdetaCorr->FindBin( eta, phi );
+    corr = m_sdetaCorr->GetBinContent(bin) * 1e-3;
+  }
+  return ele.trackCaloMatchValue(xAOD::EgammaParameters::TrackCaloMatchType::deltaEta1) - corr;
+
+}
+

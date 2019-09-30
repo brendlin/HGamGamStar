@@ -5,6 +5,17 @@
 #include "xAODBase/IParticleHelpers.h"
 #include "HGamAnalysisFramework/HGamCommon.h"
 
+#include <iostream>
+
+void HG::MapHelpers::DumpMapInfo(  const TrackElectronMap& trkEleMap )
+{
+  std::cout << "Dumping map : " << std::endl;
+  for(auto pair :  trkEleMap )
+    std::cout << pair.first << "  " <<  pair.first->pt() << "  " <<  pair.first->eta() << "  "<<  pair.first->phi() << " El:  "<< pair.second << "  " <<  pair.second->pt() << "  " <<  pair.second->eta() << "  "<<  pair.second->phi() << std::endl;
+
+  std::cout << "End dumping map  "<< std::endl;
+
+}
 //______________________________________________________________________________
 float HG::MapHelpers::getTruthMatchProbability(const xAOD::TrackParticle* trackParticle)
 {

@@ -521,7 +521,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       m_mergedElectronID->decorateMergedVariables(*ele,*trk0,*trk1);
       // Need to cut on lead track pt in merged case when processing MxAODs, for that need a variable which is defined for each event (i.e. also need it in muon/resolved events where the value is -99)
       HG::EleAcc::passPID(*ele) = m_mergedElectronID->passPIDCut(*ele,*trk0,*trk1);
-      HG::EleAcc::passTMVAPID(*ele) = m_mergedElectronID_v2->passPIDCut(*ele);
+      HG::EleAcc::passTMVAPID(*ele) = m_mergedElectronID_v2->passPIDCut(*ele, HG::isMC() );
     }
     else if (m_selElectrons.size() == 2) {
       m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();

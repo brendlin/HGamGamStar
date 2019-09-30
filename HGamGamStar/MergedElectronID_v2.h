@@ -11,6 +11,8 @@
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 #include "xAODTracking/TrackParticle.h"
 #include "xAODTruth/xAODTruthHelpers.h"
+#include <string>
+#include <TH2.h>
 
 
 namespace HG {
@@ -19,17 +21,19 @@ namespace HG {
 
   private:
 
-
-
     // Preselection cuts
     // These are applied via the original MergedElectronID passPreselection function!
     /* int m_PreselNPassBlayer; */
     /* float m_PreselRhad; */
     /* flaot m_mergedElePtCut; */
 
+    bool m_isMC;
+    std::string m_deltaEtaFileName;
+    std::string m_deltaEtaHistName;
+    TH2* m_sdetaCorr;
 
-
-
+    float correctDeta1(const xAOD::Electron &ele, bool isMC) const;
+  
 
   public:
 
@@ -41,7 +45,7 @@ namespace HG {
 
     virtual EL::StatusCode initialize(Config &config);
 
-    bool passPIDCut(const xAOD::Electron &ele) const ;
+    bool passPIDCut(const xAOD::Electron &ele, bool isMC) const ;
 
   };
 

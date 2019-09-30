@@ -25,7 +25,7 @@ namespace HG {
   };
 
   TString GetChannelName(ChannelEnum channel);
-  
+
   enum CategoryEnum {
     CATEGORYUNKNOWN=0,
     GGF_DIMUON=1,
@@ -103,6 +103,7 @@ namespace HG {
     static SG::AuxElement::Accessor< int >   standAloneIndexB("standAloneIndexB");
 
     // Variables to connect the output MxAOD TrackParticle container with the electron container
+    static SG::AuxElement::Accessor< std::vector<int> >  trkParticleIndex_MxAOD("trkParticleIndex_MxAOD");
     static SG::AuxElement::Accessor< int >  vtxTrkParticleIndex1_MxAOD("vtxTrkParticleIndex1_MxAOD");
     static SG::AuxElement::Accessor< int >  vtxTrkParticleIndex2_MxAOD("vtxTrkParticleIndex2_MxAOD");
 
