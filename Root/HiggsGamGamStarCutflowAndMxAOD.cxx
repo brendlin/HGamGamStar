@@ -503,15 +503,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     m_selTracks.push_back(sel_trk1);
     m_selTracks.push_back(sel_trk2);
 
-    // New: use the "best-track" classification system
-    // HG::ChannelEnum echan = ClassifyElectronChannelsByBestMatch(m_selTracks[0],m_selTracks[1],
-    //                                                             trkElectronMap,
-    //                                                             &m_preSelElectrons,&m_selElectrons);
-
-    // HG::ChannelEnum echan = ClassifyElectronsOld(m_selTracks[0],m_selTracks[1],
-    //                                              trkElectronMap,
-    //                                              &m_preSelElectrons,&m_selElectrons);
-
     for (auto ele : candElectrons) {
       m_selElectrons.push_back(ele);
     }
@@ -1162,38 +1153,6 @@ void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronConta
     }
   }
   //don't care about merged ele channel, since correction would not do anything there
-}
-
-HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::ClassifyElectronsOld(xAOD::TrackParticle* trk0,
-                                                                     xAOD::TrackParticle* trk1,
-                                                                     const HG::TrackElectronMap& trkEleMap,
-                                                                     xAOD::ElectronContainer* inEleCont,
-                                                                     xAOD::ElectronContainer* outEleCont)
-{
-  if (!inEleCont || !outEleCont) HG::fatal("This function needs an incoming and outgoing electron container.");
-  (void)trkEleMap;
-
-  // Old Electron channel assignment.
-  // Get all electrons associated with tracks (accept all electrons)
-  m_selElectrons = m_trackHandler->GetElecsAssociatedToTracks(*trk0,*trk1,*inEleCont);
-
-  // Impossible to have missed a matching electron, since
-  // it is the same collection of electons as before.
-  if (m_selElectrons.size() == 1)
-  {
-    return HG::MERGED_DIELECTRON;
-  }
-  else if (m_trackHandler->nMatchedElectrons(*trk0) > 1 ||
-           m_trackHandler->nMatchedElectrons(*trk1) > 1)
-  {
-    return HG::AMBIGUOUS_DIELECTRON;
-  }
-  else if (m_selElectrons.size() == 2) {
-    return HG::RESOLVED_DIELECTRON;
-  }
-
-  HG::fatal("Something went wrong in channel categorization - please check!");
-  return HG::AMBIGUOUS_DIELECTRON;
 }
 
 HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(xAOD::TrackParticleContainer* inTracks,

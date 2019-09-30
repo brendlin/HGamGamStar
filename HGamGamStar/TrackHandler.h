@@ -45,16 +45,11 @@ namespace HG {
                                                          xAOD::ElectronContainer& elecs,
                                                          TrackElectronMap& trkEleMap);
 
-    xAOD::ElectronContainer GetElecsAssociatedToTracks(xAOD::TrackParticle& trk1,
-                                                       xAOD::TrackParticle& trk2,
-                                                       xAOD::ElectronContainer& preSelElecs);
-
     TruthTrackMap MakeTruthTrackMapFromGSFContainer(xAOD::TrackParticleContainer& tracks);
     TruthTrackMap MakeTruthTrackMapFromElectronContainer(const xAOD::ElectronContainer& elecs);
 
     bool passTrackPreselection(const xAOD::TrackParticle* trk,bool doTruthClassify) const;
-    bool passIndexBasedTrackSelection(xAOD::Electron* ele,int i,
-                                      int& tmp_vtxTrkIndex1,int& tmp_vtxTrkIndex2) const;
+    void fillMergedIndices(xAOD::Electron* ele,int& tmp_vtxTrkIndex1,int& tmp_vtxTrkIndex2) const;
 
     bool passIPCuts(xAOD::TrackParticle& trk);
 

@@ -153,12 +153,6 @@ private:
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
   void AddMuonDecorations(xAOD::MuonContainer& muons);
 
-  HG::ChannelEnum ClassifyElectronsOld(xAOD::TrackParticle* trk0,
-                                       xAOD::TrackParticle* trk1,
-                                       const HG::TrackElectronMap& trkEleMap,
-                                       xAOD::ElectronContainer* inEleCont=nullptr,
-                                       xAOD::ElectronContainer* outEleCont=nullptr);
-
   HG::ChannelEnum FindZboson_ElectronChannelAware(xAOD::TrackParticleContainer* inTracks,
                                                   xAOD::TrackParticle*& sel_trk1,
                                                   xAOD::TrackParticle*& sel_trk2,
