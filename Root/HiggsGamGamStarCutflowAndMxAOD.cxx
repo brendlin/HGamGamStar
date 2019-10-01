@@ -81,6 +81,14 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 
   // Resolved electron ID preselection. Applied in FindZboson_ElectronChannelAware.
   m_eleIDPreselection = config()->getStr("ResolvedElectrons.Preselection.PID","VeryLoose");
+  
+  //configurable overlap removal cone sizes
+  m_OR_e_DR_y = config()->getNum("OverlapRemoval.Electron_DR_Photon", 0.4);
+  m_OR_jet_DR_y = config()->getNum("OverlapRemoval.Jet_DR_Photon", 0.4);
+  m_OR_jet_DR_e = config()->getNum("OverlapRemoval.Jet_DR_Electron", 0.2);
+  m_OR_e_DR_jet = config()->getNum("OverlapRemoval.Electron_DR_Jet", 0.4);
+  m_OR_mu_DR_y = config()->getNum("OverlapRemoval.Muon_DR_Photon", 0.4);
+  m_OR_mu_DR_jet = config()->getNum("OverlapRemoval.Muon_DR_Jet", 0.4);
 
   return EL::StatusCode::SUCCESS;
 }
@@ -539,11 +547,21 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   unsigned int electrons_preOR = m_selElectrons.size();
 
   // Removes overlap with candidate photon, and any additional tight photons (if option set)
-  overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_selElectrons, m_selMuons);
+//   overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_selElectrons, m_selMuons);
+  //Not using HGam code directly (line above) to be able to prioritize muon in muon-jet OR (otherwise same)
 
-  // These do not have any effect I think, since photons are already preferred above.
-  // overlapHandler()->removeOverlap(m_selPhotons, m_selElectrons, 0.4);
-  // overlapHandler()->removeOverlap(m_selPhotons, m_selMuons, 0.4);
+  // 1. remove electrons overlapping with photons
+  overlapHandler()->removeOverlap(m_selElectrons, m_selPhotons,  m_OR_e_DR_y);
+  // 2. jets
+  // 2.a remove jets overlapping with photons
+  overlapHandler()->removeOverlap(m_selJets, m_selPhotons, m_OR_jet_DR_y);
+  // 2.b remove jets overlapping with electrons
+  overlapHandler()->removeOverlap(m_selJets, m_selElectrons, m_OR_jet_DR_e);
+  // 3. remove electrons too close to jets (usually 0.4)
+  overlapHandler()->removeOverlap(m_selElectrons, m_selJets, m_OR_e_DR_jet);
+  // 4. remove muons overlapping photons and **remove jets** overlapping with muons
+  overlapHandler()->removeOverlap(m_selMuons,  m_selPhotons, m_OR_mu_DR_y);
+  overlapHandler()->removeOverlap(m_selJets, m_selMuons, m_OR_mu_DR_jet);
 
   //==== CUT 13 : Whether SF leptons survive OR
   if (m_selElectrons.size() == 0 && m_selMuons.size() < 2) return TWO_SF_LEPTONS_POSTOR;
