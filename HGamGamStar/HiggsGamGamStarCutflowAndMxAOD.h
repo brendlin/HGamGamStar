@@ -160,6 +160,13 @@ private:
                                                   const HG::TrackElectronMap& trkEleMap,
                                                   xAOD::ElectronContainer* inEleCont,
                                                   xAOD::ElectronContainer* outEleCont);
+  //configurable overlap removal cone sizes
+  float m_OR_e_DR_y;
+  float m_OR_jet_DR_y;
+  float m_OR_jet_DR_e;
+  float m_OR_e_DR_jet;
+  float m_OR_mu_DR_y;
+  float m_OR_mu_DR_jet;
 
 private:
 #ifndef __CINT__
