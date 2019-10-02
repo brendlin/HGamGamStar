@@ -1309,6 +1309,7 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     if(photon)
     {
       HG::setPhotonConversionVertex( electron, photon, 20, outVertices);
+      photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       HG::EleAcc::calibratedPhotonEnergy(*electron) = photon->e();
 
       delete photon;

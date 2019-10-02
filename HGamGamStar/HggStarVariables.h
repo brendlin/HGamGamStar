@@ -302,7 +302,12 @@ namespace HG {
       const xAOD::IParticleContainer *trks = ExtraHggStarObjects::getInstance()->getElectronTracks();
       if (trks->size() < 2) return m_default;
 
-      return ((*trks)[0]->p4() + (*trks)[1]->p4()).M();
+      TLorentzVector tlv1 = (*trks)[0]->p4();
+      TLorentzVector tlv2 = (*trks)[1]->p4();
+      tlv1.SetPtEtaPhiM( tlv1.Pt(), tlv1.Eta(), tlv1.Phi(), 0.510998 ); // ele.m == 0.510998
+      tlv2.SetPtEtaPhiM( tlv2.Pt(), tlv2.Eta(), tlv2.Phi(), 0.510998 );
+
+      return (tlv1 + tlv2).M();
     }
   };
   
