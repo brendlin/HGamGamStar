@@ -89,6 +89,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
   m_OR_e_DR_jet = config()->getNum("OverlapRemoval.Electron_DR_Jet", 0.4);
   m_OR_mu_DR_y = config()->getNum("OverlapRemoval.Muon_DR_Photon", 0.4);
   m_OR_mu_DR_jet = config()->getNum("OverlapRemoval.Muon_DR_Jet", 0.4);
+  
+  m_passTriggers = false;
 
   return EL::StatusCode::SUCCESS;
 }
@@ -358,6 +360,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 // Returns value of the last cut passed in the cut sequence
 HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow()
 {
+  m_passTriggers = false;
   m_lepIDWeight = 1.0;
   m_lepIsoWeight = 1.0;
 
@@ -381,9 +384,10 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   if ( requireGRL && HG::isData() && !eventHandler()->passGRL(eventInfo()) ) return GRL;
 
   //==== CUT 6 : Require trigger ====
+  m_passTriggers = eventHandler()->passTriggers();
   static bool requireTrigger = config()->getBool("EventHandler.CheckTriggers");
   // passTrigger() will impose the RunNumbers restriction, if specified via EventHandler.RunNumbers.TRIG
-  if ( requireTrigger && !eventHandler()->passTriggers() ) return TRIGGER;
+  if ( requireTrigger && !m_passTriggers ) return TRIGGER;
 
   //==== CUT 7 : Detector quality ====
   if ( !(eventHandler()->passLAr (eventInfo()) &&
@@ -868,6 +872,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
 
   // Make sure every trigger is checked, and decorated to EventInfo
   eventHandler()->getPassedTriggers();
+  eventHandler()->storeVar<char>("isPassedTriggers",m_passTriggers);
 
   // Add some convenience variables
   eventHandler()->storeVar<char>("isPassedObjPreselection",m_cutFlow > TRIG_MATCH);
