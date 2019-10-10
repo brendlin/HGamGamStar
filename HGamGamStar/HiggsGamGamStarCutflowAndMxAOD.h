@@ -167,6 +167,9 @@ private:
   float m_OR_e_DR_jet;
   float m_OR_mu_DR_y;
   float m_OR_mu_DR_jet;
+  
+  //trigger decision for the event
+  bool m_passTriggers;
 
 private:
 #ifndef __CINT__
