@@ -384,9 +384,11 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   if ( requireGRL && HG::isData() && !eventHandler()->passGRL(eventInfo()) ) return GRL;
 
   //==== CUT 6 : Require trigger ====
-  m_passTriggers = eventHandler()->passTriggers();
+  m_passTriggers = false;
   static bool requireTrigger = config()->getBool("EventHandler.CheckTriggers");
-  // passTrigger() will impose the RunNumbers restriction, if specified via EventHandler.RunNumbers.TRIG
+  for (auto trig : eventHandler()->getRequiredTriggers()) {
+    if (eventHandler()->passTrigger(trig.Data())) m_passTriggers = true;
+  }
   if ( requireTrigger && !m_passTriggers ) return TRIGGER;
 
   //==== CUT 7 : Detector quality ====
