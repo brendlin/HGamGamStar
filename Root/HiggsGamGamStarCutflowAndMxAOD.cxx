@@ -37,6 +37,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
       HG::fatal("You must define EventHandler.RunNumbers (years of validity) for trigger "+trig);
   }
 
+  if (eventHandler()->getRequiredTriggers().size() > 31)
+    HG::fatal("Too many triggers for bitset! Change the size of your bitset!");
+
   m_trackHandler = new HG::TrackHandler("TrackHandler", event(), store());
   ANA_CHECK(m_trackHandler->initialize(*config()));
 
@@ -361,6 +364,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow()
 {
   m_passTriggers = false;
+  m_triggerBitset = 0;
   m_lepIDWeight = 1.0;
   m_lepIsoWeight = 1.0;
 
@@ -386,8 +390,13 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 6 : Require trigger ====
   m_passTriggers = false;
   static bool requireTrigger = config()->getBool("EventHandler.CheckTriggers");
-  for (auto trig : eventHandler()->getRequiredTriggers()) {
-    if (eventHandler()->passTrigger(trig.Data())) m_passTriggers = true;
+
+  for (unsigned int i_trig = 0; i_trig<eventHandler()->getRequiredTriggers().size(); ++i_trig) {
+    TString trig = eventHandler()->getRequiredTriggers()[i_trig];
+    if (eventHandler()->passTrigger(trig.Data())) {
+      m_passTriggers = true;
+      m_triggerBitset = m_triggerBitset | (0x1 << i_trig);
+    }
   }
   if ( requireTrigger && !m_passTriggers ) return TRIGGER;
 
@@ -875,6 +884,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
   // Make sure every trigger is checked, and decorated to EventInfo
   eventHandler()->getPassedTriggers();
   eventHandler()->storeVar<char>("isPassedTriggers",m_passTriggers);
+  eventHandler()->storeVar<unsigned int>("triggerBitset",m_triggerBitset);
 
   // Add some convenience variables
   eventHandler()->storeVar<char>("isPassedObjPreselection",m_cutFlow > TRIG_MATCH);

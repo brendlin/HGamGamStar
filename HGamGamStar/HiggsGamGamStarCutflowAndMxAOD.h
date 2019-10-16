@@ -170,6 +170,7 @@ private:
   
   //trigger decision for the event
   bool m_passTriggers;
+  unsigned int m_triggerBitset;
 
 private:
 #ifndef __CINT__
