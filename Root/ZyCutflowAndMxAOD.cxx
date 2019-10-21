@@ -59,6 +59,9 @@ EL::StatusCode ZyCutflowAndMxAOD::createOutput()
   // Ignore photon selection and save inclusive Z events
   m_saveAllZ = config()->getBool("SaveAllZ",false);
 
+  // do VBS selection
+  m_isVBSsel = config()->getBool("isVBSselection",false);
+
   // Whether we are running with yybb-tool in detailed mode.
   m_detailedHHyybb = config()->getBool("HHyybb.DetailedInfo",false);
 
@@ -373,7 +376,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   }
 
   //==== CUT 11 : 30 GeV cut on leading lepton ====
-  if (!((m_selElectrons.size()>0 && m_selElectrons[0]->pt()>30*HG::GeV) || (m_selMuons.size()>0 && m_selMuons[0]->pt()>30*HG::GeV))) return LEADLEPTON_PT;
+  if (!m_isVBSsel && !((m_selElectrons.size()>0 && m_selElectrons[0]->pt()>30*HG::GeV) || (m_selMuons.size()>0 && m_selMuons[0]->pt()>30*HG::GeV))) return LEADLEPTON_PT;
 
   //==== CUT 12 : MLL>40 GeV ====
   double m_ll=-99, m_emu=-99;
@@ -432,12 +435,21 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
                                                     &m_selMuons    );
   m_selMET = etmissHandler()->applySelection(m_allMET);
 
+  xAOD::JetContainer allPFlowJets = jetHandlerPFlow()->getCorrectedContainer();
+  xAOD::JetContainer selPFlowJets = jetHandlerPFlow()->applySelection(allPFlowJets);
+
   // Save JVT weight (needs special overlap removal)
   m_jvtJets = jetHandler()->applySelectionNoJvt(m_allJets);
   xAOD::ElectronContainer jvtElecs = m_selElectrons;
   xAOD::MuonContainer jvtMuons = m_selMuons;
   overlapHandler()->removeOverlap(m_selPhotons, m_jvtJets, jvtElecs, jvtMuons);
 
+  // Special overlap removal for PFlow jets
+  xAOD::ElectronContainer pflowElecs = m_selElectrons;
+  xAOD::MuonContainer pflowMuons = m_selMuons;
+  overlapHandler()->removeOverlap(m_selPhotons, selPFlowJets, pflowElecs, pflowMuons);
+  
+  
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
   setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, &m_selMET, &m_jvtJets);
@@ -457,7 +469,6 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
   SG::AuxElement::Accessor<float> cluster_time("cluster_time");
   for (auto photon: m_selPhotons) {
     cluster_time(*photon) = photon->caloCluster()->time();
-    std::cout << "time " << photon->auxdata<float>("cluster_time") << std::endl;
   }
 
   if (not m_photonAllSys) {
@@ -482,6 +493,7 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
       CP_CHECK("execute()", photonHandler  ()->writeContainer(m_selPhotons  ));
       CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
       CP_CHECK("execute()", jetHandler     ()->writeContainer(m_selJets     ));
+      CP_CHECK("execute()", jetHandlerPFlow()->writeContainer(selPFlowJets));
       CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
       CP_CHECK("execute()", etmissHandler  ()->writeContainer(m_selMET      ));
     }
@@ -558,7 +570,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   eventHandler()->storeVar<float>("met_hardVertexTST", m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->met() : m_selMET["TST"]->met());
 
   //store passAll flag
-  bool passPID = false, passIso = false, passPre = false, passAll = false;
+  bool passPID = false, passIso = false, passPre = false, passAll = false, passVBSPre = false;
   if (m_selPhotons.size()>0){
     xAOD::Photon *y1 = m_selPhotons[0];
     passPID = photonHandler()->passPIDCut(y1);
@@ -566,8 +578,11 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   }
   passPre = var::cutFlow()>15; //all except ID and iso
   passAll = passPre && passPID && passIso;
+  passVBSPre = passPre && var::N_j()>=2 && var::m_jj_50()>150 * HG::GeV && var::Dy_j_j()>1.0;
+
   eventHandler()->storeVar<char>("isPassedZyPreSel", passPre);
   eventHandler()->storeVar<char>("isPassedZy", passAll);
+  eventHandler()->storeVar<char>("isPassedZyVBSPreSel", passVBSPre);
 
   if(m_saveAllZ){
     eventHandler()->storeVar<char>("isPassedZ",m_isZ);
@@ -595,10 +610,21 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::eta_y1.addToStore(truth);
   var::m_emu.addToStore(truth);
   var::m_emuy.addToStore(truth);
-  var::N_mu   .addToStore(truth);
-  var::N_e    .addToStore(truth);
-  var::N_j_central  .addToStore(truth);
-  var::N_j_btag30   .addToStore(truth);
+  var::N_mu.addToStore(truth);
+  var::N_e.addToStore(truth);
+  var::N_j.addToStore(truth);
+  var::N_j_central.addToStore(truth);
+  var::N_j_btag30.addToStore(truth);
+  var::N_j_btag.addToStore(truth);
+  var::m_jj_50.addToStore(truth);
+  var::Dy_j_j_50.addToStore(truth);
+  var::Zy_centrality.addToStore(truth);
+  var::m_jj.addToStore(truth);
+  var::DRmin_y_j.addToStore(truth);
+  var::Dy_j_j.addToStore(truth);
+  var::Dphi_lly_jj.addToStore(truth);
+  var::DR_Zy_jj.addToStore(truth);
+  var::deltaR_ll.addToStore(truth);
   if (!truth) {
     var::met_TST  .addToStore(truth);
     var::sumet_TST.addToStore(truth);

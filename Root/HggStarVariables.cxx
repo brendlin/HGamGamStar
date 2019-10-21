@@ -26,6 +26,11 @@ namespace var {
   HG::m_llyy m_llyy;
   HG::m_emu m_emu;
   HG::m_emuy m_emuy;
+  HG::N_j_btag N_j_btag;
+  HG::m_jj_50 m_jj_50;
+  HG::Dy_j_j_50 Dy_j_j_50;
+  HG::Zy_centrality Zy_centrality;
+  HG::DR_Zy_jj DR_Zy_jj;
   HG::pT_l1_h1 pT_l1_h1;
   HG::pT_l2_h1 pT_l2_h1;
   HG::deltaR_l1l2_h1 deltaR_l1l2_h1;

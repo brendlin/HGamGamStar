@@ -48,6 +48,9 @@ private:
   // option for different flavour lepton pair
   bool m_checkemu;
 
+  // for VBS selection
+  bool m_isVBSsel;
+
   // option to save inclusive Z events
   bool m_saveAllZ;
   bool m_isZ;
