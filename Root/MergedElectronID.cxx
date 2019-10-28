@@ -85,36 +85,36 @@ bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::Trac
 
     // first cut: RHad
     // const std::vector<std::string> cutRHad({"<0.03", "<0.03", "<0.03", "<0.03", "<0.03", "<0.03", "<0.03", "<0.03", "<0.03", ""});
-    const std::vector<std::vector<std::string>> cutRHad({
-      {"", "", "", "", "", "", "", "", "", ""}, // pT < 20 GeV
-      {"<0.0490", "<0.0470", "<0.0450", "<0.0400", "<0.01980", "<0.0500", "<0.0500", "<0.0500", "<0.0450", ""}, // pT [20, 25] GeV
-      {"<0.0490", "<0.0470", "<0.0450", "<0.0400", "<0.01980", "<0.0500", "<0.0500", "<0.0500", "<0.0450", ""}, // pT [25, 30] GeV
-      {"<0.0440", "<0.0420", "<0.0400", "<0.0350", "<0.01820", "<0.0450", "<0.0450", "<0.0450", "<0.0400", ""}, // pT [30, 35] GeV
-      {"<0.0440", "<0.0420", "<0.0400", "<0.0350", "<0.01820", "<0.0450", "<0.0450", "<0.0450", "<0.0400", ""}, // pT [35, 40] GeV
-      {"<0.0365", "<0.0345", "<0.0325", "<0.0300", "<0.01680", "<0.0375", "<0.0375", "<0.0375", "<0.0325", ""}, // pT [40, 45] GeV
-      {"<0.0365", "<0.0345", "<0.0325", "<0.0300", "<0.01680", "<0.0375", "<0.0375", "<0.0375", "<0.0325", ""}, // pT [45, 50] GeV
-      {"<0.0340", "<0.0320", "<0.0300", "<0.0275", "<0.01680", "<0.0350", "<0.0350", "<0.0350", "<0.0300", ""}, // pT [50, 60] GeV
-      {"<0.0290", "<0.0270", "<0.0250", "<0.0240", "<0.01680", "<0.0300", "<0.0300", "<0.0300", "<0.0260", ""}, // pT [60, 80] GeV
-      {"<0.0270", "<0.0250", "<0.0230", "<0.0220", "<0.01680", "<0.0280", "<0.0280", "<0.0280", "<0.0250", ""}, // pT > 80 GeV
+    static const std::vector<std::vector<float>> cutRHad({
+      {999999, 999999, 999999, 999999,  999999, 999999, 999999, 999999, 999999, 999999}, // pT < 20 GeV
+      {0.0490, 0.0470, 0.0450, 0.0400, 0.01980, 0.0500, 0.0500, 0.0500, 0.0450, 999999}, // pT [20, 25] GeV
+      {0.0490, 0.0470, 0.0450, 0.0400, 0.01980, 0.0500, 0.0500, 0.0500, 0.0450, 999999}, // pT [25, 30] GeV
+      {0.0440, 0.0420, 0.0400, 0.0350, 0.01820, 0.0450, 0.0450, 0.0450, 0.0400, 999999}, // pT [30, 35] GeV
+      {0.0440, 0.0420, 0.0400, 0.0350, 0.01820, 0.0450, 0.0450, 0.0450, 0.0400, 999999}, // pT [35, 40] GeV
+      {0.0365, 0.0345, 0.0325, 0.0300, 0.01680, 0.0375, 0.0375, 0.0375, 0.0325, 999999}, // pT [40, 45] GeV
+      {0.0365, 0.0345, 0.0325, 0.0300, 0.01680, 0.0375, 0.0375, 0.0375, 0.0325, 999999}, // pT [45, 50] GeV
+      {0.0340, 0.0320, 0.0300, 0.0275, 0.01680, 0.0350, 0.0350, 0.0350, 0.0300, 999999}, // pT [50, 60] GeV
+      {0.0290, 0.0270, 0.0250, 0.0240, 0.01680, 0.0300, 0.0300, 0.0300, 0.0260, 999999}, // pT [60, 80] GeV
+      {0.0270, 0.0250, 0.0230, 0.0220, 0.01680, 0.0280, 0.0280, 0.0280, 0.0250, 999999}, // pT > 80 GeV
     });
-    if (!passCut( EleAcc::RhadForPID(ele), cutRHad[iPt][iEta])) return(false);
+    if ( !(EleAcc::RhadForPID(ele) < cutRHad[iPt][iEta]) ) return(false);
 
     // second cut: f3
     // const std::vector<std::string> cutF3({"", "", "", "", "", ">0.0005", ">0.0005", ">0.0005", ">0.0005", ">0.0005", ">0.0005"});
     // if (!passCut(f3, cutF3[iPt])) return(false);
-    const std::vector<std::vector<std::string>> cutF3({
-      {"", "", "", "", "", "", "", "", "", ""}, // pT < 20 GeV
-      {"<0.01800", "<0.01750", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [20, 25] GeV
-      {"<0.01800", "<0.01750", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [25, 30] GeV
-      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [30, 35] GeV
-      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [35, 40] GeV
-      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [40, 45] GeV
-      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [45, 50] GeV
-      {"<0.01800", "<0.01680", "<0.01800", "<0.02000", "", "<0.01560", "<0.02850", "<0.02680", "<0.03830", ""}, // pT [50, 60] GeV
-      {"", "", "", "", "", "", "", "", "", ""}, // pT [60, 80] GeV
-      {"", "", "", "", "", "", "", "", "", ""}, // pT > 80 GeV
+    static const std::vector<std::vector<float>> cutF3({
+      { 999999,  999999,  999999,  999999,  999999,  999999,  999999,  999999,  999999, 999999}, // pT < 20 GeV
+      {0.01800, 0.01750, 0.01800, 0.02000,  999999, 0.01560, 0.02850, 0.02680, 0.03830, 999999}, // pT [20, 25] GeV
+      {0.01800, 0.01750, 0.01800, 0.02000,  999999, 0.01560, 0.02850, 0.02680, 0.03830, 999999}, // pT [25, 30] GeV
+      {0.01800, 0.01680, 0.01800, 0.02000,  999999, 0.01560, 0.02850, 0.02680, 0.03830, 999999}, // pT [30, 35] GeV
+      {0.01800, 0.01680, 0.01800, 0.02000,  999999, 0.01560, 0.02850, 0.02680, 0.03830, 999999}, // pT [35, 40] GeV
+      {0.01800, 0.01680, 0.01800, 0.02000,  999999, 0.01560, 0.02850, 0.02680, 0.03830, 999999}, // pT [40, 45] GeV
+      {0.01800, 0.01680, 0.01800, 0.02000,  999999, 0.01560, 0.02850, 0.02680, 0.03830, 999999}, // pT [45, 50] GeV
+      {0.01800, 0.01680, 0.01800, 0.02000,  999999, 0.01560, 0.02850, 0.02680, 0.03830, 999999}, // pT [50, 60] GeV
+      { 999999,  999999,  999999,  999999,  999999,  999999,  999999,  999999,  999999, 999999}, // pT [60, 80] GeV
+      { 999999,  999999,  999999,  999999,  999999,  999999,  999999,  999999,  999999, 999999}, // pT > 80 GeV
     });
-    if (!passCut(f3, cutF3[iPt][iEta])) return(false);
+    if ( !(f3 < cutF3[iPt][iEta]) ) return(false);
 
     // // seventh cut: f1
     // // const std::vector<std::string> cutF1({"", "", "", "", "", ">0.1", ">0.1", ">0.1", "", "", ""});
@@ -122,8 +122,8 @@ bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::Trac
     // if (!passCut(f1, cutF1)) return(false);
 
     // third cut: REta / eta
-    const std::vector<std::string> cutREtaInEta({">0.920", ">0.915", ">0.910", ">0.905", ">0.85", ">0.90", ">0.90", ">0.90", ">0.90", ""});
-    if (!passCut(rEta, cutREtaInEta[iEta])) return(false);
+    static const std::vector<float> cutREtaInEta({0.920, 0.915, 0.910, 0.905, 0.85, 0.90, 0.90, 0.90, 0.90, -999999});
+    if ( !(rEta > cutREtaInEta[iEta]) ) return(false);
 
     // // fourth cut: REta / pT
     // // const std::vector<std::string> cutREtaInPt({"", ">0.70", ">0.75", ">0.80", ">0.85", ">0.85", ">0.85", ">0.90", ">0.90", ">0.90"});
@@ -133,47 +133,47 @@ bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::Trac
     // }
 
     // fourth cut: ERatio / eta
-    const std::vector<std::string> cutERatioInEta({">0.90", ">0.90", ">0.85", ">0.80", "", ">0.90", ">0.90", ">0.90", "", ""});
-    if (f1 > 0.005 && !passCut(Eratio, cutERatioInEta[iEta])){
+    static const std::vector<float> cutERatioInEta({0.90, 0.90, 0.85, 0.80, -999999, 0.90, 0.90, 0.90, -999999, -999999});
+    if (f1 > 0.005 && !(Eratio > cutERatioInEta[iEta]) ){
       if (EleAcc::dRExtrapTrk12(ele) > 0.1) return(false);
     }
 
     // fifth cut: wTotS1 / eta
-    const std::vector<std::string> cutWTotS1InEta({"<3.0", "<3.1", "<3.2", "<3.3", "<3.5", "<3.5", "<2.5", "<1.8", "<1.8", ""});
-    if (f1 > 0.005 && !passCut(wTotS1, cutWTotS1InEta[iEta])){
+    static const std::vector<float> cutWTotS1InEta({3.0, 3.1, 3.2, 3.3, 3.5, 3.5, 2.5, 1.8, 1.8, 999999});
+    if (f1 > 0.005 && !(wTotS1 < cutWTotS1InEta[iEta]) ){
       return(false);
     }
 
     // sixth cut: wEtaS2 / eta
-    const std::vector<std::string> cutWEtaS2InEta({"<0.0115", "<0.0120", "<0.0125", "<0.0130", "", "<0.0130", "<0.0130", "<0.0140", "<0.0140", ""});
-    if (!passCut(wEta2, cutWEtaS2InEta[iEta])) return(false);
+    static const std::vector<float> cutWEtaS2InEta({0.0115, 0.0120, 0.0125, 0.0130, 999999, 0.0130, 0.0130, 0.0140, 0.0140, 999999});
+    if ( !(wEta2 < cutWEtaS2InEta[iEta]) ) return(false);
 
     // seventh cut: deltaEta1 / pT
     // const std::vector<std::string> cutDeltaEta1InPt({"", "", "", "", "", ">-0.003&<0.003", ">-0.003&<0.003", ">-0.003&<0.003", ">-0.003&<0.003", ">-0.003&<0.003", ">-0.003&<0.003"});
     // const std::vector<std::string> cutDeltaEta1InPt({">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002", ">-0.002&<0.002"});
-    const std::vector<std::string> cutDeltaEta1InPt({">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025", ">-0.0025&<0.0025"});
-    if (f1 > 0.005 && !passCut(deltaEta1, cutDeltaEta1InPt[iPt])) return(false);
+    static const std::vector<float> cutDeltaEta1InPt({0.0025, 0.0025, 0.0025, 0.0025, 0.0025, 0.0025, 0.0025, 0.0025, 0.0025, 0.0025});
+    if (f1 > 0.005 && !(fabs(deltaEta1) < cutDeltaEta1InPt[iPt]) ) return(false);
 
     // eigth cut: RHad / eta
-    const std::vector<std::string> cutRHadInEta({"<0.02", "<0.02", "<0.02", "<0.02", "", "<0.02", "<0.02", "<0.02", "<0.02", ""});
-    if (!passCut( EleAcc::RhadForPID(ele), cutRHadInEta[iEta])) return(false);
+    static const std::vector<float> cutRHadInEta({0.02, 0.02, 0.02, 0.02, 999999, 0.02, 0.02, 0.02, 0.02, 999999});
+    if ( !( EleAcc::RhadForPID(ele) < cutRHadInEta[iEta]) ) return(false);
 
     // ninth cut: FHT2 / eta
-    const std::vector<std::string> cutFHT2InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
-    if (!passCut(TrkAcc::TRT_PID_trans(trk2), cutFHT2InEta[iEta])) return(false);
+    static const std::vector<float> cutFHT2InEta({-0.16, -0.16, -0.16, -0.16, -0.16, -999999, -0.3, -999999, -999999, -999999});
+    if ( !(TrkAcc::TRT_PID_trans(trk2) > cutFHT2InEta[iEta]) ) return(false);
 
     // tenth cut: FHT1 / eta
-    const std::vector<std::string> cutFHT1InEta({">-0.16", ">-0.16", ">-0.16", ">-0.16", ">-0.16", "", ">-0.3", "", "", ""});
-    if (!passCut(TrkAcc::TRT_PID_trans(trk1), cutFHT1InEta[iEta])) return(false);
+    static const std::vector<float> cutFHT1InEta({-0.16, -0.16, -0.16, -0.16, -0.16, -999999, -0.3, -999999, -999999, -999999});
+    if ( !(TrkAcc::TRT_PID_trans(trk1) > cutFHT1InEta[iEta]) ) return(false);
 
     // eleventh cut: EOverP / eta
     // const std::vector<std::string> cutEOverPInPt({"", ">0.2", ">0.2", ">0.2", ">0.2", ">0.2", ">0.25", "", "", ""});
-    const std::vector<std::string> cutEOverPInEta({">0.8", ">0.8", ">0.8", ">0.8", "", "", "", "", "", ""});
-    if (!passCut(EleAcc::EOverP0P1(ele), cutEOverPInEta[iEta])) return(false);
+    static const std::vector<float> cutEOverPInEta({0.8, 0.8, 0.8, 0.8, -999999, -999999, -999999, -999999, -999999, -999999});
+    if ( !(EleAcc::EOverP0P1(ele) > cutEOverPInEta[iEta]) ) return(false);
 
     // twelvth cut: rPhi / eta
-    const std::vector<std::string> cutRPhiInEta({">0.84", ">0.84", "", "", "", "", ">0.80", ">0.84", ">0.84", ""});
-    if (!passCut(rPhi, cutRPhiInEta[iEta])) return(false);
+    static const std::vector<float> cutRPhiInEta({0.84, 0.84, -999999, -999999, -999999, -999999, 0.80, 0.84, 0.84, -999999});
+    if ( !(rPhi > cutRPhiInEta[iEta]) ) return(false);
 
     // // thirteenth cut: fSide / eta
     // const std::vector<std::string> cutFSideInEta({">0.15", ">0.175", ">0.2", ">0.25", "", ">0.2", "", "<0.3", "", ""});
@@ -195,42 +195,7 @@ bool HG::MergedElectronID::passPIDCut(const xAOD::Electron &ele,const xAOD::Trac
     // congrats - this event survived all the cuts
     return(true);
 }
-bool HG::MergedElectronID::passCut(const float obsValue, const std::string cutString){
-    if (cutString == "") return(true);
 
-    // split cutString by '&'
-    std::vector<std::string> cuts;
-    std::stringstream ss(cutString);
-    std::string token;
-    char delim='&';
-    while (std::getline(ss, token, delim)) {
-        cuts.push_back(token);
-    }
-
-    // apply the individual cuts
-    bool pass = true;
-    for (const auto cut : cuts){
-
-      std::string cutSign;
-      if (cut.find("==")!=std::string::npos){cutSign = "==";}
-      else if (cut.find("<=")!=std::string::npos){cutSign = "<=";}
-      else if (cut.find(">=")!=std::string::npos){cutSign = ">=";}
-      else if (cut.find("<")!=std::string::npos){cutSign = "<";}
-      else if (cut.find(">")!=std::string::npos){cutSign = ">";}
-
-      double cutValue = std::stod(cut.substr(cutSign.size(),cut.size()));
-
-      if (cutSign == "<"){pass = pass && (obsValue < cutValue);}
-      else if (cutSign == "<="){pass = pass && (obsValue <= cutValue);}
-      else if (cutSign == "=="){pass = pass && (obsValue == cutValue);}
-      else if (cutSign == ">="){pass = pass && (obsValue >= cutValue);}
-      else if (cutSign == ">"){pass = pass && (obsValue > cutValue);}
-
-    }
-
-    return(pass);
-
-}
 unsigned HG::MergedElectronID::getPtBin(const xAOD::Electron * const el) const {
 
     double pt = el->pt() / 1000.0;

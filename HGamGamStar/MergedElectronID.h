@@ -19,7 +19,6 @@ namespace HG {
 
   private:
     
-    bool passCut(const float obsValue, const std::string cutString);
     unsigned getPtBin(const xAOD::Electron * const el) const;
     unsigned getEtaBin(const xAOD::Electron * const el) const;
     
