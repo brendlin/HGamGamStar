@@ -938,6 +938,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
   {
     var::m_lly_track4mom.addToStore(false);
     var::m_ll_track4mom.addToStore(false);
+    var::deltaR_track4mom.addToStore(false);
     var::Resolved_dRExtrapTrk12.addToStore(false);
     var::Resolved_deltaPhiRescaled2.addToStore(false);
     var::Resolved_deltaEta2.addToStore(false);
