@@ -265,7 +265,12 @@ namespace HG {
       const xAOD::IParticleContainer *trks = ExtraHggStarObjects::getInstance()->getElectronTracks();
       if (trks->size() < 2) return m_default;
 
-      return ((*trks)[0]->p4() + (*trks)[1]->p4() + (*gams)[0]->p4()).M();
+      TLorentzVector tlv1 = (*trks)[0]->p4();
+      TLorentzVector tlv2 = (*trks)[1]->p4();
+      tlv1.SetPtEtaPhiM( tlv1.Pt(), tlv1.Eta(), tlv1.Phi(), 0.510998 ); // ele.m == 0.510998
+      tlv2.SetPtEtaPhiM( tlv2.Pt(), tlv2.Eta(), tlv2.Phi(), 0.510998 );
+
+      return (tlv1 + tlv2 + (*gams)[0]->p4()).M();
     }
   };
 
@@ -311,6 +316,29 @@ namespace HG {
     }
   };
   
+  //____________________________________________________________________________
+  class deltaR_track4mom : public VarBase<float> {
+  public:
+  deltaR_track4mom() : VarBase("deltaR_track4mom") { m_default = -99; m_recoOnly = true; }
+    ~deltaR_track4mom() { }
+
+    float calculateValue(bool truth)
+    {
+      if (truth)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *trks = ExtraHggStarObjects::getInstance()->getElectronTracks();
+      if (trks->size() < 2) return m_default;
+
+      TLorentzVector tlv1 = (*trks)[0]->p4();
+      TLorentzVector tlv2 = (*trks)[1]->p4();
+      tlv1.SetPtEtaPhiM( tlv1.Pt(), tlv1.Eta(), tlv1.Phi(), 0.510998 ); // ele.m == 0.510998
+      tlv2.SetPtEtaPhiM( tlv2.Pt(), tlv2.Eta(), tlv2.Phi(), 0.510998 );
+
+      return (*trks)[0]->p4().DeltaR((*trks)[1]->p4());
+    }
+  };
+
   //____________________________________________________________________________
   class trk_lead_pt : public VarBase<float> {
   public:
@@ -946,6 +974,7 @@ namespace var {
   extern HG::pt_ll pt_ll;
   extern HG::m_lly_track4mom m_lly_track4mom;
   extern HG::m_ll_track4mom m_ll_track4mom;
+  extern HG::deltaR_track4mom deltaR_track4mom;
   extern HG::deltaPhi_ll_y deltaPhi_ll_y;
   extern HG::eta_y1 eta_y1;
   extern HG::pt_llyy pt_llyy;
