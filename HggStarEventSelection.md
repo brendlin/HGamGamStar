@@ -40,7 +40,7 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 |19, LEP_ISO               | Resolved e: CloseByCorrected FCLoose<br>Merged e: FCTight<br>&mu;: CloseByCorrected FCLoose_FixedRad | Merged e: specially done in<br>HiggsGamGamStarCutflowAndMxAOD.cxx.<br>Resolved e/&mu;: HGamAnalysisFramework/HGamRel21.config | Muons and resolved-e: add Iso SFs |
 |20, GAM_TIGHTID           | Photon passes Tight | HGamAnalysisFramework/HGamRel21.config | Add photon ID SF |
 |21, GAM_ISOLATION         | Photon passes FixedCutLoose | HGamAnalysisFramework/HGamRel21.config | Add photon Iso SF |
-|22, ZMASSCUT              | m<sub>ll</sub> < 45 GeV<br> (see code for merged mass definiton) | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
+|22, ZMASSCUT              | m<sub>ll</sub> < 50 GeV<br> (see code for merged mass definiton) | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |23, LLGMASSCUT            | 105 < m<sub>ll&gamma;</sub> && m<sub>ll&gamma;</sub> < 160 GeV | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |24, LLMASSCUT             | Res/Mrgd e: !(2.5 < m<sub>ll</sub> < 3.5 GeV) (J/&Psi; veto)<br> !(8.0 < m<sub>ll</sub> < 11.0 GeV) (&Upsilon; veto)<br> &mu;: !(2.9 < m<sub>ll</sub> < 3.3 GeV) (J/&Psi; veto); <br> !(9.1 < m<sub>ll</sub> < 10.6 GeV) (&Upsilon; veto)  | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |25, DILEP_PT_FRAC         | p<sub>T</sub><sup>ll</sup>/m<sub>ll&gamma;</sub> > 0.3 | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
