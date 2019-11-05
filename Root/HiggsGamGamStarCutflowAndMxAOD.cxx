@@ -388,16 +388,9 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   if ( requireGRL && HG::isData() && !eventHandler()->passGRL(eventInfo()) ) return GRL;
 
   //==== CUT 6 : Require trigger ====
-  m_passTriggers = false;
+  m_passTriggers = eventHandler()->passTriggers();
   static bool requireTrigger = config()->getBool("EventHandler.CheckTriggers");
-
-  for (unsigned int i_trig = 0; i_trig<eventHandler()->getRequiredTriggers().size(); ++i_trig) {
-    TString trig = eventHandler()->getRequiredTriggers()[i_trig];
-    if (eventHandler()->passTrigger(trig.Data())) {
-      m_passTriggers = true;
-      m_triggerBitset = m_triggerBitset | (0x1 << i_trig);
-    }
-  }
+  // passTrigger() will impose the RunNumbers restriction, if specified via EventHandler.RunNumbers.TRIG
   if ( requireTrigger && !m_passTriggers ) return TRIGGER;
 
   //==== CUT 7 : Detector quality ====
@@ -591,13 +584,35 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 15 : Photon gets lost in overlap removal
   if (m_selPhotons.size()==0) return ONE_PHOTON_POSTOR;
 
+  //==== Check all triggers at this point, for trigger studies
+  for (unsigned int i_trig = 0; i_trig<eventHandler()->getRequiredTriggers().size(); ++i_trig) {
+    TString trig = eventHandler()->getRequiredTriggers()[i_trig];
+    if (eventHandler()->passTrigger(trig.Data())) {
+      m_triggerBitset = m_triggerBitset | (0x1 << i_trig);
+    }
+  }
+
   //==== CUT 16: Trigger matching (Set in config file using EventHandler.CheckTriggerMatching)
   if ( eventHandler()->doTrigMatch() ){
     bool isTrigMatched = false;
-    for (auto trig: eventHandler()->getRequiredTriggers()) {
-      // You need passTrigger() here in order to make sure the RunNumbers restriction is imposed on trigs.
-      if (eventHandler()->passTrigger(trig) &&
-          eventHandler()->passTriggerMatch(trig, &m_selPhotons, &m_selElectrons, &m_selMuons, NULL))
+    for (unsigned int i_trig = 0; i_trig<eventHandler()->getRequiredTriggers().size(); ++i_trig) {
+
+      // If trigger did not fire, continue.
+      // You need to check this here in order to make sure RunNumbers restriction is imposed on trigs.
+      if ( !(m_triggerBitset & (0x1 << i_trig)) ) continue;
+
+      TString trig = eventHandler()->getRequiredTriggers()[i_trig];
+
+      // HACK - NEED TO FIX photon icalotight triggers!
+      if (trig.Contains("g35_tight_icalotight"))
+      {
+        Warning("cutflow()","  Trigger name %s automatically passes - need to fix!!!!!",trig.Data());
+        isTrigMatched = true;
+        break;
+      }
+      // End HACK
+
+      if (eventHandler()->passTriggerMatch(trig.Data(), &m_selPhotons, &m_selElectrons, &m_selMuons))
       {
         isTrigMatched = true;
         break;

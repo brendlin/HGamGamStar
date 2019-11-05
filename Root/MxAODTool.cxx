@@ -103,7 +103,8 @@ EL::StatusCode MxAODTool::fillCutFlowWithBookkeeperInfo()
 
   int maxAcycle = -1, maxDcycle = -1;
   for ( auto cbk : *completeCBC ) {
-    Info("fileExecute()","  Book keeper name=%s, inputStream=%s, cycle=%d, nAcceptedEvents=%d", cbk->name().c_str(), cbk->inputStream().c_str(), cbk->cycle(), (int)cbk->nAcceptedEvents());
+    if (TString(cbk->name()).Contains(str_daod))
+      Info("fileExecute()","  Book keeper name=%s, inputStream=%s, cycle=%d, nAcceptedEvents=%d", cbk->name().c_str(), cbk->inputStream().c_str(), cbk->cycle(), (int)cbk->nAcceptedEvents());
 
     if ( cbk->name().empty() ) continue;
 
