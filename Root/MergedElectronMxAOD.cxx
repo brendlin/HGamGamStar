@@ -757,6 +757,10 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       HG::setPhotonConversionVertex( el, photon, 400, outVerticies);
       photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       HG::EleAcc::calibratedPhotonEnergy400(*el) = photon->e();
+
+      if(photon->usingPrivateStore()) photon->releasePrivateStore();
+      delete photon;
+
     } else {
       HG::EleAcc::calibratedPhotonEnergy(*el) = -999;
       HG::EleAcc::calibratedPhotonEnergy50(*el) = -999;
@@ -764,7 +768,8 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       HG::EleAcc::calibratedPhotonEnergy200(*el) = -999;
       HG::EleAcc::calibratedPhotonEnergy400(*el) = -999;
     }
-    delete photon;
+    photon = 0;
+
     HG::EleAcc::calibratedElectronEnergy(*el) = el->e();
 
     //std::cout << "E " <<  HG::EleAcc::calibratedElectronEnergy(*el)  << " ph " << HG::EleAcc::calibratedPhotonEnergy(*el) << std::endl;

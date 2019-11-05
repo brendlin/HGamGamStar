@@ -32,13 +32,12 @@ xAOD::Photon*  HG::createPhotonFromElectron (const xAOD::Electron* el)
   }
   //std::cout << "Index 1/2  " << index1  << " " << index2 << std::endl;
 
-  xAOD::Photon* photon = new xAOD::Photon();
-  photon->makePrivateStore();
+  xAOD::Photon* photon = 0; // no NEW here -- it is below!
 
   if( el->ambiguousObject() ){
     //std::cout << "Copying photon" <<  std::endl;
     auto ambiPhoton = dynamic_cast<const xAOD::Photon*>( el->ambiguousObject() );
-    photon->Photon_v1::operator=(*ambiPhoton);
+    photon = new xAOD::Photon(*ambiPhoton);
     photon->setCaloClusterLinks(el->caloClusterLinks());
   } else {
     //std::cout << "Creating photon" <<  std::endl;
@@ -54,6 +53,8 @@ xAOD::Photon*  HG::createPhotonFromElectron (const xAOD::Electron* el)
   nClu(*el)= clusterVec.size();
 
 
+  // You now own this photon - do not forget to delete it, and its private store!
+  // Using this code snippet: (photon->usingPrivateStore()) photon->releasePrivateStore();
   return photon;
 }
 
