@@ -1363,10 +1363,12 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
       photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       HG::EleAcc::calibratedPhotonEnergy(*electron) = photon->e();
 
+      if(photon->usingPrivateStore()) photon->releasePrivateStore();
       delete photon;
     } else {
       HG::EleAcc::calibratedPhotonEnergy(*electron) = -999;
     }
+    photon = 0;
 
   }
 
