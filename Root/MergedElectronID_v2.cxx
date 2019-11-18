@@ -87,6 +87,10 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele, bool isMC) c
 
     float vtx_deta  = HG::EleAcc::vtxdEta(ele);
     float vtx_dphi  = HG::EleAcc::vtxdPhi(ele);
+    
+    float trk1_eta = ele_tp->eta();
+    float trk2_eta = ele_tp2->eta();
+    float trk_deta = fabs(trk1_eta-trk2_eta);
 
     float pte  = ele.pt()/1000.;
     float etae = ele.caloCluster()->etaBE(2);
@@ -98,6 +102,9 @@ bool HG::MergedElectronID_v2::passPIDCut(const xAOD::Electron &ele, bool isMC) c
 
 
     float Eratio = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Eratio);
+    //recovering efficiency at larger deta separation
+    if(trk_deta>0.0031) Eratio =1.;
+    
     float wTotS1 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::wtots1);
 
     float Reta = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Reta);
