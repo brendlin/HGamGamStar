@@ -645,20 +645,20 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
     //==== CUT 19: Require muons to pass isolation
     static bool requireIso = config()->getBool("MuonHandler.Selection.ApplyIsoCut", true);
+    static bool leadMuIsoOnly = config()->getBool("MuonHandler.Selection.UseOnlyLeadMuonIso", true);
     if(requireIso){
       static bool correctIsolation = config()->getBool("MuonHandler.Selection.UseCorrectedIso", false);
-      if(correctIsolation){ //isolation cut taking into account close-by objects
-        if ( !(*m_muIsoAccCorr[m_muonIsoWP])(*mu0) ||
-             !(*m_muIsoAccCorr[m_muonIsoWP])(*mu1)) return LEP_ISO;
-      }
-      else {
-        if ( !muonHandler()->passIsoCut(mu0) ||
-             !muonHandler()->passIsoCut(mu1)) return LEP_ISO;
-      }
+
+      bool passIsoMu0 = (correctIsolation ? (*m_muIsoAccCorr[m_muonIsoWP])(*mu0) : muonHandler()->passIsoCut(mu0));
+      bool passIsoMu1 = true;
+      if (!leadMuIsoOnly) passIsoMu1 = (correctIsolation ? (*m_muIsoAccCorr[m_muonIsoWP])(*mu1) : muonHandler()->passIsoCut(mu1));
+
+      if ( !passIsoMu0 || !passIsoMu1) return LEP_ISO;
 
       // Iso scale factors for cutflow
       m_lepIsoWeight *= HG::MuonHandler::effSFIso(*mu0);
-      m_lepIsoWeight *= HG::MuonHandler::effSFIso(*mu1);
+      if (!leadMuIsoOnly)
+        m_lepIsoWeight *= HG::MuonHandler::effSFIso(*mu1);
 
     }
 
