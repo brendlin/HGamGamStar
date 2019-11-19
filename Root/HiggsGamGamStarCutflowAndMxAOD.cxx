@@ -645,9 +645,9 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
     //==== CUT 19: Require muons to pass isolation
     static bool requireIso = config()->getBool("MuonHandler.Selection.ApplyIsoCut", true);
-    static bool leadMuIsoOnly = config()->getBool("MuonHandler.Selection.UseOnlyLeadMuonIso", true);
     if(requireIso){
       static bool correctIsolation = config()->getBool("MuonHandler.Selection.UseCorrectedIso", false);
+      static bool leadMuIsoOnly = config()->getBool("MuonHandler.Selection.UseOnlyLeadMuonIso", true);
 
       bool passIsoMu0 = (correctIsolation ? (*m_muIsoAccCorr[m_muonIsoWP])(*mu0) : muonHandler()->passIsoCut(mu0));
       bool passIsoMu1 = true;
@@ -689,18 +689,18 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
     if(requireIso){
       static bool correctIsolation = config()->getBool("ElectronHandler.Selection.UseCorrectedIso", false);
-      if(correctIsolation){ //isolation cut taking into account close-by objects
-        if ( !(*m_eleIsoAccCorr[m_eleResolvedIsoWP])(*ele0) ||
-             !(*m_eleIsoAccCorr[m_eleResolvedIsoWP])(*ele1)) return LEP_ISO;
-      }
-      else {
-        if ( !electronHandler()->passIsoCut(ele0,m_eleResolvedIsoWP) ||
-             !electronHandler()->passIsoCut(ele1,m_eleResolvedIsoWP)) return LEP_ISO;
-      }
+      static bool leadEleIsoOnly = config()->getBool("ElectronHandler.Selection.UseOnlyLeadEleIso", true);
+
+      bool passIsoEle0 = (correctIsolation ? (*m_eleIsoAccCorr[m_eleResolvedIsoWP])(*ele0) : electronHandler()->passIsoCut(ele0,m_eleResolvedIsoWP));
+      bool passIsoEle1 = true;
+      if (!leadEleIsoOnly) passIsoEle1 = (correctIsolation ? (*m_eleIsoAccCorr[m_eleResolvedIsoWP])(*ele1) : electronHandler()->passIsoCut(ele1,m_eleResolvedIsoWP));
+
+      if ( !passIsoEle0 || !passIsoEle1) return LEP_ISO;
 
       // Iso scale factors for cutflow
       m_lepIsoWeight *= HG::ElectronHandler::effIsoSF(*ele0);
-      m_lepIsoWeight *= HG::ElectronHandler::effIsoSF(*ele1);
+      if (!leadEleIsoOnly)
+        m_lepIsoWeight *= HG::ElectronHandler::effIsoSF(*ele1);
 
     }
   }

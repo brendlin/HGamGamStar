@@ -27,9 +27,9 @@ To checkout the necessary packages, do:
 Compiling
 ---------
 
-To compile in Rel 21.2.56, do:
+To compile in Rel 21.2.99, do:
 
-    asetup AnalysisBase,21.2.56,here # only needed once per login session
+    asetup AnalysisBase,21.2.99,here # only needed once per login session
     cd $TestArea/../build
     cmake ../source
     cmake --build .
