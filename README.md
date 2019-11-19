@@ -226,3 +226,4 @@ hashes used in this package:
 | v1.8.15-h024 | f7f097c8    | 21.2.56    |          |
 | v1.8.34-h024 | 8551d8d5    | 21.2.56    |          |
 | v1.8.47-h024-ttHcp | 5312e5d9    | 21.2.56    | Update for trig-match mem leak |
+| master commit | f2e09974   | 21.2.99    | Updated muon and jet recommendations |
