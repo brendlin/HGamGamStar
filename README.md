@@ -195,6 +195,7 @@ Information on MxAOD Productions
 | ysy002 | [ysy002](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy002) | 21.2.25 | Not fully documented yet | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy002<br>EOS: /eos/user/b/brendlin/ysy/ysy002 |
 | ysy003 | [ysy003](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy003) | 21.2.25 | [ysy003 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/fc0b714ed0354e37fd8239e7ca732ed25323ca12/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy003<br>EOS: /eos/user/b/brendlin/ysy/ysy003  |
 | ysy005 | [ysy005](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy005) | 21.2.56 | [ysy005 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/51e7884246726940caf6effe7465154c2343f470/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy005<br>EOS: /eos/user/b/brendlin/ysy/ysy005  |
+| ysy011 | [ysy011](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy011) | 21.2.99 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy011<br>EOS: /eos/user/b/brendlin/ysy/ysy011  |
 
 Updating the HGamCore Tag
 ================
