@@ -22,6 +22,7 @@ find_package( ROOT COMPONENTS Core RIO Hist Tree )
 # build a CINT dictionary for the library
 atlas_add_root_dictionary ( HGamGamStarLib HGamGamStarCintDict
                             ROOT_HEADERS HGamGamStar/ZyCutflowAndMxAOD.h
+                            HGamGamStar/ZyUnfoldingInput.h 
                             HGamGamStar/HiggsGamGamStarCutflowAndMxAOD.h
                             HGamGamStar/RadiativeZCutflowAndMxAOD.h
                             HGamGamStar/MergedElectronMxAOD.h
