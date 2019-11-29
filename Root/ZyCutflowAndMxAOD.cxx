@@ -68,6 +68,10 @@ EL::StatusCode ZyCutflowAndMxAOD::createOutput()
   // Temporary hack for large PhotonAllSys samples
   m_photonAllSys = config()->getStr("PhotonHandler.Calibration.decorrelationModel") == "FULL_v1";
 
+  m_WZy = config()->getBool("WZyConfig",false);
+
+  m_ZZy = config()->getBool("ZZyConfig",false);
+
   // a. Event variables
   StrV ignore = {};
   if (HG::isData()) ignore = {".mcChannelNumber", ".mcEventWeights", ".RandomRunNumber", ".truthCentralEventShapeDensity", ".truthForwardEventShapeDensity"};
@@ -342,6 +346,14 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
       }
     }
   }
+
+  if(m_WZy){
+    m_selElectrons.clear();
+    m_selElectrons = m_preSelElectrons;
+    m_selMuons.clear();
+    m_selMuons = m_preSelMuons;
+  }
+
   //emu pair
   int nOSOFpair=0;
   if(m_checkemu && m_preSelMuons.size()>=1 && m_preSelElectrons.size()>=1){
@@ -357,6 +369,8 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   }
   if (m_checkemu && nOSOFpair==0) return TWO_SF_LEPTONS_POSTOR;
   else if (!m_checkemu && nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
+  else if (m_ZZy && nOSSFpair<2) return TWO_SF_LEPTONS_POSTOR;
+  else if (m_WZy && (m_selElectrons.size()+m_selMuons.size()<3)) return TWO_SF_LEPTONS_POSTOR;
 
   //==== CUT 9 : 1 photon after OR ====
   if (m_selPhotons.size()==0 && !m_saveAllZ) return ONE_PHOTON_POSTOR;

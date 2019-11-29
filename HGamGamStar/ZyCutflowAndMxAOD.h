@@ -64,6 +64,10 @@ private:
   // Temporary flag for photon all sys
   bool m_photonAllSys;
 
+  // Config for Triboson ntuples
+  bool m_WZy;
+  bool m_ZZy;
+
   // Tools
   ToolHandle<ZMassConstraint::IConstraintFit> m_massConstraint;
 
