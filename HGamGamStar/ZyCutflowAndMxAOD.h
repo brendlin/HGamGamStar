@@ -65,8 +65,8 @@ private:
   bool m_photonAllSys;
 
   // Config for Triboson ntuples
-  bool m_WZy;
-  bool m_ZZy;
+  bool m_isWZysel;
+  bool m_isZZysel;
 
   // Tools
   ToolHandle<ZMassConstraint::IConstraintFit> m_massConstraint;

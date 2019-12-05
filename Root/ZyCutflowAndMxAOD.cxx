@@ -68,9 +68,9 @@ EL::StatusCode ZyCutflowAndMxAOD::createOutput()
   // Temporary hack for large PhotonAllSys samples
   m_photonAllSys = config()->getStr("PhotonHandler.Calibration.decorrelationModel") == "FULL_v1";
 
-  m_WZy = config()->getBool("WZyConfig",false);
-
-  m_ZZy = config()->getBool("ZZyConfig",false);
+  //Triboson selection
+  m_isWZysel = config()->getBool("WZyConfig",false);
+  m_isZZysel = config()->getBool("ZZyConfig",false);
 
   // a. Event variables
   StrV ignore = {};
@@ -324,6 +324,9 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   // Select Z candidate after overlap removal.
   // choose leading OSSF pair
   int nOSSFpair=0;
+
+  double m_ll_tri=0., mZ=91187;
+
   if(!m_checkemu && m_preSelElectrons.size()>=2){
     for(int ilepton1=0; ilepton1<((int)m_preSelElectrons.size()-1); ilepton1++){
       for(int ilepton2=ilepton1+1; ilepton2< (int)m_preSelElectrons.size(); ilepton2++){
@@ -331,10 +334,15 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
           nOSSFpair++;
           m_selElectrons.push_back(m_preSelElectrons[ilepton1]);
           m_selElectrons.push_back(m_preSelElectrons[ilepton2]);
+	  if(abs((m_preSelElectrons[ilepton1]->p4()+m_preSelElectrons[ilepton2]->p4()).M()-mZ)<abs(m_ll_tri-mZ)){
+	    m_ll_tri = (m_preSelElectrons[ilepton1]->p4()+m_preSelElectrons[ilepton2]->p4()).M();
+	  }
         }
       }
     }
   }
+
+
   if(!m_checkemu && m_preSelMuons.size()>=2){
     for(int ilepton1=0; ilepton1<((int)m_preSelMuons.size()-1); ilepton1++){
       for(int ilepton2=ilepton1+1; ilepton2< (int)m_preSelMuons.size(); ilepton2++){
@@ -342,12 +350,15 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
           nOSSFpair++;
           m_selMuons.push_back(m_preSelMuons[ilepton1]);
           m_selMuons.push_back(m_preSelMuons[ilepton2]);
+	  if(abs((m_preSelMuons[ilepton1]->p4()+m_preSelMuons[ilepton2]->p4()).M()-mZ)<abs(m_ll_tri-mZ)){
+	    m_ll_tri = (m_preSelMuons[ilepton1]->p4()+m_preSelMuons[ilepton2]->p4()).M();
+	  }
         }
       }
     }
   }
 
-  if(m_WZy){
+  if(m_isWZysel || m_isZZysel){
     m_selElectrons.clear();
     m_selElectrons = m_preSelElectrons;
     m_selMuons.clear();
@@ -367,10 +378,11 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
       }
     }
   }
+
   if (m_checkemu && nOSOFpair==0) return TWO_SF_LEPTONS_POSTOR;
-  else if (!m_checkemu && nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
-  else if (m_ZZy && nOSSFpair<2) return TWO_SF_LEPTONS_POSTOR;
-  else if (m_WZy && (m_selElectrons.size()+m_selMuons.size()<3)) return TWO_SF_LEPTONS_POSTOR;
+  else if (m_isZZysel && (m_selElectrons.size()+m_selMuons.size()<4 || nOSSFpair<2)) return TWO_SF_LEPTONS_POSTOR;
+  else if (m_isWZysel && (m_selElectrons.size()+m_selMuons.size()<3 || nOSSFpair==0)) return TWO_SF_LEPTONS_POSTOR;
+  else if (!m_isZZysel && !m_isWZysel && !m_checkemu && nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
 
   //==== CUT 9 : 1 photon after OR ====
   if (m_selPhotons.size()==0 && !m_saveAllZ) return ONE_PHOTON_POSTOR;
@@ -396,6 +408,11 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   double m_ll=-99, m_emu=-99;
   if ( m_selElectrons.size()>=2 ) m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
   else if ( m_selMuons.size()>=2 ) m_ll = (m_selMuons[0]->p4() + m_selMuons[1]->p4()).M();
+
+  if(m_isWZysel || m_isZZysel){
+    m_ll=m_ll_tri;
+  } 
+
   if (m_selElectrons.size()>=1 && m_selMuons.size()>=1) m_emu = (m_selElectrons[0]->p4() + m_selMuons[0]->p4()).M();
   if (m_checkemu && m_emu<40*HG::GeV ) return MASSCUT;
   else if (!m_checkemu && m_ll<40*HG::GeV ) return MASSCUT;
