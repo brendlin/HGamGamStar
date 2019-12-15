@@ -325,7 +325,9 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   // choose leading OSSF pair
   int nOSSFpair=0;
 
-  double m_ll_tri=0., mZ=91187;
+  // Container for all possible Z candidates with mll > 5GeV
+  std::vector<std::pair<int,int>> lepPairs;
+  int nElecPairs=0, nMuonPairs=0;
 
   if(!m_checkemu && m_preSelElectrons.size()>=2){
     for(int ilepton1=0; ilepton1<((int)m_preSelElectrons.size()-1); ilepton1++){
@@ -334,9 +336,12 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
           nOSSFpair++;
           m_selElectrons.push_back(m_preSelElectrons[ilepton1]);
           m_selElectrons.push_back(m_preSelElectrons[ilepton2]);
-	  if(abs((m_preSelElectrons[ilepton1]->p4()+m_preSelElectrons[ilepton2]->p4()).M()-mZ)<abs(m_ll_tri-mZ)){
-	    m_ll_tri = (m_preSelElectrons[ilepton1]->p4()+m_preSelElectrons[ilepton2]->p4()).M();
+
+	  if((m_preSelElectrons[ilepton1]->p4()+m_preSelElectrons[ilepton2]->p4()).M()>5e3){
+	    lepPairs.push_back(std::make_pair(ilepton1,ilepton2));
+	    nElecPairs++;
 	  }
+
         }
       }
     }
@@ -350,14 +355,18 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
           nOSSFpair++;
           m_selMuons.push_back(m_preSelMuons[ilepton1]);
           m_selMuons.push_back(m_preSelMuons[ilepton2]);
-	  if(abs((m_preSelMuons[ilepton1]->p4()+m_preSelMuons[ilepton2]->p4()).M()-mZ)<abs(m_ll_tri-mZ)){
-	    m_ll_tri = (m_preSelMuons[ilepton1]->p4()+m_preSelMuons[ilepton2]->p4()).M();
+
+	  if((m_preSelMuons[ilepton1]->p4()+m_preSelMuons[ilepton2]->p4()).M()>5e3){
+	    lepPairs.push_back(std::make_pair(ilepton1,ilepton2));
+	    nMuonPairs++;
 	  }
+
         }
       }
     }
   }
 
+  // For triboson config, need multiple lepton pairs so save all preselected leptons
   if(m_isWZysel || m_isZZysel){
     m_selElectrons.clear();
     m_selElectrons = m_preSelElectrons;
@@ -379,8 +388,73 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
     }
   }
 
-  if (m_checkemu && nOSOFpair==0) return TWO_SF_LEPTONS_POSTOR;
-  else if (m_isZZysel && (m_selElectrons.size()+m_selMuons.size()<4 || nOSSFpair<2)) return TWO_SF_LEPTONS_POSTOR;
+  double  mZ=91187;
+  double m_ll1=-99, m_ll2=-99;
+  int Z_pair1=-1, Z_pair2=-1;
+  int nQuad=0;
+
+  if(m_isWZysel && (nElecPairs+nMuonPairs)>=1){
+    // Loop over all possible lepton pairs and find one with mll closest to mZ
+    for(int ipair=0; ipair<(nElecPairs+nMuonPairs); ipair++){
+      double m_pair = 0.;
+      //For muon pairs
+      if(ipair>=nElecPairs){
+	m_pair = (m_selMuons[lepPairs[ipair].first]->p4()+m_selMuons[lepPairs[ipair].second]->p4()).M(); 
+      }
+      //For electron pairs
+      else{
+	m_pair = (m_selElectrons[lepPairs[ipair].first]->p4()+m_selElectrons[lepPairs[ipair].second]->p4()).M(); 
+      }
+      //Choose pair with closest inv mass to mZ
+      if(abs(m_pair-mZ)<abs(m_ll1-mZ)){
+	m_ll1 = m_pair;
+	Z_pair1 = ipair;
+      }
+    }
+  }
+  // Can use lepton pair later using lepPairs[Z_pair1]
+
+  if(m_isZZysel && (nElecPairs+nMuonPairs)>=2){
+    // Loop over all combinations of lepton pairs (quads)
+    for(int ipair=0; ipair<(nElecPairs+nMuonPairs-1); ipair++){
+      for(int jpair=ipair+1; jpair<(nElecPairs+nMuonPairs); jpair++){
+	double m_pair1=0., m_pair2=0.;
+	// If either of the two pairs contain a common lepton, continue (only applicable for comparing like flavour pairs)
+	if((ipair<nElecPairs && jpair<nElecPairs) || (ipair>=nElecPairs && jpair>=nElecPairs)){
+	  if(lepPairs[ipair].first==lepPairs[jpair].first || lepPairs[ipair].first==lepPairs[jpair].second || lepPairs[ipair].second==lepPairs[jpair].first || lepPairs[ipair].second==lepPairs[jpair].second)continue;
+	}
+	nQuad++;
+	//Muon pair
+	if(ipair>=nElecPairs){
+	  m_pair1 = (m_selMuons[lepPairs[ipair].first]->p4()+m_selMuons[lepPairs[ipair].second]->p4()).M(); 
+	}
+	//Electron pair
+	else{
+	  m_pair1 = (m_selElectrons[lepPairs[ipair].first]->p4()+m_selElectrons[lepPairs[ipair].second]->p4()).M(); 
+	}
+	//Muon pair
+	if(jpair>=nElecPairs){
+	  m_pair2 = (m_selMuons[lepPairs[jpair].first]->p4()+m_selMuons[lepPairs[jpair].second]->p4()).M(); 
+	}
+	//Electrons pair
+	else{
+	  m_pair2 = (m_selElectrons[lepPairs[jpair].first]->p4()+m_selElectrons[lepPairs[jpair].second]->p4()).M(); 
+	}
+	// Choose quad with closest combined inv mass to 2mZ
+	if(abs(m_pair1+m_pair2-(2*mZ))<abs(m_ll1+m_ll2-(2*mZ))){
+	  m_ll1 = m_pair1;
+	  m_ll2 = m_pair2;
+	  Z_pair1 = ipair;
+	  Z_pair2 = jpair;
+	}
+      }
+    }
+  }
+  // Can use lepton pairs later using lepPairs[Z_pair1], lepPairs[Z_pair2]
+
+
+  if (m_checkemu && nOSOFpair==0) return TWO_SF_LEPTONS_POSTOR; 
+  else if (m_isZZysel && nQuad==0) return TWO_SF_LEPTONS_POSTOR;
   else if (m_isWZysel && (m_selElectrons.size()+m_selMuons.size()<3 || nOSSFpair==0)) return TWO_SF_LEPTONS_POSTOR;
   else if (!m_isZZysel && !m_isWZysel && !m_checkemu && nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
 
@@ -406,16 +480,17 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
 
   //==== CUT 12 : MLL>40 GeV ====
   double m_ll=-99, m_emu=-99;
-  if ( m_selElectrons.size()>=2 ) m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
-  else if ( m_selMuons.size()>=2 ) m_ll = (m_selMuons[0]->p4() + m_selMuons[1]->p4()).M();
+  if (!m_isWZysel && !m_isZZysel && m_selElectrons.size()>=2 ) m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
+  else if (!m_isWZysel && !m_isZZysel && m_selMuons.size()>=2 ) m_ll = (m_selMuons[0]->p4() + m_selMuons[1]->p4()).M();
 
-  if(m_isWZysel || m_isZZysel){
-    m_ll=m_ll_tri;
-  } 
 
   if (m_selElectrons.size()>=1 && m_selMuons.size()>=1) m_emu = (m_selElectrons[0]->p4() + m_selMuons[0]->p4()).M();
+  
+
   if (m_checkemu && m_emu<40*HG::GeV ) return MASSCUT;
-  else if (!m_checkemu && m_ll<40*HG::GeV ) return MASSCUT;
+  else if (m_isWZysel && (m_ll1<61*HG::GeV || m_ll1>116*HG::GeV)) return MASSCUT;
+  else if (m_isZZysel && (m_ll1<61*HG::GeV || m_ll1>116*HG::GeV || m_ll2<61*HG::GeV || m_ll2>116*HG::GeV)) return MASSCUT;
+  else if (!m_isWZysel && !m_isZZysel && !m_checkemu && m_ll<40*HG::GeV ) return MASSCUT;
 
   // isZ flag set properly whilst not influincing the original cutflow decision
   m_isZ = true;
