@@ -441,7 +441,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
 	  m_pair2 = (m_selElectrons[lepPairs[jpair].first]->p4()+m_selElectrons[lepPairs[jpair].second]->p4()).M(); 
 	}
 	// Choose quad with closest combined inv mass to 2mZ
-	if(abs(m_pair1+m_pair2-(2*mZ))<abs(m_ll1+m_ll2-(2*mZ))){
+	if( (abs(m_pair1-mZ)+abs(m_pair2-mZ)) < (abs(m_ll1-mZ)+abs(m_ll2-mZ)) ){
 	  m_ll1 = m_pair1;
 	  m_ll2 = m_pair2;
 	  Z_pair1 = ipair;
