@@ -29,7 +29,7 @@ Each step corresponds to a CutEnum defining the cutflow (see `HiggsGamGamStarCut
 | **Z boson assignment** | Pick highest vector-sum p<sub>T</sub> SFOS pair<br>(&mu;s or tracks). Channels: <br>DIMUON=1, RESOLVED_DIELECTRON=2,<br>MERGED_DIELECTRON=3.<br>&mu; preferred **&mu; leading p<sub>T</sub> must be >11 GeV**. Use preselection below. | HggStarVariables.cxx,<br>HiggsGamGamStarCutflowAndMxAOD.cxx | N/A |
 | **Presel for Z-assignment above** | Res e: VeryLooseLH,<br>lead p<sub>T</sub>>13 GeV<br>Mrgd e: Rhad<0.1, NtrkPassBL&geq;1,<br>p<sub>T</sub>>20 GeV<br>&mu;: lead p<sub>T</sub>>11 GeV | " " | N/A |
 |12, ZBOSON_ASSIGNMENT     | nSFOS &ge; 1 (muon or track pairs). | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
-| **Get jet container**  | Selected jets | JetHandler.cxx | N/A |
+| **Get jet container**  | Selected jets | p<sub>T</sub>>20 GeV, rest see in JetHandler.cxx | N/A |
 | **Overlap removal**    | Remove e if &Delta;R(e,&gamma;)<0.4<br> Remove jet if &Delta;R(j,&gamma;)<0.4<br>Remove jet if &Delta;R(j,e)<0.2<br>Remove e if &Delta;R(j,e)<0.4<br>Remove &mu; if &Delta;R(&mu;,&gamma;)<0.4<br>Remove &mu; if &Delta;R(&mu;,j)<0.4 | HGamAnalysisFramework/<br>OverlapRemovalHandler.cxx | N/A |
 |13, TWO_SF_LEPTONS_POSTOR | &ge; 1 of the SFOS pairs survives OR.<br>At this point, &mu;&mu; is preferred;<br>the remaining channels are exclusive. | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |
 |14, BAD_MUON              | Reject events with presel BadMuons | HiggsGamGamStarCutflowAndMxAOD.cxx | " " |

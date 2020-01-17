@@ -15,6 +15,8 @@
 #include "IsolationSelection/IsolationCloseByCorrectionTool.h"
 #include "IsolationSelection/IsolationSelectionTool.h"
 
+#include "xAODTracking/TrackParticlexAODHelpers.h"
+
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
 

@@ -62,7 +62,16 @@ float HG::m_lly_gev::calculateValue(bool truth)
 int HG::yyStarCategory::calculateValue(bool truth)
 {
   if (truth) return CategoryEnum::CATEGORYUNKNOWN;
-  bool passVBF = var::m_jj()/1000>400 && var::Deta_j_j() > 2.5;
+  const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+  bool passVBF = false;
+  if (jets->size() > 1){ //we have two or more jets - prerequisite to pass VBF
+      passVBF = true;
+      passVBF = passVBF && var::m_jj() > 400 * HG::GeV;
+      passVBF = passVBF && var::Deta_j_j() > 2.5;
+      passVBF = passVBF && (*jets)[0]->pt() > 25 * HG::GeV;
+      passVBF = passVBF && (*jets)[1]->pt() > 25 * HG::GeV;
+  }
+
   if (var::yyStarChannel()==ChannelEnum::DIMUON){
       if(passVBF) return CategoryEnum::VBF_DIMUON;
       else return CategoryEnum::GGF_DIMUON;

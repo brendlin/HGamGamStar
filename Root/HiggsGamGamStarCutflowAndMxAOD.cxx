@@ -1291,10 +1291,15 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
 
 void HiggsGamGamStarCutflowAndMxAOD::AddMuonDecorations(xAOD::MuonContainer& muons) {
 
-  //set corrected iso decision same as non-corrected by default
+  //set corrected iso decision same as non-corrected by default; set d0significance
   for(auto muon: muons){
     for (auto dec : m_muIsoAccCorr){
       (*dec.second)(*muon) = muonHandler()->passIsoCut(muon,dec.first);
+    }
+    HG::MuAcc::d0significance(*muon) = 999;
+    const xAOD::TrackParticle *tp = (*muon).primaryTrackParticle();
+    if (tp != nullptr && tp->definingParametersCovMatrixVec().size() > 0 && tp->definingParametersCovMatrixVec().at(0) > 0.) {
+        HG::MuAcc::d0significance(*muon) = xAOD::TrackingHelpers::d0significance(tp, eventInfo()->beamPosSigmaX(), eventInfo()->beamPosSigmaY(), eventInfo()->beamPosSigmaXY());
     }
   }
 
