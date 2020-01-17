@@ -348,6 +348,8 @@ float HG::TrackHandler::calculateIPSig(const xAOD::TrackParticle& trk) const
 //______________________________________________________________________________
 void HG::TrackHandler::decorateIPCut(xAOD::TrackParticle& trk)
 {
+  TrkAcc::z0pv(trk) = 999;
+  TrkAcc::z0sinTheta(trk) = 999;
   TrkAcc::passIPCut(trk) = true;
 
   float d0sig  = calculateIPSig(trk);
