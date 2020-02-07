@@ -53,6 +53,7 @@ private:
   // cutflow.
   float m_lepIDWeight;
   float m_lepIsoWeight;
+  std::vector<float> m_mergedSysts;
 
   // names of the output containers
   TString m_photonContainerName, m_jetContainerName, m_elecContainerName, m_muonContainerName, m_trackContainerName;
@@ -154,6 +155,7 @@ private:
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
   void AddMuonDecorations(xAOD::MuonContainer& muons);
+  void AddMergedIDSFSystematics(void);
 
   HG::ChannelEnum FindZboson_ElectronChannelAware(xAOD::TrackParticleContainer* inTracks,
                                                   xAOD::TrackParticle*& sel_trk1,

@@ -14,6 +14,13 @@
 #include <string>
 #include <TH2.h>
 
+enum MergedSystematic {
+  MERGEDUNC_NOMINAL=0,
+  MERGEDUNC_STAT_UP=1,
+  MERGEDUNC_STAT_DOWN=2,
+  MERGEDUNC_SYST_UP=3,
+  MERGEDUNC_SYST_DOWN=4
+};
 
 namespace HG {
 
@@ -46,6 +53,7 @@ namespace HG {
     virtual EL::StatusCode initialize(Config &config);
 
     bool passPIDCut(const xAOD::Electron &ele, bool isMC) const ;
+    float GetScaleFactor(const xAOD::Electron &ele, MergedSystematic sys=MERGEDUNC_NOMINAL) const;
 
   };
 
