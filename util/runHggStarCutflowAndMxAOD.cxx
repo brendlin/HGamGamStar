@@ -1,3 +1,5 @@
+#include <xAODRootAccess/Init.h>
+
 #include "HGamGamStar/HiggsGamGamStarCutflowAndMxAOD.h"
 #include "HGamAnalysisFramework/RunUtils.h"
 

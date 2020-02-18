@@ -27,9 +27,9 @@ To checkout the necessary packages, do:
 Compiling
 ---------
 
-To compile in Rel 21.2.99, do:
+To compile in Rel 21.2.106, do:
 
-    asetup AnalysisBase,21.2.99,here # only needed once per login session
+    asetup AnalysisBase,21.2.106,here # only needed once per login session
     cd $TestArea/../build
     cmake ../source
     cmake --build .
@@ -228,3 +228,4 @@ hashes used in this package:
 | v1.8.34-h024 | 8551d8d5    | 21.2.56    |          |
 | v1.8.47-h024-ttHcp | 5312e5d9    | 21.2.56    | Update for trig-match mem leak |
 | master commit | f2e09974   | 21.2.99    | Updated muon and jet recommendations |
+| untagged commit | 9d640507 | 21.2.106   | Update our code for p4061, p4062 |
