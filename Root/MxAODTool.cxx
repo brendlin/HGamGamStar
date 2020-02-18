@@ -1,5 +1,5 @@
 #include "HGamGamStar/MxAODTool.h"
-#include "HGamAnalysisFramework/HgammaIncludes.h"
+#include "HGamAnalysisFramework/HGamCommon.h"
 #include "HGamAnalysisFramework/HGamVariables.h"
 
 #include "xAODCutFlow/CutBookkeeper.h"
