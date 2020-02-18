@@ -307,8 +307,9 @@ float HG::MergedElectronID_v2::GetScaleFactor(const xAOD::Electron &ele, MergedS
   float sf = nominal_sf[iPt][iEta];
   if (sys == MERGEDUNC_STAT_UP  ) sf = sf + stat_unc[iPt][iEta];
   if (sys == MERGEDUNC_STAT_DOWN) sf = sf - stat_unc[iPt][iEta];
-  if (sys == MERGEDUNC_SYST_UP  ) sf = sf + syst_unc[iPt][iEta];
-  if (sys == MERGEDUNC_SYST_DOWN) sf = sf - syst_unc[iPt][iEta];
+  // sys uncertainties are relative
+  if (sys == MERGEDUNC_SYST_UP  ) sf = sf * (1. + syst_unc[iPt][iEta]);
+  if (sys == MERGEDUNC_SYST_DOWN) sf = sf * (1. - syst_unc[iPt][iEta]);
 
   return sf;
 }
