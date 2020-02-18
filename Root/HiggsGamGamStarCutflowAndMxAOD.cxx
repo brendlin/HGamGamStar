@@ -608,15 +608,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
       TString trig = eventHandler()->getRequiredTriggers()[i_trig];
 
-      // HACK - NEED TO FIX photon icalotight triggers!
-      if (trig.Contains("g35_tight_icalotight"))
-      {
-        Warning("cutflow()","  Trigger name %s automatically passes - need to fix!!!!!",trig.Data());
-        isTrigMatched = true;
-        break;
-      }
-      // End HACK
-
       if (eventHandler()->passTriggerMatch(trig.Data(), &m_selPhotons, &m_selElectrons, &m_selMuons))
       {
         isTrigMatched = true;
