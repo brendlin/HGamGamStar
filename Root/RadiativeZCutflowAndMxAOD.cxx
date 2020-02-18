@@ -957,7 +957,7 @@ void RadiativeZCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& 
 
     if(photon)
     {
-      HG::setPhotonConversionVertex( electron, photon, 20, outVertices);
+      HG::setPhotonConversionVertex( electron, photon, 30, outVertices);
       HG::EleAcc::calibratedPhotonEnergy(*electron) = photon->e();
 
       if(photon->usingPrivateStore()) photon->releasePrivateStore();
