@@ -449,43 +449,6 @@ namespace HG {
   };
 
   //____________________________________________________________________________
-  class N_j_btag : public VarBase<int> {
-  public:
-    N_j_btag() : VarBase("N_j_btag") { m_default = -99; }
-    ~N_j_btag() { }
-
-    int calculateValue(bool truth)
-    {
-      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
-      int njets = 0;
-
-      for (auto jet : *jets) {
-        if (jet->auxdata<char>("MV2c10_FixedCutBEff_70"))
-        { njets++; }
-      }
-
-      return njets;
-    }
-  };
-
-  //____________________________________________________________________________
-  class m_jj_50 : public VarBase<float> {
-  public:
-    m_jj_50() : VarBase("m_jj_50") { m_default = -99; }
-    ~m_jj_50() { }
-
-    float calculateValue(bool truth)
-    {
-      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
-
-      if (jets->size() < 2)
-      { return m_default; }
-
-      return (*jets)[1]->pt() < 50 * HG::GeV ? m_default : ((*jets)[0]->p4() + (*jets)[1]->p4()).M();
-    }
-  };
-
-  //____________________________________________________________________________
   class Dy_j_j_50 : public VarBase<float> {
   public:
     Dy_j_j_50() : VarBase("Dy_j_j_50") { m_default = -99; }
@@ -981,8 +944,6 @@ namespace var {
   extern HG::m_llyy m_llyy;
   extern HG::m_emu m_emu;
   extern HG::m_emuy m_emuy;
-  extern HG::N_j_btag N_j_btag;
-  extern HG::m_jj_50 m_jj_50;
   extern HG::Dy_j_j_50 Dy_j_j_50;
   extern HG::Zy_centrality Zy_centrality;
   extern HG::DR_Zy_jj DR_Zy_jj;
