@@ -7,7 +7,7 @@
 #include "HGamGamStar/TrackElectronMap.h"
 #include "xAODTracking/VertexAuxContainer.h"
 
-
+#include "TruthWeightTools/HiggsWeights.h"
 
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
 // #include "ZMassConstraint/ConstraintFit.h"
@@ -329,10 +329,13 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   // Selects the objects, does overlap removal, and calculate all
   // variables that will be saved
   doReco();
+  if ( HG::isMC() && (m_saveTruthObjects || m_saveTruthVars))
+    doTruth();
 
   // check if we should apply systematics or not
   if (m_applySystematics) {
-
+      
+    AddTheorySystematics();
     AddMergedIDSFSystematics();
 
     for (auto sys: getSystematics()) {
@@ -350,8 +353,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
     }
   }
 
-  if ( HG::isMC() && (m_saveTruthObjects || m_saveTruthVars))
-    doTruth();
+
 
   // Write nominal EventInfo to output
   eventHandler()->writeEventInfo();
@@ -1425,6 +1427,92 @@ void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
   }
 }
 
+void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
+  
+  float m_lly = var::m_lly();
+  float m_lly_gev = var::m_lly_gev();
+  float weight = var::weight();
+  int category = var::yyStarCategory();
+  int channel = var::yyStarChannel();
+  
+  eventHandler()->setTruthVariables();
+  
+  TruthWeightTools::HiggsWeights hw = eventHandler()->higgsWeights();
+  
+  for(unsigned i=0;i<hw.pdf4lhc_unc.size();i++)
+      std::cout<<"GRP_KURT "<<hw.pdf4lhc_unc[i]<<std::endl;
+  
+  std::cout<<"GRP601 Nominal "<<hw.nominal<<std::endl;
+
+  
+  //now fill all weight values into one array
+  std::vector<double> sys_weights;
+  
+  //qcd uncertainties
+  std::vector<std::string> sysNames = {
+      "TheorySig_QCDscale_ggF_mu",
+      "TheorySig_QCDscale_ggF_res",
+      "TheorySig_QCDscale_ggF_mig01",
+      "TheorySig_QCDscale_ggF_mig12",
+      "TheorySig_QCDscale_ggF_vbf2j",
+      "TheorySig_QCDscale_ggF_vbf3j",
+      "TheorySig_QCDscale_ggF_pTH60",
+      "TheorySig_QCDscale_ggF_pTH120",
+      "TheorySig_QCDscale_ggF_qm_t"
+  };
+  
+  if (hw.pdf4lhc_unc.size()!=30){
+      HG::fatal("Got unexpected number of PDF theory systs: " + std::to_string(hw.pdf4lhc_unc.size()) + " (expected 30)");
+  }
+  if (hw.ggF_qcd_2017.size()!=9){
+      HG::fatal("Got unexpected number of QCD theory systs: " + std::to_string(hw.ggF_qcd_2017.size()) + " (expected 9)");
+  }
+  
+  //QCD uncertainties
+  for (unsigned i = 0; i<9; i++)
+    sys_weights.push_back(hw.ggF_qcd_2017[i]);
+  
+  //pdf uncertainties
+  for(unsigned i=0; i<30; i++){
+    sysNames.push_back("TheorySig_PDF4LHC_NLO_30_EV" + std::to_string(i+1));
+    sys_weights.push_back(hw.pdf4lhc_unc[i]);
+  }
+  
+  //alpha_S uncertainties
+  sysNames.push_back("TheorySig_QCDalphaS__1up");
+  sys_weights.push_back(hw.alphaS_up);
+  sysNames.push_back("TheorySig_QCDalphaS__1down");
+  sys_weights.push_back(hw.alphaS_dn);
+  
+  //now create all systematic branches
+  for (unsigned i=0; i<sysNames.size(); ++i) {
+
+    CP::SystematicSet sys(sysNames[i]);
+
+    // This is the magic call to get a fresh EventInfo:
+    HG::VarHandler::getInstance()->applySystematicVariation(sys);
+
+    // These are unchanged variables:
+    var::cutFlow.setValue(m_cutFlow);
+    var::m_lly.setValue(m_lly);
+    var::m_lly_gev.setValue(m_lly_gev);
+    eventHandler()->storeVar<char>("isPassedEventSelection",m_cutFlow >= PASSALL);
+    var::yyStarCategory.setValue(category);
+    var::yyStarChannel.setValue(channel);
+
+    if (hw.nominal != sys_weights[i]) //only update the weight if there's a difference to avoid numerical errors "faking" systematic
+        var::weight.setValue(weight / hw.nominal * sys_weights[i]);
+    else var::weight.setValue(weight);
+
+        std::cout<<"GRP603 "<<weight<<" "<< weight / hw.nominal * sys_weights[i]<<" "<<sys_weights[i]<<" "<<sysNames[i]<<std::endl;
+
+    // Write out the syst in each case:
+    HG::VarHandler::getInstance()->write();
+  }
+  var::weight.setValue(weight);
+  std::cout<<"GRP666 theory sys done "<<std::endl;
+}
+
 void HiggsGamGamStarCutflowAndMxAOD::AddMergedIDSFSystematics() {
 
   bool is_mergedChan = (var::yyStarChannel()==HG::MERGED_DIELECTRON);
@@ -1470,6 +1558,8 @@ void HiggsGamGamStarCutflowAndMxAOD::AddMergedIDSFSystematics() {
     // Write out the syst in each case:
     HG::VarHandler::getInstance()->write();
   }
-
+  
+  //reset the weight to nominal
+  var::weight.setValue(weight);
   return;
 }
