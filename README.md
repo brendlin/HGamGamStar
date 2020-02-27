@@ -82,7 +82,7 @@ You will need to export a few variables to your environment so that the code kno
 (You can put these in your `.bash_profile` startup script too):
 
     export LOCALGROUPDISK="DESY-HH_LOCALGROUPDISK"
-    export GRIDDIRECT_FROM="root://dcache-atlas-xrootd.desy.de:1094//"
+    export GRIDDIRECT_FROM="root://dcache-atlas-xrootd-job.desy.de:1094/"
     export GRIDDIRECT_TO="/"
 
 The last two variables relate to how to interpret the file paths on your institute's local group disk. If you do not know the file protocol, try running:
@@ -196,6 +196,7 @@ Information on MxAOD Productions
 | ysy003 | [ysy003](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy003) | 21.2.25 | [ysy003 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/fc0b714ed0354e37fd8239e7ca732ed25323ca12/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy003<br>EOS: /eos/user/b/brendlin/ysy/ysy003  |
 | ysy005 | [ysy005](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy005) | 21.2.56 | [ysy005 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/51e7884246726940caf6effe7465154c2343f470/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy005<br>EOS: /eos/user/b/brendlin/ysy/ysy005  |
 | ysy011 | [ysy011](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy011) | 21.2.99 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy011<br>EOS: /eos/user/b/brendlin/ysy/ysy011  |
+| ysy012 | [ysy012](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy012) | 21.2.109 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy012<br>EOS: /eos/user/b/brendlin/ysy/ysy012  |
 
 Updating the HGamCore Tag
 ================
