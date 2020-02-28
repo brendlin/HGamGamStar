@@ -94,14 +94,6 @@ EL::StatusCode ZyCutflowAndMxAOD::createOutput()
 
   // b. Selected objects
 
-  // If we have a detailed run then append a list of extra variables to add to jets
-  if(m_detailedHHyybb)
-  {
-    TString yybb_detailedJetVars = config()->getStr("MxAOD.Variables.Jet")+config()->getStr("MxAOD.yybb-Detailed.Jet");
-    yybb_detailedJetVars.ReplaceAll(" ",""); //Remove spaces in lists...
-    config()->setValue("MxAOD.Variables.Jet",yybb_detailedJetVars.Data());
-  }
-
   if (HG::isData()) ignore = {".isEMTight_nofudge", ".isTight_nofudge", ".topoetcone20_DDcorrected", ".topoetcone40_DDcorrected", ".truthOrigin", ".truthType", ".truthConvRadius", ".scaleFactor", ".truthLink", ".parentPdgId", ".pdgId"};
   declareOutputVariables(m_photonContainerName, "MxAOD.Variables.Photon"  , {}, ignore);
   declareOutputVariables("HGamPhotonsWithFakes","MxAOD.Variables.Photon"  , {}, ignore);
@@ -435,26 +427,18 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
                                                     &m_selMuons    );
   m_selMET = etmissHandler()->applySelection(m_allMET);
 
-  xAOD::JetContainer allPFlowJets = jetHandlerPFlow()->getCorrectedContainer();
-  xAOD::JetContainer selPFlowJets = jetHandlerPFlow()->applySelection(allPFlowJets);
-
   // Save JVT weight (needs special overlap removal)
   m_jvtJets = jetHandler()->applySelectionNoJvt(m_allJets);
   xAOD::ElectronContainer jvtElecs = m_selElectrons;
   xAOD::MuonContainer jvtMuons = m_selMuons;
   overlapHandler()->removeOverlap(m_selPhotons, m_jvtJets, jvtElecs, jvtMuons);
 
-  // Special overlap removal for PFlow jets
-  xAOD::ElectronContainer pflowElecs = m_selElectrons;
-  xAOD::MuonContainer pflowMuons = m_selMuons;
-  overlapHandler()->removeOverlap(m_selPhotons, selPFlowJets, pflowElecs, pflowMuons);
-  
   
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
   setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, &m_selMET, &m_jvtJets);
 
-  // add lepton SF and trigger SF weight to total weight
+  // add lepton SF and trigger SF weight to total weight, only for dilepton case!
   if (HG::isMC()) {
     if ( m_selElectrons.size()>=2||m_selMuons.size()>=2) var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(&m_selElectrons,&m_selMuons));
     double myweight = var::weightSF();
@@ -469,12 +453,6 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
   SG::AuxElement::Accessor<float> cluster_time("cluster_time");
   for (auto photon: m_selPhotons) {
     cluster_time(*photon) = photon->caloCluster()->time();
-  }
-
-  if (not m_photonAllSys) {
-    // Must come before writing out containers (Detailed mode decorates objects for studying)
-    // Decorate MET information to HGamEventInfo
-    metCatTool()->saveCategoryAndWeight(m_selPhotons, m_selElectrons, m_selMuons, m_selJets, m_selMET);
   }
 
   // Adds event-level variables to TStore
@@ -493,7 +471,6 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
       CP_CHECK("execute()", photonHandler  ()->writeContainer(m_selPhotons  ));
       CP_CHECK("execute()", electronHandler()->writeContainer(m_selElectrons));
       CP_CHECK("execute()", jetHandler     ()->writeContainer(m_selJets     ));
-      CP_CHECK("execute()", jetHandlerPFlow()->writeContainer(selPFlowJets));
       CP_CHECK("execute()", muonHandler    ()->writeContainer(m_selMuons    ));
       CP_CHECK("execute()", etmissHandler  ()->writeContainer(m_selMET      ));
     }
@@ -614,8 +591,8 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::N_e.addToStore(truth);
   var::N_j.addToStore(truth);
   var::N_j_central.addToStore(truth);
-  var::N_j_btag30.addToStore(truth);
-  var::N_j_btag.addToStore(truth);
+  //var::N_j_btag30.addToStore(truth);
+  //var::N_j_btag.addToStore(truth);
   var::m_jj_50.addToStore(truth);
   var::Dy_j_j_50.addToStore(truth);
   var::Zy_centrality.addToStore(truth);
