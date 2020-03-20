@@ -2,20 +2,24 @@
 # Signal
 # ------------------------------------------------------------------------------
 
-mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p3877
-mc16_13TeV.345834.PowhegPythia8EvtGen_NNPDF30_AZNLOCTEQ6L1_VBFH125_gamstargam.deriv.DAOD_HIGG1D2.e7111_s3126_r9364_p3877
-mc16_13TeV.345963.PowhegPythia8EvtGen_NNPDF30_AZNLO_WmH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p3877
-mc16_13TeV.345964.PowhegPythia8EvtGen_NNPDF30_AZNLO_WpH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p3877
-mc16_13TeV.345965.PowhegPythia8EvtGen_NNPDF30_AZNLO_ZH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p3877
+mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p4062
+mc16_13TeV.345834.PowhegPythia8EvtGen_NNPDF30_AZNLOCTEQ6L1_VBFH125_gamstargam.deriv.DAOD_HIGG1D2.e7111_s3126_r9364_p4062
+mc16_13TeV.345963.PowhegPythia8EvtGen_NNPDF30_AZNLO_WmH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p4062
+mc16_13TeV.345964.PowhegPythia8EvtGen_NNPDF30_AZNLO_WpH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p4062
+mc16_13TeV.345965.PowhegPythia8EvtGen_NNPDF30_AZNLO_ZH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p4062
+
+# ggH125 gamgam Background
+# ------------------------------------------------------------------------------
+mc16_13TeV.343981.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamgam.deriv.DAOD_HIGG1D2.e5607_s3126_r9364_p4062
 
 # Zgam background
 # ------------------------------------------------------------------------------
-mc16_13TeV.301535.Sherpa_CT10_eegammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_r9315_p3703
-mc16_13TeV.301899.Sherpa_CT10_eegammaPt35_70.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_r9315_p3703
-mc16_13TeV.301900.Sherpa_CT10_eegammaPt70_140.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_r9315_p3703
-mc16_13TeV.301901.Sherpa_CT10_eegammaPt140.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_r9315_p3703
+mc16_13TeV.301535.Sherpa_CT10_eegammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_p4062
+mc16_13TeV.301899.Sherpa_CT10_eegammaPt35_70.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_p4062
+mc16_13TeV.301900.Sherpa_CT10_eegammaPt70_140.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_p4062
+mc16_13TeV.301901.Sherpa_CT10_eegammaPt140.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_p4062
 
-mc16_13TeV.301536.Sherpa_CT10_mumugammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_r9315_p3703
-mc16_13TeV.301902.Sherpa_CT10_mumugammaPt35_70.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_r9315_p3703
-mc16_13TeV.301903.Sherpa_CT10_mumugammaPt70_140.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_r9315_p3703
-mc16_13TeV.301904.Sherpa_CT10_mumugammaPt140.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_r9315_p3703
+mc16_13TeV.301536.Sherpa_CT10_mumugammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_p4062
+mc16_13TeV.301902.Sherpa_CT10_mumugammaPt35_70.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_p4062
+mc16_13TeV.301903.Sherpa_CT10_mumugammaPt70_140.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_p4062
+mc16_13TeV.301904.Sherpa_CT10_mumugammaPt140.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_p4062

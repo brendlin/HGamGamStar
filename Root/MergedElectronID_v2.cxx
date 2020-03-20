@@ -256,3 +256,60 @@ float HG::MergedElectronID_v2::correctDeta1(const xAOD::Electron &ele, bool isMC
 
 }
 
+float HG::MergedElectronID_v2::GetScaleFactor(const xAOD::Electron &ele, MergedSystematic sys) const{
+
+  if (!HG::isMC()) return 1;
+
+  float pt  = ele.pt()/1000.;
+  float eta = fabs(ele.caloCluster()->etaBE(2));
+
+  // This should really not happen:
+  if (pt < 20) return 1;
+  if (eta > 2.37) return 1;
+
+  unsigned iPt = 0;
+  if      (pt < 30.0) iPt = 0;
+  else if (pt < 40.0) iPt = 1;
+  else if (pt < 50.0) iPt = 2;
+  else iPt = 3;
+
+  unsigned iEta = 0;
+  if      (eta < 0.8 ) iEta = 0;
+  else if (eta < 1.37) iEta = 1;
+  else if (eta < 1.52) iEta = 2; // crack will be excluded anyway, but we leave it in the matrix.
+  else if (eta < 2.01) iEta = 3;
+  else iEta = 4;
+
+  static const std::vector<std::vector<float>> nominal_sf ({
+      // 0-0.8,to1.37,to1.52,to2.01,to2.37
+      {      1.011,     0.983,   999,     0.945,     1.121}, // pT [20, 30] GeV
+      {      1.002,     0.941,   999,     0.933,     0.876}, // pT [30, 40] GeV
+      {      1.018,     0.966,   999,     0.927,     0.963}, // pT [40, 50] GeV
+      {      1.159,     0.959,   999,     0.954,     0.993}  // pT [50, 100+] GeV
+    });
+
+  static const std::vector<std::vector<float>> stat_unc ({
+      // 0-0.8,to1.37,to1.52,to2.01,to2.37
+      {   0.021,  0.020,   999,  0.025,  0.030}, // pT [20, 30] GeV
+      {   0.023,  0.027,   999,  0.033,  0.045}, // pT [30, 40] GeV
+      {   0.042,  0.047,   999,  0.066,  0.110}, // pT [40, 50] GeV
+      {   0.036,  0.040,   999,  0.068,  0.093}  // pT [50, 100+] GeV
+    });
+
+  static const std::vector<std::vector<float>> syst_unc ({
+      // 0-0.8,to1.37,to1.52,to2.01,to2.37
+      {   0.002,  0.009,   999,  0.033,  0.009}, // pT [20, 30] GeV
+      {   0.023,  0.017,   999,  0.015,  0.006}, // pT [30, 40] GeV
+      {   0.030,  0.037,   999,  0.060,  0.029}, // pT [40, 50] GeV
+      {   0.080,  0.029,   999,  0.039,  0.034}  // pT [50, 100+] GeV
+    });
+
+  float sf = nominal_sf[iPt][iEta];
+  if (sys == MERGEDUNC_STAT_UP  ) sf = sf + stat_unc[iPt][iEta];
+  if (sys == MERGEDUNC_STAT_DOWN) sf = sf - stat_unc[iPt][iEta];
+  // sys uncertainties are relative
+  if (sys == MERGEDUNC_SYST_UP  ) sf = sf * (1. + syst_unc[iPt][iEta]);
+  if (sys == MERGEDUNC_SYST_DOWN) sf = sf * (1. - syst_unc[iPt][iEta]);
+
+  return sf;
+}

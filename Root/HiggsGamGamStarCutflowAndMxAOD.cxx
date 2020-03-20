@@ -332,6 +332,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 
   // check if we should apply systematics or not
   if (m_applySystematics) {
+
+    AddMergedIDSFSystematics();
+
     for (auto sys: getSystematics()) {
       // ignore nominal case, already done!
       if (sys.name() == "") continue;
@@ -366,6 +369,8 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   m_passTriggers = false;
   m_triggerBitset = 0;
   m_lepIDWeight = 1.0;
+  m_mergedSysts.clear();
+  for (unsigned i = 0; i<5; ++i) m_mergedSysts.push_back(1);
   m_lepIsoWeight = 1.0;
 
   m_preSelPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
@@ -603,15 +608,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
       TString trig = eventHandler()->getRequiredTriggers()[i_trig];
 
-      // HACK - NEED TO FIX photon icalotight triggers!
-      if (trig.Contains("g35_tight_icalotight"))
-      {
-        Warning("cutflow()","  Trigger name %s automatically passes - need to fix!!!!!",trig.Data());
-        isTrigMatched = true;
-        break;
-      }
-      // End HACK
-
       if (eventHandler()->passTriggerMatch(trig.Data(), &m_selPhotons, &m_selElectrons, &m_selMuons))
       {
         isTrigMatched = true;
@@ -718,6 +714,16 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     //==== CUT 19: Require melectrons to pass isolation
     static bool requireIso = config()->getBool("ElectronHandler.Selection.ApplyIsoCut", true);
     if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0],m_eleMergedIsoWP)) ) return LEP_ISO;
+
+    // ID+Iso scale factors for cutflow (and systs)
+    m_lepIDWeight *= m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_NOMINAL);
+    if (m_applySystematics) {
+      m_mergedSysts[0] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_NOMINAL  );
+      m_mergedSysts[1] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_STAT_UP  );
+      m_mergedSysts[2] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_STAT_DOWN);
+      m_mergedSysts[3] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_SYST_UP  );
+      m_mergedSysts[4] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_SYST_DOWN);
+    }
   }
   else {
     HG::fatal("Unknown channel categorization - please check!");
@@ -1291,10 +1297,15 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
 
 void HiggsGamGamStarCutflowAndMxAOD::AddMuonDecorations(xAOD::MuonContainer& muons) {
 
-  //set corrected iso decision same as non-corrected by default
+  //set corrected iso decision same as non-corrected by default; set d0significance
   for(auto muon: muons){
     for (auto dec : m_muIsoAccCorr){
       (*dec.second)(*muon) = muonHandler()->passIsoCut(muon,dec.first);
+    }
+    HG::MuAcc::d0significance(*muon) = 999;
+    const xAOD::TrackParticle *tp = (*muon).primaryTrackParticle();
+    if (tp != nullptr && tp->definingParametersCovMatrixVec().size() > 0 && tp->definingParametersCovMatrixVec().at(0) > 0.) {
+        HG::MuAcc::d0significance(*muon) = xAOD::TrackingHelpers::d0significance(tp, eventInfo()->beamPosSigmaX(), eventInfo()->beamPosSigmaY(), eventInfo()->beamPosSigmaXY());
     }
   }
 
@@ -1359,7 +1370,7 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
 
     if(photon)
     {
-      HG::setPhotonConversionVertex( electron, photon, 20, outVertices);
+      HG::setPhotonConversionVertex( electron, photon, 30, outVertices);
       photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
       HG::EleAcc::calibratedPhotonEnergy(*electron) = photon->e();
 
@@ -1412,4 +1423,53 @@ void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
            truthChannel.Data(),weighted.Data());
     printCutFlowHisto(entry.second,nDecimals);
   }
+}
+
+void HiggsGamGamStarCutflowAndMxAOD::AddMergedIDSFSystematics() {
+
+  bool is_mergedChan = (var::yyStarChannel()==HG::MERGED_DIELECTRON);
+
+  float m_lly = var::m_lly();
+  float m_lly_gev = var::m_lly_gev();
+  float weight = var::weight();
+  int category = var::yyStarCategory();
+
+  // Cycle over all systs :
+  for (unsigned i=1; i<5; ++i) {
+
+    std::vector<std::string> sysNames = {
+      "NOMINAL - used in denominator",
+      "MERGEDID_EFF_STAT__1up",
+      "MERGEDID_EFF_STAT__1down",
+      "MERGEDID_EFF_SYST__1up",
+      "MERGEDID_EFF_SYST__1down"
+    };
+
+    // Make a new syst:
+    // std::cout << "syst is" << sysNames[i] << std::endl;
+    CP::SystematicSet sys(sysNames[i]);
+
+    // This is the magic call to get a fresh EventInfo:
+    HG::VarHandler::getInstance()->applySystematicVariation(sys);
+
+    // These are unchanged variables:
+    var::cutFlow.setValue(m_cutFlow);
+    var::m_lly.setValue(m_lly);
+    var::m_lly_gev.setValue(m_lly_gev);
+    eventHandler()->storeVar<char>("isPassedEventSelection",m_cutFlow >= PASSALL);
+    var::yyStarCategory.setValue(category);
+
+    float weight_new = weight;
+    if (is_mergedChan) {
+      if (!m_mergedSysts.size()) HG::fatal("Merged systs should have a size, but it is zero!");
+      weight_new = weight_new * m_mergedSysts[i] / m_mergedSysts[0];
+    }
+
+    var::weight.setValue(weight_new);
+
+    // Write out the syst in each case:
+    HG::VarHandler::getInstance()->write();
+  }
+
+  return;
 }

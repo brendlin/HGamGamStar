@@ -27,9 +27,9 @@ To checkout the necessary packages, do:
 Compiling
 ---------
 
-To compile in Rel 21.2.99, do:
+To compile in Rel 21.2.109, do:
 
-    asetup AnalysisBase,21.2.99,here # only needed once per login session
+    asetup AnalysisBase,21.2.109,here # only needed once per login session
     cd $TestArea/../build
     cmake ../source
     cmake --build .
@@ -82,7 +82,7 @@ You will need to export a few variables to your environment so that the code kno
 (You can put these in your `.bash_profile` startup script too):
 
     export LOCALGROUPDISK="DESY-HH_LOCALGROUPDISK"
-    export GRIDDIRECT_FROM="root://dcache-atlas-xrootd.desy.de:1094//"
+    export GRIDDIRECT_FROM="root://dcache-atlas-xrootd-job.desy.de:1094/"
     export GRIDDIRECT_TO="/"
 
 The last two variables relate to how to interpret the file paths on your institute's local group disk. If you do not know the file protocol, try running:
@@ -116,7 +116,7 @@ automatically convert the DSIDs in your localgroupdisk to a list of files.
 
     ```
     cd $TestArea/../run
-    runJob.py --InputList Samples.txt --OutputDir MyOutputDir --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000
+    runJob.py --InputList Samples.txt --OutputDir MyOutputDir --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000 --optCondorConf 'Requirements = ( OpSysAndVer == "CentOS7" )'
     ```
 
 ### Rerunning failed / killed Condor jobs
@@ -175,7 +175,7 @@ Then do (specifying an appropriate ProdTag):
 
     prodtag=ysy00X
     for DS in data15_13TeV data16_13TeV data17_13TeV data18_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2 mc16e_HIGG1D2; do
-    runJob.py --InputList HGamGamStar/input/$DS.txt --OutputDir ${DS}_${prodtag} --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000 --ProdTag $prodtag;
+    runJob.py --InputList HGamGamStar/input/$DS.txt --OutputDir ${DS}_${prodtag} --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000 --ProdTag $prodtag --optCondorConf 'Requirements = ( OpSysAndVer == "CentOS7" )';
     done;
 
 Wait for all jobs to complete. Then merge using the following commands (it is recommended to run these one-by-one; in case a job failed, follow the rerun procedure outlined above):
@@ -196,6 +196,7 @@ Information on MxAOD Productions
 | ysy003 | [ysy003](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy003) | 21.2.25 | [ysy003 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/fc0b714ed0354e37fd8239e7ca732ed25323ca12/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy003<br>EOS: /eos/user/b/brendlin/ysy/ysy003  |
 | ysy005 | [ysy005](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy005) | 21.2.56 | [ysy005 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/51e7884246726940caf6effe7465154c2343f470/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy005<br>EOS: /eos/user/b/brendlin/ysy/ysy005  |
 | ysy011 | [ysy011](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy011) | 21.2.99 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy011<br>EOS: /eos/user/b/brendlin/ysy/ysy011  |
+| ysy012 | [ysy012](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy012) | 21.2.109 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy012<br>EOS: /eos/user/b/brendlin/ysy/ysy012  |
 
 Updating the HGamCore Tag
 ================
@@ -228,3 +229,4 @@ hashes used in this package:
 | v1.8.34-h024 | 8551d8d5    | 21.2.56    |          |
 | v1.8.47-h024-ttHcp | 5312e5d9    | 21.2.56    | Update for trig-match mem leak |
 | master commit | f2e09974   | 21.2.99    | Updated muon and jet recommendations |
+| untagged commit | 9d640507 | 21.2.109   | Update our code for p4061, p4062 |

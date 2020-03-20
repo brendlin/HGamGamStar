@@ -189,6 +189,15 @@ namespace HG {
     static SG::AuxElement::Accessor<std::vector<float>> subCluster_dPhi("SubCluster_dPhi");
 
   } // namespace EleAcc
+  
+  namespace MuAcc {
+
+    //
+    // New Accessors for output MxAOD:
+    //
+    static SG::AuxElement::Accessor<float> d0significance("d0significance");
+    
+  } // namespace MuAcc
 
   xAOD::Photon*  createPhotonFromElectron (const xAOD::Electron* el) ;
   void setPhotonConversionVertex( const xAOD::Electron* el,
