@@ -146,15 +146,6 @@ namespace HG {
   };
 
   //____________________________________________________________________________
-  class Resolved_dRExtrapTrk12 : public VarBase<float> {
-  public:
-  Resolved_dRExtrapTrk12() : VarBase("Resolved_dRExtrapTrk12") { m_default = -99; m_recoOnly = true; }
-    ~Resolved_dRExtrapTrk12() { }
-
-    float calculateValue(bool truth); // See cxx file
-  };
-
-  //____________________________________________________________________________
   class Resolved_deltaPhiRescaled2 : public VarBase<float> {
   public:
   Resolved_deltaPhiRescaled2() : VarBase("Resolved_deltaPhiRescaled2") { m_default = -99; m_recoOnly = true; }
@@ -166,8 +157,11 @@ namespace HG {
       // This is dR between the cluster barycenter from 3rd sampling (etaBE2, phiBE2)
       const xAOD::ElectronContainer *eles = (xAOD::ElectronContainer*)HG::VarHandler::getInstance()->getElectrons(truth);
       if (eles->size() >= 2) {
+
+        // This is to fix how the shower shape variables are saved.
         int flipSign1 = ( (*eles)[0]->trackParticle()->charge() > 0) ? 1 : -1; // -1 = flip
         int flipSign2 = ( (*eles)[1]->trackParticle()->charge() > 0) ? 1 : -1; // -1 = flip
+
         float dphi_trk1,dphi_trk2;
         // Christos says that track-matching uses DeltaPhiRescaled, since this matches barycenter better
         // and that Layer 2 is best.
@@ -175,7 +169,10 @@ namespace HG {
         (*eles)[1]->trackCaloMatchValue(dphi_trk2, xAOD::EgammaParameters::deltaPhiRescaled2);
         float dphi_e1e2 = xAOD::P4Helpers::deltaPhi((*eles)[0]->caloCluster()->phiBE(2) + dphi_trk1*flipSign1,
                                                     (*eles)[1]->caloCluster()->phiBE(2) + dphi_trk2*flipSign2);
-        return dphi_e1e2;
+
+        // This is to get the higher-pt tracks all bending in the same direction.
+        int flipSignOverall = ((*eles)[0]->trackParticle()->pt() > (*eles)[1]->trackParticle()->pt()) ? flipSign1 : flipSign2;
+        return flipSignOverall * dphi_e1e2;
       }
       return m_default;
     }
@@ -201,6 +198,347 @@ namespace HG {
         return deta_e1e2;
       }
       return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class Resolved_dRExtrapTrk12 : public VarBase<float> {
+  public:
+  Resolved_dRExtrapTrk12() : VarBase("Resolved_dRExtrapTrk12") { m_default = -99; m_recoOnly = true; }
+    ~Resolved_dRExtrapTrk12() { }
+
+    float calculateValue(bool truth); // See cxx file
+  };
+
+  //____________________________________________________________________________
+  class deltaPhi_trktrk_IP : public VarBase<float> {
+  public:
+  deltaPhi_trktrk_IP() : VarBase("deltaPhi_trktrk_IP") { m_default = -99; m_recoOnly = true; }
+    ~deltaPhi_trktrk_IP() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::MuonContainer *mus = (xAOD::MuonContainer*)HG::VarHandler::getInstance()->getMuons(truth);
+      if (mus->size() >= 2)
+        return (*mus)[0]->charge() * xAOD::P4Helpers::deltaPhi((*mus)[0],(*mus)[1]);
+
+      const xAOD::TrackParticleContainer *eleTrks = (xAOD::TrackParticleContainer*)HG::ExtraHggStarObjects::getInstance()->getElectronTracks(truth);
+      if (eleTrks->size() >= 2) {
+
+        TLorentzVector tlv1 = (*eleTrks)[0]->p4();
+        TLorentzVector tlv2 = (*eleTrks)[1]->p4();
+        tlv1.SetPtEtaPhiM( tlv1.Pt(), tlv1.Eta(), tlv1.Phi(), 0.510998 ); // ele.m == 0.510998
+        tlv2.SetPtEtaPhiM( tlv2.Pt(), tlv2.Eta(), tlv2.Phi(), 0.510998 );
+
+        return (*eleTrks)[0]->charge() * tlv1.DeltaPhi( tlv2 );
+      }
+
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaEta_trktrk_IP : public VarBase<float> {
+  public:
+  deltaEta_trktrk_IP() : VarBase("deltaEta_trktrk_IP") { m_default = -99; m_recoOnly = true; }
+    ~deltaEta_trktrk_IP() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::MuonContainer *mus = (xAOD::MuonContainer*)HG::VarHandler::getInstance()->getMuons(truth);
+      if (mus->size() >= 2)
+        return xAOD::P4Helpers::deltaEta((*mus)[0],(*mus)[1]);
+
+      const xAOD::TrackParticleContainer *eleTrks = (xAOD::TrackParticleContainer*)HG::ExtraHggStarObjects::getInstance()->getElectronTracks(truth);
+      if (eleTrks->size() >= 2) {
+
+        TLorentzVector tlv1 = (*eleTrks)[0]->p4();
+        TLorentzVector tlv2 = (*eleTrks)[1]->p4();
+        tlv1.SetPtEtaPhiM( tlv1.Pt(), tlv1.Eta(), tlv1.Phi(), 0.510998 ); // ele.m == 0.510998
+        tlv2.SetPtEtaPhiM( tlv2.Pt(), tlv2.Eta(), tlv2.Phi(), 0.510998 );
+
+        return tlv1.Eta() - tlv2.Eta();
+      }
+
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaR_track4mom : public VarBase<float> {
+  public:
+  deltaR_track4mom() : VarBase("deltaR_track4mom") { m_default = -99; m_recoOnly = true; }
+    ~deltaR_track4mom() { }
+
+    float calculateValue(bool truth); // See cxx file
+  };
+
+  //____________________________________________________________________________
+  class deltaPhi2_trktrk_perigee : public VarBase<float> {
+  public:
+  deltaPhi2_trktrk_perigee() : VarBase("deltaPhi2_trktrk_perigee") { m_default = -99; m_recoOnly = true; }
+    ~deltaPhi2_trktrk_perigee() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::ElectronContainer *eles = (xAOD::ElectronContainer*)HG::VarHandler::getInstance()->getElectrons(truth);
+
+      const xAOD::Electron* ele1 = NULL;
+      const xAOD::Electron* ele2 = NULL;
+      int ele1_trkIndex = -1;
+      int ele2_trkIndex = -1;
+      if (eles->size() >= 2) {
+        ele1 = (*eles)[0];
+        ele2 = (*eles)[1];
+        ele1_trkIndex = 0;
+        ele2_trkIndex = 0;
+      }
+      else if (eles->size() == 1) {
+        ele1 = (*eles)[0];
+        ele2 = (*eles)[0];
+        ele1_trkIndex = EleAcc::vtxTrkIndex1(*ele1);
+        ele2_trkIndex = EleAcc::vtxTrkIndex2(*ele2);
+      }
+      else {
+        return m_default;
+      }
+
+      const xAOD::TrackParticle* ele_tp1 = ele1->trackParticle(ele1_trkIndex);
+      const xAOD::TrackParticle* ele_tp2 = ele2->trackParticle(ele2_trkIndex);
+
+      // This is to fix how the shower shape variables are saved.
+      int flipSign1 = ( ele_tp1->charge() > 0) ? 1 : -1; // -1 = flip
+      int flipSign2 = ( ele_tp2->charge() > 0) ? 1 : -1; // -1 = flip
+
+      // This is to get the higher-pt tracks all bending in the same direction.
+      float dphi_trk1 = HG::EleAcc::TrackMatchingP_dPhi2( *ele1 )[ele1_trkIndex];
+      float dphi_trk2 = HG::EleAcc::TrackMatchingP_dPhi2( *ele2 )[ele2_trkIndex];
+      float dphi_e1e2 = xAOD::P4Helpers::deltaPhi(ele1->caloCluster()->phiBE(2) + dphi_trk1*flipSign1,
+                                                  ele2->caloCluster()->phiBE(2) + dphi_trk2*flipSign2);
+
+      int flipSignOverall = (ele_tp1->pt() > ele_tp2->pt()) ? flipSign1 : flipSign2;
+      return flipSignOverall * dphi_e1e2;
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaEta2_trktrk_perigee : public VarBase<float> {
+  public:
+  deltaEta2_trktrk_perigee() : VarBase("deltaEta2_trktrk_perigee") { m_default = -99; m_recoOnly = true; }
+    ~deltaEta2_trktrk_perigee() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::ElectronContainer *eles = (xAOD::ElectronContainer*)HG::VarHandler::getInstance()->getElectrons(truth);
+
+      const xAOD::Electron* ele1 = NULL;
+      const xAOD::Electron* ele2 = NULL;
+      int ele1_trkIndex = -1;
+      int ele2_trkIndex = -1;
+      if (eles->size() >= 2) {
+        ele1 = (*eles)[0];
+        ele2 = (*eles)[1];
+        ele1_trkIndex = 0;
+        ele2_trkIndex = 0;
+      }
+      else if (eles->size() == 1) {
+        ele1 = (*eles)[0];
+        ele2 = (*eles)[0];
+        ele1_trkIndex = EleAcc::vtxTrkIndex1(*ele1);
+        ele2_trkIndex = EleAcc::vtxTrkIndex2(*ele2);
+      }
+      else {
+        return m_default;
+      }
+
+      // This is to get the higher-pt tracks all bending in the same direction.
+      float deta_trk1 = HG::EleAcc::TrackMatchingP_dEta2( *ele1 )[ele1_trkIndex];
+      float deta_trk2 = HG::EleAcc::TrackMatchingP_dEta2( *ele2 )[ele2_trkIndex];
+      float deta_e1e2 = ( (ele1->caloCluster()->etaBE(2) - deta_trk1) -
+                          (ele2->caloCluster()->etaBE(2) - deta_trk2) );
+
+      return deta_e1e2;
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaRL2_trktrk_perigee : public VarBase<float> {
+  public:
+  deltaRL2_trktrk_perigee() : VarBase("deltaRL2_trktrk_perigee") { m_default = -99; m_recoOnly = true; }
+    ~deltaRL2_trktrk_perigee() { }
+
+    float calculateValue(bool truth); // See cxx file
+  };
+
+  //____________________________________________________________________________
+  class deltaPhi2_trktrk_LM : public VarBase<float> {
+  public:
+  deltaPhi2_trktrk_LM() : VarBase("deltaPhi2_trktrk_LM") { m_default = -99; m_recoOnly = true; }
+    ~deltaPhi2_trktrk_LM() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::ElectronContainer *eles = (xAOD::ElectronContainer*)HG::VarHandler::getInstance()->getElectrons(truth);
+
+      const xAOD::Electron* ele1 = NULL;
+      const xAOD::Electron* ele2 = NULL;
+      int ele1_trkIndex = -1;
+      int ele2_trkIndex = -1;
+      if (eles->size() >= 2) {
+        ele1 = (*eles)[0];
+        ele2 = (*eles)[1];
+        ele1_trkIndex = 0;
+        ele2_trkIndex = 0;
+      }
+      else if (eles->size() == 1) {
+        ele1 = (*eles)[0];
+        ele2 = (*eles)[0];
+        ele1_trkIndex = EleAcc::vtxTrkIndex1(*ele1);
+        ele2_trkIndex = EleAcc::vtxTrkIndex2(*ele2);
+      }
+      else {
+        return m_default;
+      }
+
+      const xAOD::TrackParticle* ele_tp1 = ele1->trackParticle(ele1_trkIndex);
+      const xAOD::TrackParticle* ele_tp2 = ele2->trackParticle(ele2_trkIndex);
+
+      // This is to fix how the shower shape variables are saved.
+      int flipSign1 = ( ele_tp1->charge() > 0) ? 1 : -1; // -1 = flip
+      int flipSign2 = ( ele_tp2->charge() > 0) ? 1 : -1; // -1 = flip
+
+      // This is to get the higher-pt tracks all bending in the same direction.
+      float dphi_trk1 = HG::EleAcc::TrackMatchingLM_dPhi2( *ele1 )[ele1_trkIndex];
+      float dphi_trk2 = HG::EleAcc::TrackMatchingLM_dPhi2( *ele2 )[ele2_trkIndex];
+      float dphi_e1e2 = xAOD::P4Helpers::deltaPhi(ele1->caloCluster()->phiBE(2) + dphi_trk1*flipSign1,
+                                                  ele2->caloCluster()->phiBE(2) + dphi_trk2*flipSign2);
+
+      int flipSignOverall = (ele_tp1->pt() > ele_tp2->pt()) ? flipSign1 : flipSign2;
+      return flipSignOverall * dphi_e1e2;
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaEta2_trktrk_LM : public VarBase<float> {
+  public:
+  deltaEta2_trktrk_LM() : VarBase("deltaEta2_trktrk_LM") { m_default = -99; m_recoOnly = true; }
+    ~deltaEta2_trktrk_LM() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::ElectronContainer *eles = (xAOD::ElectronContainer*)HG::VarHandler::getInstance()->getElectrons(truth);
+
+      const xAOD::Electron* ele1 = NULL;
+      const xAOD::Electron* ele2 = NULL;
+      int ele1_trkIndex = -1;
+      int ele2_trkIndex = -1;
+      if (eles->size() >= 2) {
+        ele1 = (*eles)[0];
+        ele2 = (*eles)[1];
+        ele1_trkIndex = 0;
+        ele2_trkIndex = 0;
+      }
+      else if (eles->size() == 1) {
+        ele1 = (*eles)[0];
+        ele2 = (*eles)[0];
+        ele1_trkIndex = EleAcc::vtxTrkIndex1(*ele1);
+        ele2_trkIndex = EleAcc::vtxTrkIndex2(*ele2);
+      }
+      else {
+        return m_default;
+      }
+
+      // This is to get the higher-pt tracks all bending in the same direction.
+      float deta_trk1 = HG::EleAcc::TrackMatchingLM_dEta2( *ele1 )[ele1_trkIndex];
+      float deta_trk2 = HG::EleAcc::TrackMatchingLM_dEta2( *ele2 )[ele2_trkIndex];
+      float deta_e1e2 = ( (ele1->caloCluster()->etaBE(2) - deta_trk1) -
+                          (ele2->caloCluster()->etaBE(2) - deta_trk2) );
+
+      return deta_e1e2;
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaRL2_trktrk_LM : public VarBase<float> {
+  public:
+  deltaRL2_trktrk_LM() : VarBase("deltaRL2_trktrk_LM") { m_default = -99; m_recoOnly = true; }
+    ~deltaRL2_trktrk_LM() { }
+
+    float calculateValue(bool truth); // See cxx file
+  };
+
+  //____________________________________________________________________________
+  class deltaPhi_naiveExtrap : public VarBase<float> {
+  public:
+  deltaPhi_naiveExtrap() : VarBase("deltaPhi_naiveExtrap") { m_default = -99; m_recoOnly = true;}
+    ~deltaPhi_naiveExtrap() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::TrackParticleContainer *eleTrks = (xAOD::TrackParticleContainer*)HG::ExtraHggStarObjects::getInstance()->getElectronTracks(truth);
+
+      if (eleTrks->size() < 2) return m_default;
+
+      const xAOD::TrackParticle* trk1 = (*eleTrks)[0];
+      const xAOD::TrackParticle* trk2 = (*eleTrks)[1];
+
+      float loopRadius_trk1 = 1.668*trk1->pt()/1000.;
+      //float etaToAngle1 = M_PI/2. - 2*atan( exp( -fabs(trk1->eta()) ) );
+      float phiMag2T_trk1 = ( (fabs(trk1->eta()) < 1.52) ?
+                              // 1.500m is the radius of the barrel calorimeter
+                              // 1.210m is where the magnet coil is. Not perfect... but close enough?
+                              asin(0.750/loopRadius_trk1) :
+                              // 3.512m is the start of the ID endplate (in m)
+                              // 3.680m is my guess based on another source...
+                              // NOT 4668.5mm is the front face (cold) of FCAL1 (endcap EM)
+                              // The solenoid stops at 2.642
+                              0.5*(2.642 / loopRadius_trk1) * (trk1->pt() / fabs(trk1->p4().Pz())) );
+                              /* 0.5*(3.512 / loopRadius_trk1) * tan( etaToAngle1 ) ); */
+
+      float loopRadius_trk2 = 1.668*trk2->pt()/1000.;
+      //float etaToAngle2 = M_PI/2. - 2*atan( exp( -fabs(trk2->eta()) ) );
+      float phiMag2T_trk2 = ( (fabs(trk2->eta()) < 1.52) ?
+                              asin(0.750/loopRadius_trk2) :
+                              0.5*(2.642 / loopRadius_trk2) * (trk2->pt() / fabs(trk2->p4().Pz())) );
+
+      float deltaphi = xAOD::P4Helpers::deltaPhi( trk1->phi() - trk1->charge() * phiMag2T_trk1,
+                                                  trk2->phi() - trk2->charge() * phiMag2T_trk2 );
+      int flipSignOverall = (trk1->pt() > trk2->pt()) ? trk1->charge() : trk2->charge();
+      return flipSignOverall * deltaphi;
+    }
+  };
+
+  //____________________________________________________________________________
+  class deltaPhi_overScaled_naiveExtrap : public VarBase<float> {
+  public:
+  deltaPhi_overScaled_naiveExtrap() : VarBase("deltaPhi_overScaled_naiveExtrap") { m_default = -99; m_recoOnly = true;}
+    ~deltaPhi_overScaled_naiveExtrap() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::TrackParticleContainer *eleTrks = (xAOD::TrackParticleContainer*)HG::ExtraHggStarObjects::getInstance()->getElectronTracks(truth);
+
+      if (eleTrks->size() < 2) return m_default;
+
+      const xAOD::TrackParticle* trk1 = (*eleTrks)[0];
+      const xAOD::TrackParticle* trk2 = (*eleTrks)[1];
+
+      float largerPt = (trk1->pt() > trk2->pt()) ? trk1->pt() : trk2->pt();
+
+      float loopRadius_trk1 = 1.668*largerPt/1000.;
+      float phiMag2T_trk1 = ( (fabs(trk1->eta()) < 1.52) ?
+                              asin(0.750/loopRadius_trk1) :
+                              0.5*(2.642 / loopRadius_trk1) * (largerPt / fabs(trk1->p4().Pz())) );
+
+      float loopRadius_trk2 = 1.668*largerPt/1000.;
+      float phiMag2T_trk2 = ( (fabs(trk2->eta()) < 1.52) ?
+                              asin(0.750/loopRadius_trk2) :
+                              0.5*(2.642 / loopRadius_trk2) * (largerPt / fabs(trk2->p4().Pz())) );
+
+      float deltaphi = xAOD::P4Helpers::deltaPhi( trk1->phi() - trk1->charge() * phiMag2T_trk1,
+                                                  trk2->phi() - trk2->charge() * phiMag2T_trk2 );
+      int flipSignOverall = (trk1->pt() > trk2->pt()) ? trk1->charge() : trk2->charge();
+      return flipSignOverall * deltaphi;
     }
   };
 
@@ -316,29 +654,6 @@ namespace HG {
     }
   };
   
-  //____________________________________________________________________________
-  class deltaR_track4mom : public VarBase<float> {
-  public:
-  deltaR_track4mom() : VarBase("deltaR_track4mom") { m_default = -99; m_recoOnly = true; }
-    ~deltaR_track4mom() { }
-
-    float calculateValue(bool truth)
-    {
-      if (truth)
-      { return m_default; }
-
-      const xAOD::IParticleContainer *trks = ExtraHggStarObjects::getInstance()->getElectronTracks();
-      if (trks->size() < 2) return m_default;
-
-      TLorentzVector tlv1 = (*trks)[0]->p4();
-      TLorentzVector tlv2 = (*trks)[1]->p4();
-      tlv1.SetPtEtaPhiM( tlv1.Pt(), tlv1.Eta(), tlv1.Phi(), 0.510998 ); // ele.m == 0.510998
-      tlv2.SetPtEtaPhiM( tlv2.Pt(), tlv2.Eta(), tlv2.Phi(), 0.510998 );
-
-      return (*trks)[0]->p4().DeltaR((*trks)[1]->p4());
-    }
-  };
-
   //____________________________________________________________________________
   class trk_lead_pt : public VarBase<float> {
   public:
@@ -930,14 +1245,24 @@ namespace var {
   extern HG::m_l1y m_l1y;
   extern HG::m_l2y m_l2y;
   extern HG::deltaR_ll deltaR_ll;
-  extern HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
   extern HG::Resolved_deltaPhiRescaled2 Resolved_deltaPhiRescaled2;
   extern HG::Resolved_deltaEta2 Resolved_deltaEta2;
+  extern HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
+  extern HG::deltaPhi_trktrk_IP deltaPhi_trktrk_IP;
+  extern HG::deltaEta_trktrk_IP deltaEta_trktrk_IP;
+  extern HG::deltaR_track4mom deltaR_track4mom;
+  extern HG::deltaPhi2_trktrk_perigee deltaPhi2_trktrk_perigee;
+  extern HG::deltaEta2_trktrk_perigee deltaEta2_trktrk_perigee;
+  extern HG::deltaRL2_trktrk_perigee deltaRL2_trktrk_perigee;
+  extern HG::deltaPhi2_trktrk_LM deltaPhi2_trktrk_LM;
+  extern HG::deltaEta2_trktrk_LM deltaEta2_trktrk_LM;
+  extern HG::deltaRL2_trktrk_LM deltaRL2_trktrk_LM;
+  extern HG::deltaPhi_naiveExtrap deltaPhi_naiveExtrap;
+  extern HG::deltaPhi_overScaled_naiveExtrap deltaPhi_overScaled_naiveExtrap;
   extern HG::pt_lly pt_lly;
   extern HG::pt_ll pt_ll;
   extern HG::m_lly_track4mom m_lly_track4mom;
   extern HG::m_ll_track4mom m_ll_track4mom;
-  extern HG::deltaR_track4mom deltaR_track4mom;
   extern HG::deltaPhi_ll_y deltaPhi_ll_y;
   extern HG::eta_y1 eta_y1;
   extern HG::pt_llyy pt_llyy;

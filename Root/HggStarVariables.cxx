@@ -13,14 +13,24 @@ namespace var {
   HG::m_l1y m_l1y;
   HG::m_l2y m_l2y;
   HG::deltaR_ll deltaR_ll;
-  HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
   HG::Resolved_deltaPhiRescaled2 Resolved_deltaPhiRescaled2;
   HG::Resolved_deltaEta2 Resolved_deltaEta2;
+  HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
+  HG::deltaPhi_trktrk_IP deltaPhi_trktrk_IP;
+  HG::deltaEta_trktrk_IP deltaEta_trktrk_IP;
+  HG::deltaR_track4mom deltaR_track4mom;
+  HG::deltaPhi2_trktrk_perigee deltaPhi2_trktrk_perigee;
+  HG::deltaEta2_trktrk_perigee deltaEta2_trktrk_perigee;
+  HG::deltaRL2_trktrk_perigee deltaRL2_trktrk_perigee;
+  HG::deltaPhi2_trktrk_LM deltaPhi2_trktrk_LM;
+  HG::deltaEta2_trktrk_LM deltaEta2_trktrk_LM;
+  HG::deltaRL2_trktrk_LM deltaRL2_trktrk_LM;
+  HG::deltaPhi_naiveExtrap deltaPhi_naiveExtrap;
+  HG::deltaPhi_overScaled_naiveExtrap deltaPhi_overScaled_naiveExtrap;
   HG::pt_lly pt_lly;
   HG::pt_ll pt_ll;
   HG::m_lly_track4mom m_lly_track4mom;
   HG::m_ll_track4mom m_ll_track4mom;
-  HG::deltaR_track4mom deltaR_track4mom;
   HG::deltaPhi_ll_y deltaPhi_ll_y;
   HG::eta_y1 eta_y1;
   HG::pt_llyy pt_llyy;
@@ -90,6 +100,27 @@ float HG::Resolved_dRExtrapTrk12::calculateValue(bool /* truth*/)
   if (var::yyStarChannel() != ChannelEnum::RESOLVED_DIELECTRON) return m_default;
   float deta_e1e2 = var::Resolved_deltaEta2();
   float dphi_e1e2 = var::Resolved_deltaPhiRescaled2();
+  return sqrt(dphi_e1e2*dphi_e1e2 + deta_e1e2*deta_e1e2);
+}
+
+float HG::deltaR_track4mom::calculateValue(bool /* truth */)
+{
+  float deta_e1e2 = var::deltaEta_trktrk_IP();
+  float dphi_e1e2 = var::deltaPhi_trktrk_IP();
+  return sqrt(dphi_e1e2*dphi_e1e2 + deta_e1e2*deta_e1e2);
+}
+
+float HG::deltaRL2_trktrk_perigee::calculateValue(bool /* truth */)
+{
+  float deta_e1e2 = var::deltaEta2_trktrk_perigee();
+  float dphi_e1e2 = var::deltaPhi2_trktrk_perigee();
+  return sqrt(dphi_e1e2*dphi_e1e2 + deta_e1e2*deta_e1e2);
+}
+
+float HG::deltaRL2_trktrk_LM::calculateValue(bool /* truth */)
+{
+  float deta_e1e2 = var::deltaEta2_trktrk_LM();
+  float dphi_e1e2 = var::deltaPhi2_trktrk_LM();
   return sqrt(dphi_e1e2*dphi_e1e2 + deta_e1e2*deta_e1e2);
 }
 
