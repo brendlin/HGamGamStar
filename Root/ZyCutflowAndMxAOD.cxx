@@ -772,6 +772,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::Dphi_lly_jj.addToStore(truth);
   var::DR_Zy_jj.addToStore(truth);
   var::deltaR_ll.addToStore(truth);
+  var::m_lly2.addToStore(truth);
   if (!truth) {
     var::met_TST  .addToStore(truth);
     var::sumet_TST.addToStore(truth);

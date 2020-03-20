@@ -50,6 +50,7 @@ namespace var {
   HG::pT_llyjj pT_llyjj;
   HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
+  HG::m_lly2 m_lly2;
 }
 
 // A special implementation of calculateValue that references another "var"
