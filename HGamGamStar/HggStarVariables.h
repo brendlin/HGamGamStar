@@ -911,6 +911,34 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_lly2 : public VarBase<float> {
+  public:
+  m_lly2() : VarBase("m_lly2") { m_default = -99; }
+    ~m_lly2() { }
+
+    float calculateValue(bool truth)
+    {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      // getPhotons only returns the leading photon candidate.
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+
+      // >= 2 muons and >= 2 photons
+      if (mus->size() >= 2 && gams->size() >= 2)
+	return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[1]->p4()).M();
+
+      // >= 2 electrons and >= 2 photon2
+      if (eles->size() >= 2 && gams->size() >= 2)
+	return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[1]->p4()).M();
+
+      return m_default;
+    }
+  };
+
+
+  //____________________________________________________________________________
 
   void AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_lep1i,int& return_lep2i,
                            double& return_mll,bool sortby_pt,
@@ -965,6 +993,7 @@ namespace var {
   extern HG::pT_llyjj pT_llyjj;
   extern HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   extern HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
+  extern HG::m_lly2 m_lly2;
 }
 
 
