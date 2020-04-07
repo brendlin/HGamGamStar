@@ -87,21 +87,11 @@ EL::StatusCode ZyCutflowAndMxAOD::createOutput()
   extra = {};
   declareOutputVariables(m_truthEvtsName,"MxAOD.Variables.TruthEvents", extra, ignore);
 
-  // a.3 BTagging variables - If 20.7 switch decoration names.
-  TString mv2_tagger = "MV2c10";
-  #ifdef __Rel20p1__
-    mv2_tagger = "MV2c20";
-    TString vars = config()->getStr("MxAOD.Variables.Jet");
-    vars.ReplaceAll("MV2c10","MV2c20");
-    config()->setValue("MxAOD.Variables.Jet",vars);
-  #endif
-
   // b. Selected objects
 
   if (HG::isData()) ignore = {".isEMTight_nofudge", ".isTight_nofudge", ".topoetcone20_DDcorrected", ".topoetcone40_DDcorrected", ".truthOrigin", ".truthType", ".truthConvRadius", ".scaleFactor", ".truthLink", ".parentPdgId", ".pdgId"};
   declareOutputVariables(m_photonContainerName, "MxAOD.Variables.Photon"  , {}, ignore);
   declareOutputVariables("HGamPhotonsWithFakes","MxAOD.Variables.Photon"  , {}, ignore);
-  if (HG::isData()) ignore = {".SF_"+mv2_tagger+"_FixedCutBEff_60", ".SF_"+mv2_tagger+"_FixedCutBEff_70", ".SF_"+mv2_tagger+"_FixedCutBEff_77", ".SF_"+mv2_tagger+"_FixedCutBEff_85", ".Eff_"+mv2_tagger+"_FixedCutBEff_60", ".Eff_"+mv2_tagger+"_FixedCutBEff_70", ".Eff_"+mv2_tagger+"_FixedCutBEff_77", ".Eff_"+mv2_tagger+"_FixedCutBEff_85", ".InEff_"+mv2_tagger+"_FixedCutBEff_60", ".InEff_"+mv2_tagger+"_FixedCutBEff_70", ".InEff_"+mv2_tagger+"_FixedCutBEff_77", ".InEff_"+mv2_tagger+"_FixedCutBEff_85", ".HadronConeExclTruthLabelID"};
   declareOutputVariables(m_jetContainerName   , "MxAOD.Variables.Jet"     , {}, ignore);
   if (HG::isData()) ignore = {".scaleFactor", ".truthLink"};
   declareOutputVariables(m_elecContainerName  , "MxAOD.Variables.Electron", {}, ignore);
@@ -233,6 +223,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   //==== CUT 2 : Require trigger ====
   static bool requireTrigger = config()->getBool("EventHandler.CheckTriggers");
   if ( requireTrigger && !eventHandler()->passTriggers() ) return TRIGGER;
+
 
   //==== CUT 3 : Detector quality ====
   if ( !(eventHandler()->passLAr (eventInfo()) &&
@@ -489,20 +480,27 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   else if (m_isWZysel && (m_selElectrons.size()+m_selMuons.size()<3 || nOSSFpair==0)) return TWO_SF_LEPTONS_POSTOR;
   else if (!m_isZZysel && !m_isWZysel && !m_checkemu && nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
 
-
   //==== CUT 9 : 1 photon after OR ====
   if (m_selPhotons.size()==0 && !m_saveAllZ) return ONE_PHOTON_POSTOR;
   if (m_selPhotons.size()==0 && m_saveAllZ) c_onePhotonPostor=false;
 
   //==== CUT 10 : Trigger matching ====
-  //trigger matching
   static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
-  //if ( requireTriggerMatch && !passTriggerMatch(NULL, &m_selElectrons, &m_selMuons, NULL) ) return TRIG_MATCH; //doesn't work
-  if ( requireTriggerMatch){
-    StrV m_requiredTriggers = config()->getStrV("EventHandler.RequiredTriggers");
+  unsigned int m_triggerBitset = 0;
+  for (unsigned int i_trig = 0; i_trig<eventHandler()->getRequiredTriggers().size(); ++i_trig) {
+    TString trig = eventHandler()->getRequiredTriggers()[i_trig];
+    if (eventHandler()->passTrigger(trig.Data())) {
+      m_triggerBitset = m_triggerBitset | (0x1 << i_trig);
+    }
+  }
+  if (requireTriggerMatch){
     int itrigmatch=0;
-    for (auto trig: m_requiredTriggers) {
-      if (passTriggerMatch(trig, NULL, &m_selElectrons, &m_selMuons, NULL) ) itrigmatch++;
+    for (unsigned int i_trig = 0; i_trig<eventHandler()->getRequiredTriggers().size(); ++i_trig) {
+      // If trigger did not fire, continue.
+      // You need to check this here in order to make sure RunNumbers restriction is imposed on trigs.
+      if ( !(m_triggerBitset & (0x1 << i_trig)) ) continue;
+      TString trig = eventHandler()->getRequiredTriggers()[i_trig];
+      if (passTriggerMatch(trig.Data(), NULL, &m_selElectrons, &m_selMuons, NULL) ) itrigmatch++;
     }
     if (itrigmatch==0) return TRIG_MATCH;
   }
@@ -588,10 +586,10 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
   // add lepton SF and trigger SF weight to total weight, only for dilepton case!
   if (HG::isMC()) {
     if ( m_selElectrons.size()>=2||m_selMuons.size()>=2) var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(&m_selElectrons,&m_selMuons));
-    double myweight = var::weightSF();
+    double myweight = 1.0;
     static SG::AuxElement::Accessor<float> scaleFactor("scaleFactor");
-    if (m_selMuons.size()>=2) myweight *= scaleFactor(*m_selMuons[0])*scaleFactor(*m_selMuons[1]);
-    else if (m_selElectrons.size()>=2)  myweight *= scaleFactor(*m_selElectrons[0])*scaleFactor(*m_selElectrons[1]);
+    if (m_selMuons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selMuons[0])*scaleFactor(*m_selMuons[1])*scaleFactor(*m_selPhotons[0]);
+    else if (m_selElectrons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selElectrons[0])*scaleFactor(*m_selElectrons[1])*scaleFactor(*m_selPhotons[0]);
     var::weightSF.setValue(myweight*var::weightTrigSF());
     var::weight.setValue(weightInitial()*var::weightSF());
   }
@@ -694,7 +692,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   eventHandler()->storeVar<float>("met_hardVertexTST", m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->met() : m_selMET["TST"]->met());
 
   //store passAll flag
-  bool passPID = false, passIso = false, passPre = false, passAll = false, passVBSPre = false;
+  bool passPID = false, passIso = false, passPre = false, passAll = false, passVBSPre = false, passVBS = false;
   if (m_selPhotons.size()>0){
     xAOD::Photon *y1 = m_selPhotons[0];
     passPID = photonHandler()->passPIDCut(y1);
@@ -702,11 +700,13 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   }
   passPre = var::cutFlow()>15; //all except ID and iso
   passAll = passPre && passPID && passIso;
-  passVBSPre = passPre && var::N_j()>=2 && var::m_jj_50()>150 * HG::GeV && var::Dy_j_j()>1.0;
+  passVBSPre = passPre && var::N_j()>=2 && var::m_jj_50()>150 * HG::GeV && var::Dy_j_j()>1.0 && var::Zy_centrality()<5.0 && var::m_ll()+var::m_lly()>182 * HG::GeV && var::N_e()+var::N_mu()==2;
+  passVBS = passVBSPre && passPID && passIso;
 
   eventHandler()->storeVar<char>("isPassedZyPreSel", passPre);
   eventHandler()->storeVar<char>("isPassedZy", passAll);
   eventHandler()->storeVar<char>("isPassedZyVBSPreSel", passVBSPre);
+  eventHandler()->storeVar<char>("isPassedZyVBS", passVBS);
 
   if(m_saveAllZ){
     eventHandler()->storeVar<char>("isPassedZ",m_isZ);
@@ -744,8 +744,11 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::Dy_j_j_50.addToStore(truth);
   var::Zy_centrality.addToStore(truth);
   var::m_jj.addToStore(truth);
+  var::pT_j1.addToStore(truth);
+  var::pT_j2.addToStore(truth);
   var::DRmin_y_j.addToStore(truth);
   var::Dy_j_j.addToStore(truth);
+  var::Deta_j_j.addToStore(truth);
   var::Dphi_lly_jj.addToStore(truth);
   var::DR_Zy_jj.addToStore(truth);
   var::deltaR_ll.addToStore(truth);
