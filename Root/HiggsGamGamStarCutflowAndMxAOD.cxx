@@ -8,7 +8,6 @@
 #include "xAODTracking/VertexAuxContainer.h"
 
 
-
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
 // #include "ZMassConstraint/ConstraintFit.h"
 
@@ -74,10 +73,30 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
     m_isoCloseByTools_Muon[iso] = new CP::IsolationCloseByCorrectionTool(("CBT_mu_"+isoStr).Data());
     m_isoCloseByTools_Muon[iso]->setProperty("IsolationSelectionTool", isoTool);
     m_isoCloseByTools_Muon[iso]->setProperty("BackupPrefix", "original");
+    m_isoCloseByTools_Muon[iso]->setProperty("CoreConeMuons", 0.075);
+   // m_isoCloseByTools_Muon[iso]->setProperty("OutputLevel", 1);
     m_isoCloseByTools_Muon[iso]->initialize();
+ 
 
     m_muIsoAccCorr[iso] = new SG::AuxElement::Accessor<char>(("isIsoWithCorr" + isoStr).Data());
   }
+
+  m_caloIsolationTool = new xAOD::CaloIsolationTool("CaloIsoTool");
+  m_caloIsolationTool->setProperty("coneCoreSizeMu", 0.025);
+
+  //m_caloIsolationTool->setProperty("OutputLevel", 1);
+  m_caloIsolationTool->initialize();
+  m_caloIsolationTool1 = new xAOD::CaloIsolationTool("CaloIsoTool1");
+  m_caloIsolationTool1->setProperty("coneCoreSizeMu", 0.1);
+  m_caloIsolationTool1->initialize();
+  m_caloIsolationTool2 = new xAOD::CaloIsolationTool("CaloIsoTool2");
+  m_caloIsolationTool2->setProperty("coneCoreSizeMu", 0.15);
+  m_caloIsolationTool2->initialize();
+  m_caloIsolationTool3 = new xAOD::CaloIsolationTool("CaloIsoTool3");
+  m_caloIsolationTool3->setProperty("coneCoreSizeMu", 0.075);
+  m_caloIsolationTool3->initialize();
+ 
+
 
   // Resolved electron ID preselection. Applied in FindZboson_ElectronChannelAware.
   m_eleIDPreselection = config()->getStr("ResolvedElectrons.Preselection.PID","VeryLoose");
@@ -383,7 +402,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 6 : Require trigger ====
   static bool requireTrigger = config()->getBool("EventHandler.CheckTriggers");
   // passTrigger() will impose the RunNumbers restriction, if specified via EventHandler.RunNumbers.TRIG
-  if ( requireTrigger && !eventHandler()->passTriggers() ) return TRIGGER;
+  //if ( requireTrigger && !eventHandler()->passTriggers() ) return TRIGGER;
 
   //==== CUT 7 : Detector quality ====
   if ( !(eventHandler()->passLAr (eventInfo()) &&
@@ -396,7 +415,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
   // Apply electron preselection.
   // HGamCore does not have an electron preselection step, so we make our own here:
-  m_allElectrons = electronHandler()->getCorrectedContainer();
+  m_allElectrons = xAOD::ElectronContainer(SG::VIEW_ELEMENTS); //electronHandler()->getCorrectedContainer();
 
   AddElectronDecorations(m_allElectrons);
 
@@ -539,9 +558,9 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
 
   }
 
-  decorateCorrectedIsoCut(m_selElectrons, m_selMuons);
+  //decorateCorrectedIsoCut(m_selElectrons, m_selMuons);
 
-  m_allJets = jetHandler()->getCorrectedContainer();
+  m_allJets = xAOD::JetContainer(SG::VIEW_ELEMENTS );//jetHandler()->getCorrectedContainer();
   m_selJets = jetHandler()->applySelection(m_allJets);
 
   unsigned int electrons_preOR = m_selElectrons.size();
@@ -576,19 +595,60 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 15 : Photon gets lost in overlap removal
   if (m_selPhotons.size()==0) return ONE_PHOTON_POSTOR;
 
+ 
+  TString  failedName =  "FailedToFire";
+  TString faileNameChan = failedName ;//+ var::yyStarChannel.truth(); 
+  m_TriggersAllFired[failedName]+=1; 
+  m_TriggersAllFired[faileNameChan]+=1; 
+  if ( requireTrigger && !eventHandler()->passTriggers() ) {
+    m_TriggersAllMatched[failedName]+=1; 
+    m_TriggersAllMatched[faileNameChan]+=1; 
+    //return TRIGGER;
+  }
   //==== CUT 16: Trigger matching (Set in config file using EventHandler.CheckTriggerMatching)
   if ( eventHandler()->doTrigMatch() ){
     bool isTrigMatched = false;
     for (auto trig: eventHandler()->getRequiredTriggers()) {
       // You need passTrigger() here in order to make sure the RunNumbers restriction is imposed on trigs.
-      if (eventHandler()->passTrigger(trig) &&
-          eventHandler()->passTriggerMatch(trig, &m_selPhotons, &m_selElectrons, &m_selMuons, NULL))
+      if( !eventHandler()->passTrigger(trig) )
+        continue;
+      m_TriggersAllFired[trig]+=1;
+      bool printLoads = false;
+      if( trig == "HLT_g35_tight_icalotight_L1EM24VHI_mu18noL1")
+        printLoads = true;
+      if(printLoads)
+        std::cout << "Checking HLT_g35_tight_icalotight_L1EM24VHI_mu18noL1" << std::endl;
+      if (eventHandler()->passTriggerMatch(trig, &m_selPhotons, &m_selElectrons, &m_selMuons, NULL))
       {
+        if(printLoads) std::cout << "Failed to match HLT_g35_tight_icalotight_L1EM24VHI_mu18noL1" << std::endl;
+
         isTrigMatched = true;
-        break;
+        m_TriggersAllMatched[trig]+=1;
+      } else {
+        if(printLoads) std::cout << "Failed HLT_g35_tight_icalotight_L1EM24VHI_mu18noL1" << std::endl;
+      }
+
+    }
+    if (!isTrigMatched) {
+      //std::cout << "     ----------------- " <<  std::endl;
+      for (auto trig: eventHandler()->getRequiredTriggers()) {
+      // You need passTrigger() here in order to make sure the RunNumbers restriction is imposed on trigs.
+        if( !eventHandler()->passTrigger(trig) ) 
+          continue;
+        m_TriggersNMFired[trig]+=1;
+
+      
+        //std::cout << var::yyStarChannel.truth() << " Trigger fired: " <<  trig <<  std::endl;
+        if (eventHandler()->passTrigger(trig) &&
+            eventHandler()->passTriggerMatch(trig, &m_selPhotons, &m_selElectrons, &m_selMuons, NULL))
+        {
+          m_TriggersNMMatched[trig]+=1;
+          //std::cout << " ---- Trigger matched" << std::endl;
+        } else {
+          //std::cout << " ---- Trigger did not match" << std::endl;
+        }
       }
     }
-    if (!isTrigMatched) return TRIG_MATCH;
   }
 
 
@@ -703,7 +763,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   if (requireIso && (!photonHandler()->passIsoCut(m_selPhotons[0]))) return GAM_ISOLATION;
 
   //==== CUT 22 : Z Mass window cut ====
-  if ( m_ll > 45.*HG::GeV ) return ZMASSCUT;
+  if ( m_ll > 50.*HG::GeV ) return ZMASSCUT;
 
   //==== CUT 23 : lly window cut ====
   if ( 105.*HG::GeV > m_lly || m_lly > 160.*HG::GeV ) return LLGMASSCUT;
@@ -722,7 +782,58 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   //==== CUT 26 : pt_y fraction ggF cut ==== 
   if (m_selPhotons[0]->pt()/m_lly < 0.3) return GAM_PT_FRAC;
 
-  return PASSALL;
+/*
+  //TString  failedName =  "FailedToFire";
+  //TString faileNameChan = failedName + var::yyStarChannel.truth(); 
+  m_TriggersAllFired[failedName]+=1; 
+  m_TriggersAllFired[faileNameChan]+=1; 
+  if ( requireTrigger && !eventHandler()->passTriggers() ) {
+    m_TriggersAllMatched[failedName]+=1; 
+    m_TriggersAllMatched[faileNameChan]+=1; 
+    //return TRIGGER;
+  }
+  //==== CUT 16: Trigger matching (Set in config file using EventHandler.CheckTriggerMatching)
+  if ( eventHandler()->doTrigMatch() ){
+    bool isTrigMatched = false;
+    for (auto trig: eventHandler()->getRequiredTriggers()) {
+      // You need passTrigger() here in order to make sure the RunNumbers restriction is imposed on trigs.
+      if( !eventHandler()->passTrigger(trig) )
+        continue;
+      m_TriggersAllFired[trig]+=1;
+
+      if (eventHandler()->passTriggerMatch(trig, &m_selPhotons, &m_selElectrons, &m_selMuons, NULL))
+      {
+        isTrigMatched = true;
+        m_TriggersAllMatched[trig]+=1;
+      } 
+    }
+    if (!isTrigMatched) {
+      //std::cout << "     ----------------- " <<  std::endl;
+      for (auto trig: eventHandler()->getRequiredTriggers()) {
+      // You need passTrigger() here in order to make sure the RunNumbers restriction is imposed on trigs.
+        if( !eventHandler()->passTrigger(trig) ) 
+          continue;
+        m_TriggersNMFired[trig]+=1;
+
+      
+        //std::cout << var::yyStarChannel.truth() << " Trigger fired: " <<  trig <<  std::endl;
+        if (eventHandler()->passTrigger(trig) &&
+            eventHandler()->passTriggerMatch(trig, &m_selPhotons, &m_selElectrons, &m_selMuons, NULL))
+        {
+          m_TriggersNMMatched[trig]+=1;
+          //std::cout << " ---- Trigger matched" << std::endl;
+        } else {
+          //std::cout << " ---- Trigger did not match" << std::endl;
+        }
+      }
+      
+      
+     // return TRIG_MATCH;
+    
+    }
+  }
+ */
+ return PASSALL;
 }
 
 EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
@@ -908,6 +1019,10 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
   var::pt_lly.addToStore(truth);
   var::pt_ll.addToStore(truth);
 
+  var::deltaPhiCalo_ll.addToStore(false);
+  var::deltaRCalo_ll.addToStore(false);
+
+
   var::m_jj.addToStore(truth);
   var::Deta_j_j.addToStore(truth);
   var::Dphi_lly_jj.addToStore(truth);
@@ -1090,17 +1205,26 @@ void HiggsGamGamStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
   HG::ChannelEnum truthChan = (HG::ChannelEnum)var::yyStarChannel.truth();
 
   // unweighted MC, per channel:
-  if (truthChan == HG::DIMUON) getCutFlowHisto(false, false, HG::DIMUON)->Fill(cut);
+ /* if (truthChan == HG::DIMUON) getCutFlowHisto(false, false, HG::DIMUON)->Fill(cut);
   if (truthChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(false, false, HG::RESOLVED_DIELECTRON)->Fill(cut);
   if (truthChan == HG::MERGED_DIELECTRON) getCutFlowHisto(false, false, HG::MERGED_DIELECTRON)->Fill(cut);
+*/
+ getCutFlowHisto(false, false, truthChan)->Fill(cut);
+  
 
   if (m_isNonHyyStarHiggs) return;
 
   getCutFlowHisto(true, true /*onlyDalitz*/)->Fill(cut,w);
 
+/*
   if (truthChan == HG::DIMUON) getCutFlowHisto(true, true , HG::DIMUON)->Fill(cut,w);
   if (truthChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(true, true , HG::RESOLVED_DIELECTRON)->Fill(cut,w);
   if (truthChan == HG::MERGED_DIELECTRON) getCutFlowHisto(true, true , HG::MERGED_DIELECTRON)->Fill(cut,w);
+*/
+ getCutFlowHisto(true, true, truthChan)->Fill(cut,w);
+
+
+
 
   return;
 }
@@ -1141,18 +1265,111 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::changeInput(bool firstFile) {
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons){
+  std::vector<xAOD::Iso::IsolationType> isoType;
+  isoType.push_back(xAOD::Iso::topoetcone20);
+  xAOD::CaloCorrection caloCorrList;
+  caloCorrList.calobitset.set(static_cast<unsigned int>(xAOD::Iso::coreCone));
+  caloCorrList.calobitset.set(static_cast<unsigned int>(xAOD::Iso::pileupCorrection));
+
 
   if(var::yyStarChannel()==HG::DIMUON){
     std::vector<const xAOD::IParticle*> muonsVec;
     for(auto muon: muons) muonsVec.push_back((const xAOD::IParticle*) muon);
-    for(auto muon: muons)
-    {
-      // Make the correction / decisions for every working point
-      for (auto dec : m_muIsoAccCorr)
+    //double dr  = 0;
+    //if(muonsVec.size() == 2){
+    //  dr = muonsVec[0]->p4().DeltaR(muonsVec[1]->p4());
+    //}
+    
+    const xAOD::CaloClusterContainer* topoClusters = nullptr;
+    if ( !evtStore()->retrieve(topoClusters, "CaloCalTopoClusters").isSuccess()) {
+      std::cout << "no clusters!!!" << std::endl;
+    }    
+    if( true /*dr > 0.1 && dr  <0.25*/){
+
+      for(auto muon: muons)
       {
-        (*dec.second)(*muon) = m_isoCloseByTools_Muon[dec.first]->acceptCorrected(*muon, muonsVec);
-        // this actually modifies isolation of individual objects (muons)
-        m_isoCloseByTools_Muon[dec.first]->getCloseByIsoCorrection(nullptr, &muons);
+        HG::MuonAcc::topiso20Core005( *muon )  =  muon->isolation(xAOD::Iso::topoetcone20);
+        HG::MuonAcc::topiso20Core000( *muon )  = 0;
+        HG::MuonAcc::topiso20Core010( *muon )  = 0;
+        HG::MuonAcc::topiso20Core015( *muon )  = 0;
+        HG::MuonAcc::topiso20Core075( *muon )  = 0;
+
+        xAOD::CaloIsolation resultCalo;
+/*        
+        if (m_caloIsolationTool->caloTopoClusterIsolation(resultCalo, *muon, isoType, caloCorrList)){
+          for(unsigned int i=0; i<isoType.size(); i++){
+            //std::cout << "****  AKMAKM Newly calculated iso code is: " << resultCalo.etcones[i] <<  " original was " << muon->isolation(xAOD::Iso::topoetcone20) <<  " dr "<< dr <<std::endl;
+            HG::MuonAcc::topiso20Core000( *muon ) = resultCalo.etcones[i];
+          }
+        } 
+        xAOD::CaloIsolation resultCalo1;
+        if (m_caloIsolationTool1->caloTopoClusterIsolation(resultCalo1, *muon, isoType, caloCorrList)){
+          for(unsigned int i=0; i<isoType.size(); i++){
+            HG::MuonAcc::topiso20Core010( *muon ) = resultCalo1.etcones[i];
+          }
+        } 
+        xAOD::CaloIsolation resultCalo2;
+        if (m_caloIsolationTool2->caloTopoClusterIsolation(resultCalo2, *muon, isoType, caloCorrList)){
+          for(unsigned int i=0; i<isoType.size(); i++){
+            HG::MuonAcc::topiso20Core015( *muon ) = resultCalo2.etcones[i];
+          }
+        } 
+        xAOD::CaloIsolation resultCalo3;
+        if (m_caloIsolationTool3->caloTopoClusterIsolation(resultCalo3, *muon, isoType, caloCorrList)){
+          for(unsigned int i=0; i<isoType.size(); i++){
+            HG::MuonAcc::topiso20Core075( *muon ) = resultCalo3.etcones[i];
+          }
+        } 
+        static SG::AuxElement::Decorator<char>  isBackup("IsBackup_topoetcone20_original");
+        static SG::AuxElement::Decorator<float> decoBackIso("topoetcone20_original") ; 
+        decoBackIso( *muon ) = HG::MuonAcc::topiso20Core075( *muon ); 
+        isBackup(*muon) = true;
+*/        
+        float eta, phi;
+        HG::getCaloEtaPhiLast( muon, eta, phi );
+        HG::MuonAcc::caloPhiLast(*muon) = phi;
+        HG::MuonAcc::caloEtaLast(*muon) = eta;
+        HG::getCaloEtaPhiFirst( muon, eta, phi );
+        HG::MuonAcc::caloPhiFirst(*muon) = phi;
+        HG::MuonAcc::caloEtaFirst(*muon) = eta;
+        HG::getCaloEtaPhi( muon, eta, phi );
+        
+        float adeta =0;
+        float adphi =0;
+        int ncluster =0;
+        int sumpt = 0;
+        for (const auto& cluster : *topoClusters) {
+           if (!cluster || fabs(cluster->eta()) > 7.0 || cluster->pt() <= 1.e-3) continue;
+           float dPhi = HG::dPhi( phi, cluster->phi() ) ;
+           float dEta = eta - cluster->eta() ;
+           
+           float dR2 =  dPhi*dPhi + dEta*dEta;
+           float pt = cluster->pt();
+           if( dR2 > 0.05*0.05 && dR2 <  0.075 *  0.075){
+             ncluster++;
+             if(pt > sumpt){
+               adeta = dEta;
+               adphi = dPhi;
+               sumpt = pt;
+             }
+           }
+        }
+        HG::MuonAcc::caloTopodEta(*muon) = adeta;
+        HG::MuonAcc::caloTopodPhi(*muon) = adphi;
+        HG::MuonAcc::caloTopoN(*muon) = ncluster;
+        HG::MuonAcc::caloTopoEt(*muon) = sumpt;
+
+
+
+
+        // Make the correction / decisions for every working point
+        for (auto dec : m_muIsoAccCorr)
+        {
+          (*dec.second)(*muon) = m_isoCloseByTools_Muon[dec.first]->acceptCorrected(*muon, muonsVec);
+          // this actually modifies isolation of individual objects (muons)
+          m_isoCloseByTools_Muon[dec.first]->getCloseByIsoCorrection(nullptr, &muons);
+        } 
+
       }
     }
   }
@@ -1363,7 +1580,18 @@ void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
 
     // figure out channel
     TString truthChannel = "All channels";
-    for (auto chan : {HG::MERGED_DIELECTRON,HG::RESOLVED_DIELECTRON,HG::DIMUON}) {
+    
+    enum HG::ChannelEnum allenums[] = { HG::OUT_OF_ACCEPTANCE,
+                                        HG::OTHER,
+                                        HG::FAILEDTRKELECTRON,
+                                        HG::AMBIGUOUS_DIELECTRON,
+                                        HG::MERGED_DIELECTRON,
+                                        HG::RESOLVED_DIELECTRON,
+                                        HG::DIMUON,
+                                        HG::CHANNELUNKNOWN };
+      
+      
+    for (auto chan : allenums ) {
       if (cutFlowID > (int)(1e6 * (int)chan))
       {
         truthChannel = GetChannelName(chan) + TString(" truth channel");
@@ -1376,4 +1604,19 @@ void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
            truthChannel.Data(),weighted.Data());
     printCutFlowHisto(entry.second,nDecimals);
   }
+
+  std::cout << "----------------All Events------------------" << std::endl;
+  for( auto fired: m_TriggersAllFired ){
+    int matched =  m_TriggersAllMatched[ fired.first ];
+    std::cout <<  fired.first << "  " << matched << " / " << fired.second << "  " <<  (double)matched/(double)fired.second << std::endl;   
+  }
+
+  std::cout << "----------------Events that dont match-------------" << std::endl;
+  
+  for( auto fired: m_TriggersNMFired ){
+    int matched =  m_TriggersNMMatched[ fired.first ];
+    std::cout <<  fired.first << "  " << matched << " / " << fired.second << "  " <<  (double)matched/(double)fired.second << std::endl;
+  }
+
+  std::cout << "------------------------------------" << std::endl;
 }

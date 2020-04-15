@@ -13,6 +13,8 @@ namespace var {
   HG::m_l1y m_l1y;
   HG::m_l2y m_l2y;
   HG::deltaR_ll deltaR_ll;
+  HG::deltaPhiCalo_ll deltaPhiCalo_ll;
+  HG::deltaRCalo_ll deltaRCalo_ll;
   HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
   HG::Resolved_deltaPhiRescaled2 Resolved_deltaPhiRescaled2;
   HG::Resolved_deltaEta2 Resolved_deltaEta2;
@@ -45,6 +47,84 @@ namespace var {
   HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
 }
+
+
+  float HG::dPhi( float a, float b){
+    float dphi = a - b;
+    while( dphi > TMath::Pi() )
+      dphi -= 2*TMath::Pi();
+    while( dphi < -TMath::Pi() )
+      dphi += 2*TMath::Pi();
+    return dphi;
+  }
+
+
+
+  void HG::getCaloEtaPhi( const xAOD::Muon* mu, float& eta , float& phi){
+    auto cluster = mu->cluster();
+    int nSample = 0;
+    eta = 0.0;
+    phi = 0.0;
+    float dphi = 0.;
+    if (cluster) {
+      for (unsigned int i = 0; i < CaloSampling::Unknown; i++) {
+        auto s = static_cast<CaloSampling::CaloSample>(i);
+        if (cluster->hasSampling(s)) {
+          eta += cluster->etaSample(s);
+          if(nSample == 0){ 
+            phi = cluster->phiSample(s);
+          }else{ 
+            dphi += dPhi( cluster->phiSample(s), phi );
+          }
+          ++nSample;
+        }
+      } 
+      if(nSample > 0)
+      {
+        eta/=nSample;
+        dphi/=nSample;
+      }
+    }
+    phi += dphi;
+
+  }
+
+  void HG::getCaloEtaPhiFirst( const xAOD::Muon* mu, float& eta , float& phi){
+    auto cluster = mu->cluster();
+    int nSample = 0;
+    eta = 0.0;
+    phi = 0.0;
+    if (cluster) {
+      for (unsigned int i = 0; i < CaloSampling::Unknown; i++) {
+        auto s = static_cast<CaloSampling::CaloSample>(i);
+        if (cluster->hasSampling(s)) {
+          eta = cluster->etaSample(s);
+          phi = cluster->phiSample(s);
+          break;
+        }
+      } 
+    }
+  }
+
+ void HG::getCaloEtaPhiLast( const xAOD::Muon* mu, float& eta , float& phi){
+    auto cluster = mu->cluster();
+    int nSample = 0;
+    eta = 0.0;
+    phi = 0.0;
+    if (cluster) {
+      for (unsigned int i = 0; i < CaloSampling::Unknown; i++) {
+        auto s = static_cast<CaloSampling::CaloSample>(i);
+        if (cluster->hasSampling(s)) {
+          eta = cluster->etaSample(s);
+          phi = cluster->phiSample(s);
+        }
+      }
+    }
+  }
+
+
+
+
 
 // A special implementation of calculateValue that references another "var"
 float HG::m_lly_gev::calculateValue(bool truth)

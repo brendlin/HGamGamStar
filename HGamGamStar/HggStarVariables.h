@@ -144,8 +144,77 @@ namespace HG {
       return m_default;
     }
   };
+ 
+  void getCaloEtaPhi( const xAOD::Muon* mu, float& eta , float& phi);
+  void getCaloEtaPhiFirst( const xAOD::Muon* mu, float& eta , float& phi);
+  void getCaloEtaPhiLast( const xAOD::Muon* mu, float& eta , float& phi);
+    float dPhi( float a, float b);
 
-  //____________________________________________________________________________
+
+  class deltaPhiCalo_ll : public VarBase<float> {
+  public:
+  deltaPhiCalo_ll() : VarBase("deltaPhiCalo_ll") { m_default = -99; }
+    ~deltaPhiCalo_ll() { }
+
+    float calculateValue(bool truth)
+    {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      // For Truth: best to use "m_yStar_undressed_h1"
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      if (mus->size() >= 2){
+        float eta1, phi1, eta2, phi2;
+        getCaloEtaPhi( static_cast<const xAOD::Muon*>( (*mus)[0] ), eta1, phi1 );
+        getCaloEtaPhi( static_cast<const xAOD::Muon*>( (*mus)[1] ), eta2, phi2 );
+        float dphi  = 0;
+        if( (static_cast<const xAOD::Muon*>( (*mus)[0]) )->charge() > 0  ){
+          dphi = dPhi( phi1, phi2 );
+        } else {
+          dphi = dPhi(phi2, phi1);
+        }
+        return dphi;
+      }
+      if (eles->size() >= 2)
+        return (*eles)[0]->p4().DeltaPhi((*eles)[1]->p4());
+      return m_default;
+    }
+  };
+
+  class deltaRCalo_ll : public VarBase<float> {
+  public:
+  deltaRCalo_ll() : VarBase("deltaRCalo_ll") { m_default = -99; }
+    ~deltaRCalo_ll() { }
+
+    float calculateValue(bool truth)
+    {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      // For Truth: best to use "m_yStar_undressed_h1"
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      if (mus->size() >= 2){
+        float eta1, phi1, eta2, phi2;
+        getCaloEtaPhi( static_cast<const xAOD::Muon*>( (*mus)[0] ), eta1, phi1 );
+        getCaloEtaPhi( static_cast<const xAOD::Muon*>( (*mus)[1] ), eta2, phi2 );
+        float dphi  = 0;
+        if( (static_cast<const xAOD::Muon*>( (*mus)[0]))->charge() > 0  ){
+          dphi = dPhi(phi1, phi2);
+        } else {
+          dphi = dPhi(phi2, phi1);
+        }
+        double dEta = eta1 - eta2;
+        return sqrt( dEta*dEta + dphi*dphi );
+      }
+      if (eles->size() >= 2)
+        return (*eles)[0]->p4().DeltaR((*eles)[1]->p4());
+      return m_default;
+    }
+  };
+
+
+ 
+   //____________________________________________________________________________
   class Resolved_dRExtrapTrk12 : public VarBase<float> {
   public:
   Resolved_dRExtrapTrk12() : VarBase("Resolved_dRExtrapTrk12") { m_default = -99; m_recoOnly = true; }
@@ -830,6 +899,8 @@ namespace var {
   extern HG::m_l1y m_l1y;
   extern HG::m_l2y m_l2y;
   extern HG::deltaR_ll deltaR_ll;
+  extern HG::deltaPhiCalo_ll deltaPhiCalo_ll;
+  extern HG::deltaRCalo_ll deltaRCalo_ll;
   extern HG::Resolved_dRExtrapTrk12 Resolved_dRExtrapTrk12;
   extern HG::Resolved_deltaPhiRescaled2 Resolved_deltaPhiRescaled2;
   extern HG::Resolved_deltaEta2 Resolved_deltaEta2;

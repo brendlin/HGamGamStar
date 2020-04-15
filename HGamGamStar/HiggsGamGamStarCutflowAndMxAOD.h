@@ -12,8 +12,13 @@
 #include "HGamGamStar/MergedElectronID.h"
 #include "HGamGamStar/MergedElectronID_v2.h"
 
+#include "RecoToolInterfaces/ICaloTopoClusterIsolationTool.h"
 #include "IsolationSelection/IsolationCloseByCorrectionTool.h"
 #include "IsolationSelection/IsolationSelectionTool.h"
+
+#include "IsolationTool/CaloIsolationTool.h"
+
+
 
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
@@ -102,6 +107,18 @@ private:
 
   std::map<HG::Iso::IsolationType, SG::AuxElement::Accessor<char>* > m_eleIsoAccCorr; //!
   std::map<HG::Iso::IsolationType, SG::AuxElement::Accessor<char>* > m_muIsoAccCorr; //!
+
+  xAOD::CaloIsolationTool* m_caloIsolationTool; //!
+  xAOD::CaloIsolationTool* m_caloIsolationTool1; //!
+  xAOD::CaloIsolationTool* m_caloIsolationTool2; //!
+  xAOD::CaloIsolationTool* m_caloIsolationTool3; //!
+
+
+
+  std::map<TString, int> m_TriggersAllFired;
+  std::map<TString, int> m_TriggersAllMatched;
+  std::map<TString, int> m_TriggersNMFired;
+  std::map<TString, int> m_TriggersNMMatched;
 
 private:
   /// helper methods to create, fill and print the cut flow

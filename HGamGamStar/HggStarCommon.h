@@ -36,6 +36,23 @@ namespace HG {
     VBF_MERGED_DIELECTRON=6,
   };
 
+  namespace MuonAcc {
+    static SG::AuxElement::Accessor<float> topiso20Core000("topiso20Core000");
+    static SG::AuxElement::Accessor<float> topiso20Core005("topiso20Core005");
+    static SG::AuxElement::Accessor<float> topiso20Core010("topiso20Core010");
+    static SG::AuxElement::Accessor<float> topiso20Core015("topiso20Core015");
+    static SG::AuxElement::Accessor<float> topiso20Core075("topiso20Core075");
+    static SG::AuxElement::Accessor<float> caloPhiFirst("caloPhiFirst");
+    static SG::AuxElement::Accessor<float> caloPhiLast( "caloPhiLast");
+    static SG::AuxElement::Accessor<float> caloEtaFirst("caloEtaFirst");
+    static SG::AuxElement::Accessor<float> caloEtaLast("caloEtaLast");
+    static SG::AuxElement::Accessor<float> caloTopodEta("caloTopodEta");
+    static SG::AuxElement::Accessor<float> caloTopodPhi("caloTopodPhi");
+    static SG::AuxElement::Accessor<int> caloTopoN("caloTopoN");
+    static SG::AuxElement::Accessor<float> caloTopoEt("caloTopoEt");
+
+  }
+
   namespace PhAcc {
     static SG::AuxElement::Accessor<float> RhadForPID("RhadForPID");
     static SG::AuxElement::Accessor<float> ambiguousE_deltaEta1("ambiguousE_deltaEta1");

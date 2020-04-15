@@ -139,7 +139,10 @@ HG::ChannelEnum HG::truthChannel(const xAOD::TruthParticleContainer& childleps,
     return HG::OTHER;
 
   // Check for out-of-acceptance
+  TLorentzVector allLeps;
+
   for(const auto& lepton: childleps){
+    /*
     if (fabs(lepton->pdgId()) == 11) {
       if (lepton->pt()/1000. < 0.3) return HG::OUT_OF_ACCEPTANCE;
       if (fabs(lepton->eta()) > 2.5) return HG::OUT_OF_ACCEPTANCE;
@@ -148,7 +151,12 @@ HG::ChannelEnum HG::truthChannel(const xAOD::TruthParticleContainer& childleps,
       if (lepton->pt()/1000. < 3.0) return HG::OUT_OF_ACCEPTANCE;
       if (fabs(lepton->eta()) > 2.7) return HG::OUT_OF_ACCEPTANCE;
     }
+    */
+    allLeps += lepton->p4();
   }
+
+  if( allLeps.M() > 50e3 )
+    return HG::OUT_OF_ACCEPTANCE;
 
   // Check if there are electrons in the decay
   bool isElectron = true;
