@@ -959,11 +959,21 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
   {
     var::m_lly_track4mom.addToStore(false);
     var::m_ll_track4mom.addToStore(false);
-    var::deltaR_track4mom.addToStore(false);
-    var::Resolved_dRExtrapTrk12.addToStore(false);
     var::Resolved_deltaPhiRescaled2.addToStore(false);
     var::Resolved_deltaEta2.addToStore(false);
+    var::Resolved_dRExtrapTrk12.addToStore(false);
     var::trk_lead_pt.addToStore(false);
+    var::deltaPhi_trktrk_IP.addToStore(false);
+    var::deltaEta_trktrk_IP.addToStore(false);
+    var::deltaR_track4mom.addToStore(false);
+    var::deltaPhi2_trktrk_perigee.addToStore(false);
+    var::deltaEta2_trktrk_perigee.addToStore(false);
+    var::deltaRL2_trktrk_perigee.addToStore(false);
+    var::deltaPhi2_trktrk_LM.addToStore(false);
+    var::deltaEta2_trktrk_LM.addToStore(false);
+    var::deltaRL2_trktrk_LM.addToStore(false);
+    var::deltaPhi_naiveExtrap.addToStore(false);
+    var::deltaPhi_overScaled_naiveExtrap.addToStore(false);
   }
 
   return;
