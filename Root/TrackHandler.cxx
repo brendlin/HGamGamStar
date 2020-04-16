@@ -218,7 +218,8 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
     int tmp_vtxTrkIndex2 = -999;
     fillMergedIndices(electron,tmp_vtxTrkIndex1,tmp_vtxTrkIndex2);
 
-    for (unsigned int i=0; i<electron->nTrackParticles(); ++i) {
+    //std::cout << "Filling " << tmp_vtxTrkIndex1 << " " << tmp_vtxTrkIndex2 << std::endl;
+    for (int i=0; i<(int)electron->nTrackParticles(); ++i) {
 
       const xAOD::TrackParticle* ele_tp = electron->trackParticle(i);
 

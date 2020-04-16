@@ -361,7 +361,7 @@ MergedElectronMxAOD::CutEnum MergedElectronMxAOD::cutflow()
       }
     }
     //If 2 or more the electron is selected
-    if(nSiTrack>=1){
+    if(nSiTrack>=2){
       m_selElectrons.push_back(electron);
     }
   }
@@ -872,7 +872,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     HG::EleAcc::vtxTrkParticleIndex1_MxAOD(*electron) = -999;
     HG::EleAcc::vtxTrkParticleIndex2_MxAOD(*electron) = -999;
 
-    if( false && HG::EleAcc::vtxTrkIndex1.isAvailable(*electron) && HG::EleAcc::vtxTrkIndex2.isAvailable(*electron)  ){
+    if(  false && HG::EleAcc::vtxTrkIndex1.isAvailable(*electron) && HG::EleAcc::vtxTrkIndex2.isAvailable(*electron)  ){
       int index = HG::EleAcc::vtxTrkIndex1(*electron);
       bool hasIndex = index >= 0;
 
