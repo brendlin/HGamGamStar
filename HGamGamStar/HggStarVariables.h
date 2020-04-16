@@ -306,6 +306,8 @@ namespace HG {
       const xAOD::TrackParticle* ele_tp1 = ele1->trackParticle(ele1_trkIndex);
       const xAOD::TrackParticle* ele_tp2 = ele2->trackParticle(ele2_trkIndex);
 
+      if (!ele_tp1 || !ele_tp2) return m_default;
+
       // This is to fix how the shower shape variables are saved.
       int flipSign1 = ( ele_tp1->charge() > 0) ? 1 : -1; // -1 = flip
       int flipSign2 = ( ele_tp2->charge() > 0) ? 1 : -1; // -1 = flip
@@ -402,6 +404,8 @@ namespace HG {
 
       const xAOD::TrackParticle* ele_tp1 = ele1->trackParticle(ele1_trkIndex);
       const xAOD::TrackParticle* ele_tp2 = ele2->trackParticle(ele2_trkIndex);
+
+      if (!ele_tp1 || !ele_tp2) return m_default;
 
       // This is to fix how the shower shape variables are saved.
       int flipSign1 = ( ele_tp1->charge() > 0) ? 1 : -1; // -1 = flip
