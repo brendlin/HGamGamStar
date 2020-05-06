@@ -739,7 +739,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   if (requireIso && (!photonHandler()->passIsoCut(m_selPhotons[0]))) return GAM_ISOLATION;
 
   //==== CUT 22 : Z Mass window cut ====
-  if ( m_ll > 50.*HG::GeV ) return ZMASSCUT;
+  if ( m_ll > 30.*HG::GeV ) return ZMASSCUT;
 
   //==== CUT 23 : lly window cut ====
   if ( 105.*HG::GeV > m_lly || m_lly > 160.*HG::GeV ) return LLGMASSCUT;
