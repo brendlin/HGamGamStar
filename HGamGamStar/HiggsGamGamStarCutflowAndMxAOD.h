@@ -41,7 +41,7 @@ private:
      "Z-boson assignment","2 same-flavor leptons (post-OR)","Bad muon","1 loose photon (post-OR)",
      "Trigger match","lepton ID","lepton impact parameter","lepton isolation",
      "photon tight ID","photon isolation",
-     "#it{m}_{ll} < 45 GeV",
+     "#it{m}_{ll} < 30 GeV",
      "#it{m}_{ll#gamma} #in [105,160] GeV",
      "#it{m}_{ll} J/#Psi/#Upsilon window",
      "p^{ll}_{T}/#it{m}_{ll#gamma} > 0.3",
