@@ -74,24 +74,38 @@ int HG::yyStarCategory::calculateValue(bool truth)
   const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
   bool passVBF = false;
   if (jets->size() > 1){ //we have two or more jets - prerequisite to pass VBF
-      passVBF = true;
-      passVBF = passVBF && var::m_jj() > 400 * HG::GeV;
-      passVBF = passVBF && var::Deta_j_j() > 2.5;
-      passVBF = passVBF && (*jets)[0]->pt() > 25 * HG::GeV;
-      passVBF = passVBF && (*jets)[1]->pt() > 25 * HG::GeV;
+      passVBF =  
+      (*jets)[0]->pt() > 25 * HG::GeV   &&
+      (*jets)[1]->pt() > 25 * HG::GeV   &&
+      fabs(var::Zepp_lly()) < 2.0       &&
+      var::DRmin_y_leps_2jets() > 1.5   &&
+      var::Dphi_lly_jj() > 2.8          &&
+      var::m_jj() > 500.0 * HG::GeV     &&
+      var::Deta_j_j() > 2.7;
+      //if all cuts pass finally check if we have forward jets and cut on min pT
+      if (passVBF){
+        float fw_jet0_pt = fabs((*jets)[0]->eta()) > 2.5 ? (*jets)[0]->pt() : 999 * HG::GeV;
+        float fw_jet1_pt = fabs((*jets)[1]->eta()) > 2.5 ? (*jets)[1]->pt() : 999 * HG::GeV;
+        passVBF = (fw_jet0_pt > 30 * HG::GeV && fw_jet1_pt > 30 * HG::GeV);
+      }
   }
+  bool passPtT = (var::pTt_lly() > 100.0 * HG::GeV);
 
+  //prioritize first VBF, then high pTt, then fall back to Inclusive
   if (var::yyStarChannel()==ChannelEnum::DIMUON){
       if(passVBF) return CategoryEnum::VBF_DIMUON;
-      else return CategoryEnum::GGF_DIMUON;
+      if(passPtT) return CategoryEnum::HIPTT_DIMUON;
+      return CategoryEnum::GGF_DIMUON;
   }
   else if (var::yyStarChannel()==ChannelEnum::RESOLVED_DIELECTRON){
       if(passVBF) return CategoryEnum::VBF_RESOLVED_DIELECTRON;
-      else return CategoryEnum::GGF_RESOLVED_DIELECTRON;
+      if(passPtT) return CategoryEnum::HIPTT_RESOLVED_DIELECTRON;
+      return CategoryEnum::GGF_RESOLVED_DIELECTRON;
   }
   else if(var::yyStarChannel()==ChannelEnum::MERGED_DIELECTRON){
       if(passVBF) return CategoryEnum::VBF_MERGED_DIELECTRON;
-      else return CategoryEnum::GGF_MERGED_DIELECTRON;
+      if(passPtT) return CategoryEnum::HIPTT_MERGED_DIELECTRON;
+      return CategoryEnum::GGF_MERGED_DIELECTRON;
   }
   return CategoryEnum::CATEGORYUNKNOWN;
 }
