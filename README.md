@@ -27,9 +27,9 @@ To checkout the necessary packages, do:
 Compiling
 ---------
 
-To compile in Rel 21.2.109, do:
+To compile in Rel 21.2.113, do:
 
-    asetup AnalysisBase,21.2.109,here # only needed once per login session
+    asetup AnalysisBase,21.2.113,here # only needed once per login session
     cd $TestArea/../build
     cmake ../source
     cmake --build .
@@ -144,7 +144,7 @@ you can retry the jobs using the following:
 To run on the grid, you must specify a **GridTag** as well as a **ProdTag** via the command-line (or config). An example is below (you can use
 **--Input** or **--InputList** to specify the samples):
 
-    runJob.py --Input mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_e5984_s3126_r10201_r10210_p3415 --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --Grid --GridTag user.brendlin --ProdTag ysy00X
+    runJob.py --Input mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_e5984_s3126_r10201_r10210_p3415 --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --Grid --GridTag user.brendlin --ProdTag ysy0XX
 
 You can also specify any of the other normal grid running options via command-line or in your config file
 (e.g `--nc_nFilesPerJob`, `--nc_destSE`, etc.).
@@ -173,7 +173,7 @@ first **make sure the code is fully committed, tagged in git, and that the event
 [HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/master/HggStarEventSelection.md) is fully up-to-date.**
 Then do (specifying an appropriate ProdTag):
 
-    prodtag=ysy00X
+    prodtag=ysy0XX
     for DS in data15_13TeV data16_13TeV data17_13TeV data18_13TeV mc16a_HIGG1D2 mc16d_HIGG1D2 mc16e_HIGG1D2; do
     runJob.py --InputList HGamGamStar/input/$DS.txt --OutputDir ${DS}_${prodtag} --Alg HiggsGamGamStarCutflowAndMxAOD --Config HGamGamStar/HggStarMxAOD.config --BatchCondor --Condor_UseLD_LIBRARY_PATH --GridDirect --nc_EventLoop_EventsPerWorker 100000 --ProdTag $prodtag --optCondorConf 'Requirements = ( OpSysAndVer == "CentOS7" )';
     done;
@@ -197,6 +197,7 @@ Information on MxAOD Productions
 | ysy005 | [ysy005](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy005) | 21.2.56 | [ysy005 HggStarEventSelection.md](https://gitlab.cern.ch/brendlin/HGamGamStar/blob/51e7884246726940caf6effe7465154c2343f470/HggStarEventSelection.md) | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy005<br>EOS: /eos/user/b/brendlin/ysy/ysy005  |
 | ysy011 | [ysy011](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy011) | 21.2.99 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy011<br>EOS: /eos/user/b/brendlin/ysy/ysy011  |
 | ysy012 | [ysy012](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy012) | 21.2.109 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy012<br>EOS: /eos/user/b/brendlin/ysy/ysy012  |
+| ysy013 | [ysy013](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy013) | 21.2.113 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy013<br>EOS: /eos/user/b/brendlin/ysy/ysy013  |
 
 Updating the HGamCore Tag
 ================
