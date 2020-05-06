@@ -230,3 +230,4 @@ hashes used in this package:
 | v1.8.47-h024-ttHcp | 5312e5d9    | 21.2.56    | Update for trig-match mem leak |
 | master commit | f2e09974   | 21.2.99    | Updated muon and jet recommendations |
 | untagged commit | 9d640507 | 21.2.109   | Update our code for p4061, p4062 |
+| v1.9.12-h025 | 135f317b    | 21.2.113   | Update our code to h025 |

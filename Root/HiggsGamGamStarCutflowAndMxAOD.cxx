@@ -576,6 +576,10 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   overlapHandler()->removeOverlap(m_selMuons,  m_selPhotons, m_OR_mu_DR_y);
   overlapHandler()->removeOverlap(m_selJets, m_selMuons, m_OR_mu_DR_jet);
 
+  // Add decoration for isolation SF : note that this also call applyScaleFactor for the muons !!!
+  // MuonHandler.Efficiency.UseInclusiveIsoSF is set to true, so dRJet is set to -2.
+  muonHandler()->decorateDeltaRJet(m_selMuons, m_selJets);
+
   //==== CUT 13 : Whether SF leptons survive OR
   if (m_selElectrons.size() == 0 && m_selMuons.size() < 2) return TWO_SF_LEPTONS_POSTOR;
   if (m_selMuons.size() == 0 && m_selElectrons.size() != electrons_preOR) return TWO_SF_LEPTONS_POSTOR;
@@ -766,7 +770,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
 
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
-  HG::VarHandler::getInstance()->setContainers(&m_selPhotons,&m_selElectrons,&m_selMuons,&m_selJets);
+  HG::VarHandler::getInstance()->setContainers(&m_selPhotons,&m_selElectrons,&m_selMuons,nullptr,&m_selJets);
   HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&m_selTracks);
 
   // Weights
@@ -1040,7 +1044,8 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   xAOD::JetContainer           bjets     = truthHandler()->applyBJetSelection     (jets);
 
   // remove truth jets that are from electrons or photons
-  truthHandler()->removeOverlap(photons, jets, electrons, muons);
+  xAOD::TruthParticleContainer tausEmpty;
+  truthHandler()->removeOverlap(photons, jets, electrons, muons, tausEmpty);
 
   // Save truth containers, if configured
   if (m_saveTruthObjects) {
@@ -1056,7 +1061,7 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
     { addTruthLinks(m_elecContainerName.Data()  , m_elecTruthContainerName.Data()); }
   }
 
-  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, &jets);
+  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, nullptr, &jets);
 
   // Now done in HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsParticles()
   // HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);

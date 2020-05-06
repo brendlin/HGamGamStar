@@ -294,7 +294,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   m_selJets = jetHandler()->applySelection(m_allJets);
 
   // Removes overlap with candidate diphoton system, and any additional tight photons (if option set)
-  overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_preSelElectrons, dirtyMuons);
+  overlapHandler()->removeOverlap(&m_selPhotons, &m_selJets, &m_preSelElectrons, &dirtyMuons, nullptr);
 
   //above doesn't have option to remove photon overlapping with lepton
   overlapHandler()->removeOverlap(m_selPhotons, m_preSelElectrons, 0.4);
@@ -566,22 +566,27 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
   // Do anything you missed in cutflow, and save the objects.
 
   // Rebuild MET using selected objects
+  
+
+  xAOD::TauJetContainer tausEmpty(SG::VIEW_ELEMENTS);
   m_allMET = etmissHandler()->getCorrectedContainer(&m_selPhotons    ,
                                                     &m_allJets     ,
+                                                    &m_allJets     ,
                                                     &m_selElectrons,
-                                                    &m_selMuons    );
+                                                    &m_selMuons    ,
+                                                    &tausEmpty     );
   m_selMET = etmissHandler()->applySelection(m_allMET);
 
   // Save JVT weight (needs special overlap removal)
   m_jvtJets = jetHandler()->applySelectionNoJvt(m_allJets);
   xAOD::ElectronContainer jvtElecs = m_selElectrons;
   xAOD::MuonContainer jvtMuons = m_selMuons;
-  overlapHandler()->removeOverlap(m_selPhotons, m_jvtJets, jvtElecs, jvtMuons);
+  overlapHandler()->removeOverlap(&m_selPhotons, &m_jvtJets, &jvtElecs, &jvtMuons, nullptr);
 
   
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
-  setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, &m_selMET, &m_jvtJets);
+  setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, nullptr, &m_selJets, &m_selMET, &m_jvtJets);
 
   // add lepton SF and trigger SF weight to total weight, only for dilepton case!
   if (HG::isMC()) {
@@ -675,7 +680,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   // var::isPassed.setValue(m_goodFakeComb ? true : var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
 
-  passJetEventCleaning();
+  //passJetEventCleaning();
 
   // Basic event weights
   eventHandler()->pileupWeight();
@@ -875,7 +880,8 @@ EL::StatusCode  ZyCutflowAndMxAOD::doTruth()
   xAOD::MissingETContainer     met       = truthHandler()->applyMissingETSelection(all_met);
 
   // remove truth jets that are from electrons or photons
-  truthHandler()->removeOverlap(photons, jets, electrons, muons);
+  xAOD::TruthParticleContainer tausEmpty;
+  truthHandler()->removeOverlap(photons, jets, electrons, muons, tausEmpty);
 
   const xAOD::TruthParticleContainer *truthMuons = nullptr;
   if (event()->retrieve(truthMuons, "TruthMuons").isFailure()) {
@@ -919,7 +925,7 @@ EL::StatusCode  ZyCutflowAndMxAOD::doTruth()
     addTruthLinks(m_elecContainerName.Data()  , m_elecTruthContainerName.Data());
   }
 
-  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, &jets);
+  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, nullptr, &jets);
   HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);
 
   // Adds event-level variables to TStore (this time using truth containers)
