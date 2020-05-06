@@ -124,6 +124,7 @@ namespace HG {
     static SG::AuxElement::Accessor< int >   truthTrackIndexB("truthTrackIndexB");
 
 
+    static SG::AuxElement::Accessor<int>     passTMVAPIDv2("passTMVAPIDv2") ;
     static SG::AuxElement::Accessor<int>     passTMVAPID("passTMVAPID") ;
     static SG::AuxElement::Accessor<int>     passPID("passPID") ;
 
