@@ -48,6 +48,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 
   m_mergedElectronID_v2 = new HG::MergedElectronID_v2();
   ANA_CHECK(m_mergedElectronID_v2->initialize(*config()));
+  
+  m_mergedElectronID_v3 = new HG::MergedElectronID_v3();
+  ANA_CHECK(m_mergedElectronID_v3->initialize(*config()));
 
   // We will evaluate the close-by correction for every working point, provided that it falls
   // into the Resovled category.
@@ -542,7 +545,9 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       m_mergedElectronID->decorateMergedVariables(*ele,*trk0,*trk1);
       // Need to cut on lead track pt in merged case when processing MxAODs, for that need a variable which is defined for each event (i.e. also need it in muon/resolved events where the value is -99)
       HG::EleAcc::passPID(*ele) = m_mergedElectronID->passPIDCut(*ele,*trk0,*trk1);
-      HG::EleAcc::passTMVAPID(*ele) = m_mergedElectronID_v2->passPIDCut(*ele, HG::isMC() );
+      HG::EleAcc::passTMVAPIDv2(*ele) = m_mergedElectronID_v2->passPIDCut(*ele, HG::isMC() );
+      // changed to v3
+      HG::EleAcc::passTMVAPID(*ele) = m_mergedElectronID_v3->passPIDCut(*ele, HG::isMC() );
     }
     else if (m_selElectrons.size() == 2) {
       m_ll = (m_selElectrons[0]->p4() + m_selElectrons[1]->p4()).M();
@@ -720,13 +725,13 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (requireIso && (!electronHandler()->passIsoCut(m_selElectrons[0],m_eleMergedIsoWP)) ) return LEP_ISO;
 
     // ID+Iso scale factors for cutflow (and systs)
-    m_lepIDWeight *= m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_NOMINAL);
+    m_lepIDWeight *= m_mergedElectronID_v3->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_NOMINAL);
     if (m_applySystematics) {
-      m_mergedSysts[0] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_NOMINAL  );
-      m_mergedSysts[1] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_STAT_UP  );
-      m_mergedSysts[2] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_STAT_DOWN);
-      m_mergedSysts[3] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_SYST_UP  );
-      m_mergedSysts[4] = m_mergedElectronID_v2->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_SYST_DOWN);
+      m_mergedSysts[0] = m_mergedElectronID_v3->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_NOMINAL  );
+      m_mergedSysts[1] = m_mergedElectronID_v3->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_STAT_UP  );
+      m_mergedSysts[2] = m_mergedElectronID_v3->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_STAT_DOWN);
+      m_mergedSysts[3] = m_mergedElectronID_v3->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_SYST_UP  );
+      m_mergedSysts[4] = m_mergedElectronID_v3->GetScaleFactor(*m_selElectrons[0],MERGEDUNC_SYST_DOWN);
     }
   }
   else {
@@ -1361,6 +1366,7 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::EleAcc::delta_z0_tracks(*electron) = -999;
     HG::EleAcc::passPID(*electron) = false;
     HG::EleAcc::passTMVAPID(*electron) = false;
+    HG::EleAcc::passTMVAPIDv2(*electron) = false;
 
     // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
