@@ -1038,7 +1038,7 @@ void HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsInformation(void)
   // namely H->yy. We set m_isNonHyyStarHiggs to true in order to get these events through the
   // cutflow, but this is a bit of a mislabeling.
   if (HG::isMC() && eventInfo()->mcChannelNumber() == 343981) {
-    m_isNonHyyStarHiggs = HG::eventIsHyyHiggs(all_particles);
+    m_isNonHyyStarHiggs = !HG::eventIsHyyHiggs(all_particles);
   }
 
   var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
