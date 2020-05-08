@@ -1264,6 +1264,7 @@ namespace HG {
                            double closest_to_mev,float lead_pt_cut_gev=0); // Z = 91188
 
   bool eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
+  bool eventIsHyyHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
   bool isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl);
 
   void DecorateLeptonDressing(const xAOD::IParticleContainer& leps, const xAOD::TruthParticleContainer& truthLeps);
