@@ -1027,6 +1027,14 @@ void HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsInformation(void)
   // flag current event as a MC Dalitz event
   // (needed for cut-flow histograms)
   m_isNonHyyStarHiggs = HG::eventIsNonHyyStarHiggs(all_particles);
+
+  // We make an exception for H->yy, because we want to store the opposite set of events,
+  // namely H->yy. We set m_isNonHyyStarHiggs to true in order to get these events through the
+  // cutflow, but this is a bit of a mislabeling.
+  if (HG::isMC() && eventInfo()->mcChannelNumber() == 343981) {
+    m_isNonHyyStarHiggs = HG::eventIsHyyHiggs(all_particles);
+  }
+
   var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
 
   return;

@@ -303,6 +303,23 @@ bool HG::eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer * allParticle
   return false;
 }
 
+bool HG::eventIsHyyHiggs(const xAOD::TruthParticleContainer * allParticles) {
+
+  TruthPtcls higgses = getFinalHiggsBosons(allParticles);
+
+  if (higgses.size() == 0) return false;
+
+  TruthPtcls decayProds = getHyyStarSignalDecayProducts(higgses[0]);
+
+  TruthPtcls childleps = HG::FilterLeptons(decayProds);
+  if (childleps.size() != 0) return false;
+
+  TruthPtcls directphots = HG::FilterDirectPhotons(decayProds);
+  if (directphots.size() != 2) return false;
+
+  return true;
+}
+
 void HG::DecorateLeptonDressing(const xAOD::IParticleContainer& leps, const xAOD::TruthParticleContainer& truthLeps){
 
   //leps from truthHandler(), truthLeps from TruthMuons or TruthElectrons Container which contains dressed quantities
