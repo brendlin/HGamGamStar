@@ -125,8 +125,12 @@ namespace HG {
 
 
     static SG::AuxElement::Accessor<int>     passTMVAPIDv2("passTMVAPIDv2") ;
+    static SG::AuxElement::Accessor<int>     passTMVAPIDv3("passTMVAPIDv3") ;
     static SG::AuxElement::Accessor<int>     passTMVAPID("passTMVAPID") ;
     static SG::AuxElement::Accessor<int>     passPID("passPID") ;
+    static SG::AuxElement::Accessor<int>     passDeltaPhiIPCut("passDeltaPhiIPCut") ;
+
+    static SG::AuxElement::Accessor<float>   deltaPhiTrksIP("deltaPhiTrksIP") ;
 
     static SG::AuxElement::Accessor< float > vtxTrk1_TRT_PID_trans("vtxTrk1_TRT_PID_trans");
     static SG::AuxElement::Accessor< float > vtxTrk1_dEta2_P("vtxTrk1_dEta2_P");

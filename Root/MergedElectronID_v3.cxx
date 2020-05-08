@@ -92,14 +92,7 @@ bool HG::MergedElectronID_v3::passPIDCut(const xAOD::Electron &ele, bool isMC) c
     float trk2_eta = ele_tp2->eta();
     float trk_deta = fabs(trk1_eta-trk2_eta);
     
-    float trk1_pt = ele_tp->pt();
-    float trk2_pt = ele_tp2->pt();
-    float trk1_phi = ele_tp->phi();
-    float trk2_phi = ele_tp2->phi();
-    float trk1_ch = ele_tp->charge();
-    float trk2_ch = ele_tp2->charge();
-    
-    float trk_dPhiIP = (trk1_pt>trk2_pt?trk1_ch:trk2_ch)*fabs(acos(cos(trk1_phi-trk2_phi)));
+    float trk_dPhiIP = EleAcc::deltaPhiTrksIP(ele);
 
     float pte  = ele.pt()/1000.;
     float etae = ele.caloCluster()->etaBE(2);
