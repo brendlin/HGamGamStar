@@ -241,6 +241,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
     getCutFlowHisto(false, false, HG::DIMUON);
     getCutFlowHisto(false, false, HG::RESOLVED_DIELECTRON);
     getCutFlowHisto(false, false, HG::MERGED_DIELECTRON);
+    getCutFlowHisto(false, false, HG::AMBIGUOUS_DIELECTRON); // hijacking for "any electron"
 
     if (HG::isMC()) {
       getCutFlowHisto(true, false);
@@ -249,6 +250,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
       getCutFlowHisto(true, true , HG::DIMUON);
       getCutFlowHisto(true, true , HG::RESOLVED_DIELECTRON);
       getCutFlowHisto(true, true , HG::MERGED_DIELECTRON);
+      getCutFlowHisto(true, true , HG::AMBIGUOUS_DIELECTRON); // hijacking for "any electron"
 
     }
 
@@ -1161,19 +1163,36 @@ void HiggsGamGamStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
 
   // per-channel cutflows (mainly for debugging)
   HG::ChannelEnum truthChan = (HG::ChannelEnum)var::yyStarChannel.truth();
+  HG::ChannelEnum recoChan = (HG::ChannelEnum)var::yyStarChannel();
+
+  // All other categories are electron categories of various types.
+  bool isEchan = ((truthChan != HG::OUT_OF_ACCEPTANCE) &&
+                  (truthChan != HG::DIMUON) &&
+                  (truthChan != HG::OTHER));
 
   // unweighted MC, per channel:
   if (truthChan == HG::DIMUON) getCutFlowHisto(false, false, HG::DIMUON)->Fill(cut);
-  if (truthChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(false, false, HG::RESOLVED_DIELECTRON)->Fill(cut);
-  if (truthChan == HG::MERGED_DIELECTRON) getCutFlowHisto(false, false, HG::MERGED_DIELECTRON)->Fill(cut);
+  // Resolved reco -- only valid after Z-boson assignment
+  if (isEchan && (recoChan == HG::RESOLVED_DIELECTRON)) getCutFlowHisto(false, false, HG::RESOLVED_DIELECTRON)->Fill(cut);
+  // Merged reco -- only valid after Z-boson assignment
+  if (isEchan && (recoChan == HG::MERGED_DIELECTRON  )) getCutFlowHisto(false, false, HG::MERGED_DIELECTRON)->Fill(cut);
+  // Any electron reco
+  //if (isEchan && (recoChan == HG::MERGED_DIELECTRON || recoChan == HG::RESOLVED_DIELECTRON || recoChan == HG::CHANNELUNKNOWN)) getCutFlowHisto(false, false, HG::AMBIGUOUS_DIELECTRON)->Fill(cut);
+
+  // Any reco chan (including muons??)
+  if (isEchan) getCutFlowHisto(false, false, HG::AMBIGUOUS_DIELECTRON)->Fill(cut);
 
   if (m_isNonHyyStarHiggs) return;
 
   getCutFlowHisto(true, true /*onlyDalitz*/)->Fill(cut,w);
 
   if (truthChan == HG::DIMUON) getCutFlowHisto(true, true , HG::DIMUON)->Fill(cut,w);
-  if (truthChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(true, true , HG::RESOLVED_DIELECTRON)->Fill(cut,w);
-  if (truthChan == HG::MERGED_DIELECTRON) getCutFlowHisto(true, true , HG::MERGED_DIELECTRON)->Fill(cut,w);
+  if (isEchan && (recoChan == HG::RESOLVED_DIELECTRON)) getCutFlowHisto(true, true , HG::RESOLVED_DIELECTRON)->Fill(cut,w);
+  if (isEchan && (recoChan == HG::MERGED_DIELECTRON  )) getCutFlowHisto(true, true , HG::MERGED_DIELECTRON)->Fill(cut,w);
+  //if (isEchan && (recoChan == HG::MERGED_DIELECTRON  || recoChan == HG::RESOLVED_DIELECTRON || recoChan == HG::CHANNELUNKNOWN)) getCutFlowHisto(true, true , HG::AMBIGUOUS_DIELECTRON)->Fill(cut,w);
+
+  // Any reco chan (including muons??)
+  if (isEchan) getCutFlowHisto(true, true , HG::AMBIGUOUS_DIELECTRON)->Fill(cut,w);
 
   return;
 }
@@ -1448,7 +1467,7 @@ void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
 
     // figure out channel
     TString truthChannel = "All channels";
-    for (auto chan : {HG::MERGED_DIELECTRON,HG::RESOLVED_DIELECTRON,HG::DIMUON}) {
+    for (auto chan : {HG::MERGED_DIELECTRON,HG::RESOLVED_DIELECTRON,HG::DIMUON,HG::AMBIGUOUS_DIELECTRON}) {
       if (cutFlowID > (int)(1e6 * (int)chan))
       {
         truthChannel = GetChannelName(chan) + TString(" truth channel");

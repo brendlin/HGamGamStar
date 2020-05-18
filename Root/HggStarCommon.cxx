@@ -140,16 +140,16 @@ HG::ChannelEnum HG::truthChannel(const xAOD::TruthParticleContainer& childleps,
     return HG::OTHER;
 
   // Check for out-of-acceptance
-  for(const auto& lepton: childleps){
-    if (fabs(lepton->pdgId()) == 11) {
-      if (lepton->pt()/1000. < 0.3) return HG::OUT_OF_ACCEPTANCE;
-      if (fabs(lepton->eta()) > 2.5) return HG::OUT_OF_ACCEPTANCE;
-    }
-    else if (fabs(lepton->pdgId()) == 13) {
-      if (lepton->pt()/1000. < 3.0) return HG::OUT_OF_ACCEPTANCE;
-      if (fabs(lepton->eta()) > 2.7) return HG::OUT_OF_ACCEPTANCE;
-    }
-  }
+  // for(const auto& lepton: childleps){
+  //   if (fabs(lepton->pdgId()) == 11) {
+  //     if (lepton->pt()/1000. < 0.3) return HG::OUT_OF_ACCEPTANCE;
+  //     if (fabs(lepton->eta()) > 2.5) return HG::OUT_OF_ACCEPTANCE;
+  //   }
+  //   else if (fabs(lepton->pdgId()) == 13) {
+  //     if (lepton->pt()/1000. < 3.0) return HG::OUT_OF_ACCEPTANCE;
+  //     if (fabs(lepton->eta()) > 2.7) return HG::OUT_OF_ACCEPTANCE;
+  //   }
+  // }
 
   // Check if there are electrons in the decay
   bool isElectron = true;
