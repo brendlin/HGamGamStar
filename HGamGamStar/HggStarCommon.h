@@ -83,6 +83,9 @@ namespace HG {
     // New Accessors for output MxAOD:
     //
 
+    // For our special photon-electron double-counting procedure.
+    static SG::AuxElement::Accessor<char>  passElePhOverlap("passElePhOverlap");
+
     // New ID variables
     static SG::AuxElement::Accessor<float> RhadForPID("RhadForPID");
     static SG::AuxElement::Accessor<float> EOverP0P1("EOverP0P1");
@@ -110,6 +113,9 @@ namespace HG {
     static SG::AuxElement::Accessor< int >  vtxTrkParticleIndex1_MxAOD("vtxTrkParticleIndex1_MxAOD");
     static SG::AuxElement::Accessor< int >  vtxTrkParticleIndex2_MxAOD("vtxTrkParticleIndex2_MxAOD");
 
+    static SG::AuxElement::Accessor< int > truthType("truthType");
+    static SG::AuxElement::Accessor< int > truthOrigin("truthOrigin");
+    static SG::AuxElement::Accessor< unsigned char > ambiguityType("ambiguityType");
     static SG::AuxElement::Accessor< float > ambiguousPhotonR("ambiguousPhotonR");
     static SG::AuxElement::Accessor< int >   ambiguousPhotonCT("ambiguousPhotonCT");
     static SG::AuxElement::Accessor< float > calibratedPhotonEnergy("calibratedPhotonEnergy");

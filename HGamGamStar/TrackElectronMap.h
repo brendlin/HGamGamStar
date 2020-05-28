@@ -44,6 +44,9 @@ namespace HG
    /** Add a track-electron map entry */
    void AddTrackElectronMapEntry(const xAOD::TrackParticle* trkParticle, const xAOD::Electron* electron, TrackElectronMap& trkEleMap);
 
+   /** Remove a track-electron map electron */
+   void RemoveTrackElectronMapElectron(const xAOD::Electron* electron, TrackElectronMap& trkEleMap);
+
    /** Find the electron in a particular container */
    xAOD::Electron* FindElectron(xAOD::ElectronContainer* cont, const xAOD::Electron* toFind);
 

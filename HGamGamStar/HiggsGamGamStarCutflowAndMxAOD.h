@@ -82,6 +82,7 @@ private:
 
   // Containers
   xAOD::PhotonContainer m_allPhotons; //!
+  xAOD::PhotonContainer m_preAmbPhotons; //!
   xAOD::PhotonContainer m_preSelPhotons; //!
   xAOD::PhotonContainer m_selPhotons; //!
 

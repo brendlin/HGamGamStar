@@ -226,6 +226,8 @@ HG::ChannelEnum HG::ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticl
   int Trk0_nElectron = Trk0_Electrons.size();
   int Trk1_nElectron = Trk1_Electrons.size();
 
+  if (Trk0_nElectron == 0 || Trk1_nElectron == 0) return HG::CHANNELUNKNOWN;
+
   // If each track only matches to 1 electron each then it is quite simple
   if( Trk0_nElectron == 1 &&  Trk1_nElectron == 1){
     // Match the same electron --  Merged
