@@ -82,7 +82,7 @@ You will need to export a few variables to your environment so that the code kno
 (You can put these in your `.bash_profile` startup script too):
 
     export LOCALGROUPDISK="DESY-HH_LOCALGROUPDISK"
-    export GRIDDIRECT_FROM="root://dcache-atlas-xrootd-job.desy.de:1094/"
+    export GRIDDIRECT_FROM="root://dcache-atlas-xrootd-wan.desy.de:1094//"
     export GRIDDIRECT_TO="/"
 
 The last two variables relate to how to interpret the file paths on your institute's local group disk. If you do not know the file protocol, try running:

@@ -12,6 +12,15 @@ mc16_13TeV.345965.PowhegPythia8EvtGen_NNPDF30_AZNLO_ZH125J_Hgamstargam_MINLO.der
 # ------------------------------------------------------------------------------
 mc16_13TeV.343981.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamgam.deriv.DAOD_HIGG1D2.e5607_s3126_r9364_p4062
 
+# Z->ee Background (must be run on the grid)
+# ------------------------------------------------------------------------------
+# mc16_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.deriv.DAOD_HIGG1D2.e3601_s3126_r9364_p4060
+
+# Sherpa LO lly Background
+# ------------------------------------------------------------------------------
+mc16_13TeV.700001.Sh_228_ysyLO_ee.deriv.DAOD_HIGG1D2.e7987_s3126_r9364_p4114
+mc16_13TeV.700002.Sh_228_ysyLO_mumu.deriv.DAOD_HIGG1D2.e7987_s3126_r9364_p4114
+
 # Zgam background
 # ------------------------------------------------------------------------------
 mc16_13TeV.301535.Sherpa_CT10_eegammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r9364_p4062
