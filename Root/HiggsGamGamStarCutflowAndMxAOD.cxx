@@ -458,26 +458,17 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // This section is just for the cutflow purposes.
   int nloose=0, namb=0, nHV=0;
   for (auto gam:m_allPhotons) {
-    if (photonHandler()->passOQCut(gam)       &&
-        photonHandler()->passCleaningCut(gam) &&
-        photonHandler()->passPtEtaCuts(gam)   &&
-        photonHandler()->passPIDCut(gam,egammaPID::PhotonIDLoose))
-      ++nloose;
+    bool y_passes = (photonHandler()->passOQCut(gam)
+                     && photonHandler()->passCleaningCut(gam)
+                     && photonHandler()->passPtEtaCuts(gam)
+                     && photonHandler()->passPIDCut(gam,egammaPID::PhotonIDLoose));
+    if (y_passes) ++nloose;
 
-    if (photonHandler()->passOQCut(gam)       &&
-        photonHandler()->passCleaningCut(gam) &&
-        photonHandler()->passPtEtaCuts(gam)   &&
-        photonHandler()->passPIDCut(gam,egammaPID::PhotonIDLoose) &&
-        photonHandler()->passAmbCut(gam))
-      ++namb;
+    y_passes = y_passes && photonHandler()->passAmbCut(gam);
+    if (y_passes) ++namb;
 
-    if (photonHandler()->passOQCut(gam)       &&
-        photonHandler()->passCleaningCut(gam) &&
-        photonHandler()->passPtEtaCuts(gam)   &&
-        photonHandler()->passPIDCut(gam,egammaPID::PhotonIDLoose) &&
-        photonHandler()->passAmbCut(gam)       &&
-        photonHandler()->passHVCut(gam))
-      ++nHV;
+    y_passes = y_passes && photonHandler()->passHVCut(gam);
+    if (y_passes) ++nHV;
   }
 
   //==== CUT 10 : Require one loose photon, pT > "PtPreCutGeV" GeV ====
