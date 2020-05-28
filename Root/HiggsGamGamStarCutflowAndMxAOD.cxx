@@ -468,7 +468,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
                      && photonHandler()->passPIDCut(gam,egammaPID::PhotonIDLoose));
     if (y_passes) ++nloose;
 
-    y_passes = y_passes && (int(HG::EleAcc::ambiguityType(*gam)) != 1);
+    //y_passes = y_passes && (int(HG::EleAcc::ambiguityType(*gam)) != 1);
     if (y_passes) ++namb;
 
     y_passes = y_passes && photonHandler()->passHVCut(gam);
