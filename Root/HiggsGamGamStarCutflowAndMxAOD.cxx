@@ -422,7 +422,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (!electronHandler()->passOQCut(electron)) { continue; }
     if (!electronHandler()->passPtEtaCuts(electron)) { continue; }
     if (!electronHandler()->passHVCut(electron)) { continue; }
-    //if (int(HG::EleAcc::ambiguityType(*electron)) == 5) { continue; }
+    if (int(HG::EleAcc::ambiguityType(*electron)) == 5) { continue; }
     m_preSelElectrons.push_back(electron);
   }
 
@@ -1407,9 +1407,14 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
       if (tmp_chan == HG::RESOLVED_DIELECTRON) {
         if (tmp_eles.size() != 2) HG::fatal("Z boson assignment error (resolved).");
 
+        tmp_eles.sort(HG::ElectronHandler::comparePt);
+
         // Overlap with a (presumed) photon in the photon container.
         if (!HG::EleAcc::passElePhOverlap(*(tmp_eles[0]))) continue;
         if (!HG::EleAcc::passElePhOverlap(*(tmp_eles[1]))) continue;
+
+        // Reject ambiguity = 1 resolved, leading electrons.
+        if (int(HG::EleAcc::ambiguityType(*(tmp_eles[0]))) == 1) continue;
 
         // Resolved preselection
         if (!m_eleIDPreselection.IsNull()) {
