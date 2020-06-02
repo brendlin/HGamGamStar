@@ -48,6 +48,7 @@ namespace var {
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
+  HG::yyStarChannelSimple yyStarChannelSimple;
   HG::ZyChannel ZyChannel;
   HG::vertexTruthFitRadius vertexTruthFitRadius;
   HG::trk_lead_pt trk_lead_pt;

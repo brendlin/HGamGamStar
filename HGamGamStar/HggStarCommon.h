@@ -21,7 +21,13 @@ namespace HG {
     AMBIGUOUS_DIELECTRON=4,
     FAILEDTRKELECTRON=5, //// Tracking Failed Electron Decay
     OTHER=6, //// Other Decay
-    OUT_OF_ACCEPTANCE=7
+    OUT_OF_ACCEPTANCE=7,
+
+    // Below, for additional cutflows
+    DIMUON_FULLPHASESPACE=11, // For full-phase-space cutflow
+    DIELECTRON_FULLPHASESPACE=12, // For full-phase-space cutflow
+    DIELECTRON_FULLPHASESPACE_RECORESOLVED=13,
+    DIELECTRON_FULLPHASESPACE_RECOMERGED=14
   };
 
   TString GetChannelName(ChannelEnum channel);
@@ -214,6 +220,11 @@ namespace HG {
 
   ChannelEnum truthChannel(const xAOD::TruthParticleContainer& childleps,
                            const xAOD::ElectronContainer& all_elecs);
+
+  // Returns either DIMUON_ or DIELECTRON_FULLPHASESPACE, or "other/none"
+  // No additional fiducial selection
+  ChannelEnum truthChannelSimpleMuOrE(const xAOD::TruthParticleContainer& childleps,
+                                      const xAOD::ElectronContainer& all_elecs);
 
   ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
                                                   const xAOD::TrackParticle* trk1,
