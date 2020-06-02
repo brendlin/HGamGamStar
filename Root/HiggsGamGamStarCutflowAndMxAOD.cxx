@@ -509,12 +509,8 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     HG::EleAcc::passElePhOverlap(*ph) = true;
   }
 
-  bool debug = false;
-
   // if a muon pair was found, skip the whole electron business.
   if (return_mmumu < 0) {
-
-    if (debug) std::cout << "~~~~~~~~~~~ starting the electron-photon finding process" << std::endl;
 
     // same for all electrons...
     for (auto el : m_preSelElectrons) {
@@ -539,12 +535,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
                                               return_mtrktrk,trkElectronMap,
                                               &m_preSelElectrons,&candElectrons);
 
-      if (debug)
-      {
-        if (!candElectrons.size()) std::cout << "0 Z-bosons found" << std::endl;
-        else std::cout << "Found " << (candElectrons.size() == 1 ? "Merged" : "Resolved");
-      }
-
       // If none was found, return.
       if (return_mtrktrk < 0) return ZBOSON_ASSIGNMENT;
 
@@ -554,11 +544,9 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
         // if it failed a previous overlap step, then do not consider it.
         if (!HG::EleAcc::passElePhOverlap(*ph)) continue;
         photon = ph;
-        if (debug) std::cout << " a Ph found.";
         break;
       }
 
-      if (!photon && debug) std::cout << " 0 Ph found." << std::endl;
       if (!photon) return ZBOSON_ASSIGNMENT;
 
       // Now check for an overlap between this photon and the electron(s)
@@ -572,37 +560,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
         int ph_ambi = int(HG::EleAcc::ambiguityType(*photon));
         int el_ambi = int(HG::EleAcc::ambiguityType(*el));
 
-        TString truthStatus = "TruthStatus: ";
-
-        // Some basic truth code:
-        if (HG::isMC()) {
-          const xAOD::TruthParticleContainer* all_particles = truthHandler()->getTruthParticles();
-          HG::TruthPtcls higgses = HG::getFinalHiggsBosons(all_particles);
-          if (higgses.size() > 0){
-            HG::TruthPtcls decayProds = HG::getHyyStarSignalDecayProducts(higgses[0]);
-            HG::TruthPtcls childphot = HG::FilterDirectPhotons(decayProds);
-            HG::TruthPtcls childleps = HG::FilterLeptons(decayProds);
-            if (childphot.size() == 1) {
-              if (HG::DRrap(photon,childphot[0]) < 0.03)
-                truthStatus += "PhotMatches ";
-            } else {
-              truthStatus += "NoPhotFound";
-            }
-            if (childleps.size() == 2 && (childleps[0]->absPdgId() == childleps[1]->absPdgId())) {
-              if (HG::DRrap(el,childleps[0]) < 0.03 || HG::DRrap(el,childleps[1]) < 0.03)
-                truthStatus += "EleMatches ";
-            } else {
-              truthStatus += "NoElesFound";
-            }
-          } else {
-            truthStatus += "NoHiggsFound";
-          }
-        }
-
-        if (debug) std::cout << " ph ambi " << ph_ambi
-                             << " el ambi " << el_ambi
-                             << " " << truthStatus;
-
         // Probably real el is duplicated in the ph container; remove ph duplicate.
         if      (ph_ambi == 1 && el_ambi == 1) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
         else if (ph_ambi == 1 && el_ambi == 0) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
@@ -612,25 +569,21 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
         // Probably real photon is duplicated in the el container; remove el duplicate.
         else if (ph_ambi == 6) {HG::EleAcc::passElePhOverlap(*el) = false; break;}
         else {
-          if (debug) std::cout << "not clear what to do. Defaulting to ele. ";
           HG::EleAcc::passElePhOverlap(*photon) = false; break;
         }
       }
 
       if (HG::EleAcc::passElePhOverlap(*photon) &&
           HG::EleAcc::passElePhOverlap(*(candElectrons[0])) &&
-          // if a 2nd electron exists, did it also pass?
           (candElectrons.size() == 1 || HG::EleAcc::passElePhOverlap(*(candElectrons[1])) ) )
       {
-        // We found 3 objects with no overlap!
+        // We found 3 objects with no overlap! Break out of while loop!
         break;
       }
 
       // If you get here, then you will try again from the start.
     }
-    if (debug) std::cout << std::endl;
   }
-
 
   for (auto ph : m_preSelPhotons) {
     // Take the first photon passing overlap and put it into selPhotons
