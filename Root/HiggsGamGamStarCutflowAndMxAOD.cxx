@@ -376,7 +376,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   for (unsigned i = 0; i<5; ++i) m_mergedSysts.push_back(1);
   m_lepIsoWeight = 1.0;
 
-  m_preAmbPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
   m_preSelPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
   m_selPhotons = xAOD::PhotonContainer(SG::VIEW_ELEMENTS);
   m_selElectrons = xAOD::ElectronContainer(SG::VIEW_ELEMENTS);
@@ -451,13 +450,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   m_allPhotons = photonHandler()->getCorrectedContainer();
 
   // photon applyPreSelection applies OQ, cleaning, PtEta, Loose PID, ambiguity and HV cuts
-  m_preAmbPhotons = photonHandler()->applyPreSelection(m_allPhotons);
-
-  // Our *Higgs candidate photon* is the leading pre-selected (Loose) photon
-  for (auto photon : m_preAmbPhotons) {
-    //if (int(HG::EleAcc::ambiguityType(*photon)) == 1) continue;
-    m_preSelPhotons.push_back(photon);
-  }
+  m_preSelPhotons = photonHandler()->applyPreSelection(m_allPhotons);
 
   // This section is just for the cutflow purposes.
   int nloose=0, namb=0, nHV=0;
