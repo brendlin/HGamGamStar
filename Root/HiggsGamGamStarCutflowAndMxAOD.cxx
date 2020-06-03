@@ -550,20 +550,26 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
         }
 
         // Consider the overlap case below:
-        int ph_ambi = int(HG::EleAcc::ambiguityType(*photon));
-        int el_ambi = int(HG::EleAcc::ambiguityType(*el));
+        // int ph_ambi = int(HG::EleAcc::ambiguityType(*photon));
+        // int el_ambi = int(HG::EleAcc::ambiguityType(*el));
 
         // Probably real el is duplicated in the ph container; remove ph duplicate.
-        if      (ph_ambi == 1 && el_ambi == 1) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
-        else if (ph_ambi == 1 && el_ambi == 0) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
-        else if (ph_ambi == 5 && el_ambi == 5) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
-        else if (ph_ambi == 3 && el_ambi == 3) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
+        // if      (ph_ambi == 1 && el_ambi == 1) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
+        // else if (ph_ambi == 1 && el_ambi == 0) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
+        // else if (ph_ambi == 5 && el_ambi == 5) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
+        // else if (ph_ambi == 3 && el_ambi == 3) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
 
         // Probably real photon is duplicated in the el container; remove el duplicate.
-        else if (ph_ambi == 6) {HG::EleAcc::passElePhOverlap(*el) = false; break;}
-        else {
-          HG::EleAcc::passElePhOverlap(*photon) = false; break;
-        }
+        // else if (ph_ambi == 6) {HG::EleAcc::passElePhOverlap(*el) = false; break;}
+        // else {
+        //   HG::EleAcc::passElePhOverlap(*photon) = false; break;
+        // }
+
+        //
+        // Always keep the y* and remove the photon in case of overlap:
+        //
+        HG::EleAcc::passElePhOverlap(*photon) = false; break;
+
       }
 
       if (HG::EleAcc::passElePhOverlap(*photon) &&
@@ -1359,8 +1365,8 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
         if (!HG::EleAcc::passElePhOverlap(*(tmp_eles[0]))) continue;
         if (!HG::EleAcc::passElePhOverlap(*(tmp_eles[1]))) continue;
 
-        // Reject ambiguity = 1 resolved, leading electrons.
-        if (int(HG::EleAcc::ambiguityType(*(tmp_eles[0]))) == 1) continue;
+        // Reject ambiguity != 0 resolved, leading electrons.
+        if (int(HG::EleAcc::ambiguityType(*(tmp_eles[0]))) != 0) continue;
 
         // Resolved preselection
         if (!m_eleIDPreselection.IsNull()) {
