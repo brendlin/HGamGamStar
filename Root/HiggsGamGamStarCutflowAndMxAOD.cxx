@@ -1050,6 +1050,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
   var::deltaR_ll.addToStore(truth);
   var::pt_lly.addToStore(truth);
   var::pt_ll.addToStore(truth);
+  var::deltaPhi_trktrk_IP.addToStore(truth);
 
   var::m_jj.addToStore(truth);
   var::Deta_j_j.addToStore(truth);
@@ -1068,7 +1069,6 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
     var::Resolved_deltaEta2.addToStore(false);
     var::Resolved_dRExtrapTrk12.addToStore(false);
     var::trk_lead_pt.addToStore(false);
-    var::deltaPhi_trktrk_IP.addToStore(false);
     var::deltaEta_trktrk_IP.addToStore(false);
     var::deltaR_track4mom.addToStore(false);
     var::deltaPhi2_trktrk_perigee.addToStore(false);
