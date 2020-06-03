@@ -13,6 +13,10 @@ TString HG::GetChannelName(ChannelEnum channel){
   if (channel == FAILEDTRKELECTRON   ) return "FailedTrackElectron";
   if (channel == OTHER               ) return "Other";
   if (channel == OUT_OF_ACCEPTANCE   ) return "OutOfAcceptance";
+  if (channel == DIMUON_FULLPHASESPACE) return "DimuonFullPhaseSpace";
+  if (channel == DIELECTRON_FULLPHASESPACE) return "DielectronFullPhaseSpace";
+  if (channel == DIELECTRON_FULLPHASESPACE_RECORESOLVED) return "DielectronFullPhaseSpace_RecoResolved";
+  if (channel == DIELECTRON_FULLPHASESPACE_RECOMERGED  ) return "DielectronFullPhaseSpace_RecoMerged";
   return "";
 }
 
@@ -126,6 +130,38 @@ void   HG::setPhotonConversionVertex( const xAOD::Electron* el,
   photon->setVertexCaloMatchValue( dPhi, xAOD::EgammaParameters::convMatchDeltaPhi2 );
 
   return;
+}
+
+HG::ChannelEnum HG::truthChannelSimpleMuOrE(const xAOD::TruthParticleContainer& childleps,
+                                            const xAOD::ElectronContainer& all_elecs)
+{
+  // Truth channel, but simply eey or mumuy.
+  // No additional fiducial selection
+
+  if (!HG::isMC())
+    return HG::CHANNELUNKNOWN;
+
+  if (childleps.size() != 2)
+    return HG::OTHER;
+
+  // Check if there are electrons in the decay
+  bool isElectron = true;
+  bool isMuon =  false;
+  for(const auto& lepton: childleps){
+    if( fabs(lepton->pdgId()) != 11 )
+      isElectron =  false;
+    if( fabs(lepton->pdgId()) == 13 )
+      isMuon  = true;
+  }
+
+  if(isMuon)
+    return HG::DIMUON_FULLPHASESPACE;
+
+  if(!isElectron)
+    return HG::OTHER;
+
+  // label "all electrons" as 2. Hopefully this is not too confusing.
+  return HG::DIELECTRON_FULLPHASESPACE;
 }
 
 HG::ChannelEnum HG::truthChannel(const xAOD::TruthParticleContainer& childleps,

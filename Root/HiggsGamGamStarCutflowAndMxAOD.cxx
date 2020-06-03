@@ -242,6 +242,11 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
     getCutFlowHisto(false, false, HG::RESOLVED_DIELECTRON);
     getCutFlowHisto(false, false, HG::MERGED_DIELECTRON);
 
+    getCutFlowHisto(false, false, HG::DIMUON_FULLPHASESPACE);
+    getCutFlowHisto(false, false, HG::DIELECTRON_FULLPHASESPACE);
+    getCutFlowHisto(false, false, HG::DIELECTRON_FULLPHASESPACE_RECORESOLVED);
+    getCutFlowHisto(false, false, HG::DIELECTRON_FULLPHASESPACE_RECOMERGED);
+
     if (HG::isMC()) {
       getCutFlowHisto(true, false);
       getCutFlowHisto(true, true );
@@ -250,6 +255,10 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
       getCutFlowHisto(true, true , HG::RESOLVED_DIELECTRON);
       getCutFlowHisto(true, true , HG::MERGED_DIELECTRON);
 
+      getCutFlowHisto(true, true , HG::DIMUON_FULLPHASESPACE);
+      getCutFlowHisto(true, true , HG::DIELECTRON_FULLPHASESPACE);
+      getCutFlowHisto(true, true , HG::DIELECTRON_FULLPHASESPACE_RECORESOLVED);
+      getCutFlowHisto(true, true , HG::DIELECTRON_FULLPHASESPACE_RECOMERGED);
     }
 
     // Fill the AOD and DAOD entries of the cutflow histograms.
@@ -1111,6 +1120,9 @@ void HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsInformation(void)
   HG::ChannelEnum truthChannel = HG::truthChannel(childleps,all_reco_elecs);
   var::yyStarChannel.setTruthValue( (int)truthChannel );
 
+  HG::ChannelEnum truthChannelSimple = HG::truthChannelSimpleMuOrE(childleps,all_reco_elecs);
+  var::yyStarChannelSimple.setTruthValue( (int)truthChannelSimple );
+
   // flag current event as a MC Dalitz event
   // (needed for cut-flow histograms)
   m_isNonHyyStarHiggs = HG::eventIsNonHyyStarHiggs(all_particles);
@@ -1242,11 +1254,17 @@ void HiggsGamGamStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
 
   // per-channel cutflows (mainly for debugging)
   HG::ChannelEnum truthChan = (HG::ChannelEnum)var::yyStarChannel.truth();
+  HG::ChannelEnum truthChanSimple = (HG::ChannelEnum)var::yyStarChannelSimple.truth();
+  HG::ChannelEnum recoChan = (HG::ChannelEnum)var::yyStarChannel();
 
   // unweighted MC, per channel:
   if (truthChan == HG::DIMUON) getCutFlowHisto(false, false, HG::DIMUON)->Fill(cut);
   if (truthChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(false, false, HG::RESOLVED_DIELECTRON)->Fill(cut);
   if (truthChan == HG::MERGED_DIELECTRON) getCutFlowHisto(false, false, HG::MERGED_DIELECTRON)->Fill(cut);
+  if (truthChanSimple == HG::DIMUON_FULLPHASESPACE    ) getCutFlowHisto(false, false, HG::DIMUON_FULLPHASESPACE    )->Fill(cut);
+  if (truthChanSimple == HG::DIELECTRON_FULLPHASESPACE) getCutFlowHisto(false, false, HG::DIELECTRON_FULLPHASESPACE)->Fill(cut);
+  if (truthChanSimple == HG::DIELECTRON_FULLPHASESPACE && recoChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(false, false, HG::DIELECTRON_FULLPHASESPACE_RECORESOLVED)->Fill(cut);
+  if (truthChanSimple == HG::DIELECTRON_FULLPHASESPACE && recoChan == HG::MERGED_DIELECTRON  ) getCutFlowHisto(false, false, HG::DIELECTRON_FULLPHASESPACE_RECOMERGED  )->Fill(cut);
 
   if (m_isNonHyyStarHiggs) return;
 
@@ -1255,6 +1273,10 @@ void HiggsGamGamStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
   if (truthChan == HG::DIMUON) getCutFlowHisto(true, true , HG::DIMUON)->Fill(cut,w);
   if (truthChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(true, true , HG::RESOLVED_DIELECTRON)->Fill(cut,w);
   if (truthChan == HG::MERGED_DIELECTRON) getCutFlowHisto(true, true , HG::MERGED_DIELECTRON)->Fill(cut,w);
+  if (truthChanSimple == HG::DIMUON_FULLPHASESPACE    ) getCutFlowHisto(true, true , HG::DIMUON_FULLPHASESPACE    )->Fill(cut,w);
+  if (truthChanSimple == HG::DIELECTRON_FULLPHASESPACE) getCutFlowHisto(true, true , HG::DIELECTRON_FULLPHASESPACE)->Fill(cut,w);
+  if (truthChanSimple == HG::DIELECTRON_FULLPHASESPACE && recoChan == HG::RESOLVED_DIELECTRON) getCutFlowHisto(true, true , HG::DIELECTRON_FULLPHASESPACE_RECORESOLVED)->Fill(cut,w);
+  if (truthChanSimple == HG::DIELECTRON_FULLPHASESPACE && recoChan == HG::MERGED_DIELECTRON  ) getCutFlowHisto(true, true , HG::DIELECTRON_FULLPHASESPACE_RECOMERGED  )->Fill(cut,w);
 
   return;
 }
@@ -1540,7 +1562,11 @@ void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
 
     // figure out channel
     TString truthChannel = "All channels";
-    for (auto chan : {HG::MERGED_DIELECTRON,HG::RESOLVED_DIELECTRON,HG::DIMUON}) {
+    //                Note: These must be ordered in descending order!
+    for (auto chan : {HG::DIELECTRON_FULLPHASESPACE_RECOMERGED,
+                      HG::DIELECTRON_FULLPHASESPACE_RECORESOLVED,
+                      HG::DIELECTRON_FULLPHASESPACE,HG::DIMUON_FULLPHASESPACE,
+                      HG::MERGED_DIELECTRON,HG::RESOLVED_DIELECTRON,HG::DIMUON}) {
       if (cutFlowID > (int)(1e6 * (int)chan))
       {
         truthChannel = GetChannelName(chan) + TString(" truth channel");

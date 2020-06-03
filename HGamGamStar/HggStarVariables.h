@@ -966,6 +966,16 @@ namespace HG {
   };
   
   //____________________________________________________________________________
+  class yyStarChannelSimple : public VarBase<int> {
+  public:
+  yyStarChannelSimple() : VarBase("yyStarChannelSimple") { m_default = -99; m_truthOnly = true; }
+    ~yyStarChannelSimple() { }
+
+    // Set by hand in CutflowAndMxAOD
+    // Set the truth value by specifying var::yyStarChannelSimple.setTruthValue(val)
+  };
+
+  //____________________________________________________________________________
   class ZyChannel : public VarBase<int> {
   public:
   ZyChannel() : VarBase("ZyChannel") { m_default = -99; }
@@ -1313,6 +1323,7 @@ namespace var {
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
+  extern HG::yyStarChannelSimple yyStarChannelSimple;
   extern HG::ZyChannel ZyChannel;
   extern HG::vertexTruthFitRadius vertexTruthFitRadius;
   extern HG::trk_lead_pt trk_lead_pt;
