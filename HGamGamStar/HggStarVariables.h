@@ -213,11 +213,20 @@ namespace HG {
   //____________________________________________________________________________
   class deltaPhi_trktrk_IP : public VarBase<float> {
   public:
-  deltaPhi_trktrk_IP() : VarBase("deltaPhi_trktrk_IP") { m_default = -99; m_recoOnly = true; }
+  deltaPhi_trktrk_IP() : VarBase("deltaPhi_trktrk_IP") { m_default = -99; }
     ~deltaPhi_trktrk_IP() { }
 
     float calculateValue(bool truth)
     {
+      if (truth) {
+        const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+        if (childleps->size() != 2) return m_default;
+
+        if ( (*childleps)[0]->pt() > (*childleps)[1]->pt())
+          return (*childleps)[0]->charge() * xAOD::P4Helpers::deltaPhi((*childleps)[0],(*childleps)[1]);
+        return   (*childleps)[1]->charge() * xAOD::P4Helpers::deltaPhi((*childleps)[1],(*childleps)[0]);
+      }
+
       const xAOD::MuonContainer *mus = (xAOD::MuonContainer*)HG::VarHandler::getInstance()->getMuons(truth);
       if (mus->size() >= 2)
         return (*mus)[0]->charge() * xAOD::P4Helpers::deltaPhi((*mus)[0],(*mus)[1]);
