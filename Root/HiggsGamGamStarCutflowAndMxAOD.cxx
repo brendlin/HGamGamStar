@@ -421,6 +421,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     if (!electronHandler()->passOQCut(electron)) { continue; }
     if (!electronHandler()->passPtEtaCuts(electron)) { continue; }
     if (!electronHandler()->passHVCut(electron)) { continue; }
+    if (int(HG::EleAcc::ambiguityType(*electron)) == 5) { continue; }
     m_preSelElectrons.push_back(electron);
   }
 
@@ -451,10 +452,6 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   // photon applyPreSelection applies OQ, cleaning, PtEta, Loose PID, ambiguity and HV cuts
   m_preSelPhotons = photonHandler()->applyPreSelection(m_allPhotons);
 
-  // Our *Higgs candidate photon* is the leading pre-selected (Loose) photon
-  if (m_preSelPhotons.size()  ) m_selPhotons.push_back(m_preSelPhotons[0]);
-
-
   // This section is just for the cutflow purposes.
   int nloose=0, namb=0, nHV=0;
   for (auto gam:m_allPhotons) {
@@ -464,7 +461,7 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
                      && photonHandler()->passPIDCut(gam,egammaPID::PhotonIDLoose));
     if (y_passes) ++nloose;
 
-    y_passes = y_passes && photonHandler()->passAmbCut(gam);
+    //y_passes = y_passes && (int(HG::EleAcc::ambiguityType(*gam)) != 1);
     if (y_passes) ++namb;
 
     y_passes = y_passes && photonHandler()->passHVCut(gam);
@@ -498,8 +495,101 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
   double return_mtrktrk = -1;
 
   xAOD::ElectronContainer candElectrons(SG::VIEW_ELEMENTS);
-  HG::ChannelEnum echan = FindZboson_ElectronChannelAware(&m_preSelTracks,sel_trk1,sel_trk2,return_mtrktrk,
-                                                          trkElectronMap,&m_preSelElectrons,&candElectrons);
+  HG::ChannelEnum echan = HG::ChannelEnum::CHANNELUNKNOWN;
+
+  // set these to true by default (e.g. "we still consider this object")
+  for (auto ph : m_preSelPhotons) {
+    HG::EleAcc::passElePhOverlap(*ph) = true;
+  }
+
+  // if a muon pair was found, skip the whole electron business.
+  if (return_mmumu < 0) {
+
+    // same for all electrons...
+    for (auto el : m_preSelElectrons) {
+      HG::EleAcc::passElePhOverlap(*el) = true;
+    }
+
+    // Find the highest-pt lepton pair, then perform OR with leading photon.
+    while (true) {
+
+      candElectrons.clear();
+      return_mtrktrk = -1;
+      sel_trk1 = nullptr;
+      sel_trk1 = nullptr;
+
+      // Remove OR-ed leptons from track-electron map.
+      for (auto el : m_preSelElectrons) {
+        if (!HG::EleAcc::passElePhOverlap(*el))
+          HG::MapHelpers::RemoveTrackElectronMapElectron(el,trkElectronMap);
+      }
+
+      echan = FindZboson_ElectronChannelAware(&m_preSelTracks,sel_trk1,sel_trk2,
+                                              return_mtrktrk,trkElectronMap,
+                                              &m_preSelElectrons,&candElectrons);
+
+      // If none was found, return.
+      if (return_mtrktrk < 0) return ZBOSON_ASSIGNMENT;
+
+      // Now find the highest-pt remaining photon.
+      xAOD::Photon* photon = nullptr;
+      for (auto ph : m_preSelPhotons) {
+        // if it failed a previous overlap step, then do not consider it.
+        if (!HG::EleAcc::passElePhOverlap(*ph)) continue;
+        photon = ph;
+        break;
+      }
+
+      if (!photon) return ZBOSON_ASSIGNMENT;
+
+      // Now check for an overlap between this photon and the electron(s)
+      candElectrons.sort(HG::ElectronHandler::comparePt);
+      for (auto el : candElectrons) {
+        if (HG::DRrap(photon,el) >= 0.02) {
+          continue;
+        }
+
+        // Consider the overlap case below:
+        // int ph_ambi = int(HG::EleAcc::ambiguityType(*photon));
+        // int el_ambi = int(HG::EleAcc::ambiguityType(*el));
+
+        // Probably real el is duplicated in the ph container; remove ph duplicate.
+        // if      (ph_ambi == 1 && el_ambi == 1) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
+        // else if (ph_ambi == 1 && el_ambi == 0) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
+        // else if (ph_ambi == 5 && el_ambi == 5) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
+        // else if (ph_ambi == 3 && el_ambi == 3) {HG::EleAcc::passElePhOverlap(*photon) = false; break;}
+
+        // Probably real photon is duplicated in the el container; remove el duplicate.
+        // else if (ph_ambi == 6) {HG::EleAcc::passElePhOverlap(*el) = false; break;}
+        // else {
+        //   HG::EleAcc::passElePhOverlap(*photon) = false; break;
+        // }
+
+        //
+        // Always keep the y* and remove the photon in case of overlap:
+        //
+        HG::EleAcc::passElePhOverlap(*photon) = false; break;
+
+      }
+
+      if (HG::EleAcc::passElePhOverlap(*photon) &&
+          HG::EleAcc::passElePhOverlap(*(candElectrons[0])) &&
+          (candElectrons.size() == 1 || HG::EleAcc::passElePhOverlap(*(candElectrons[1])) ) )
+      {
+        // We found 3 objects with no overlap! Break out of while loop!
+        break;
+      }
+
+      // If you get here, then you will try again from the start.
+    }
+  }
+
+  for (auto ph : m_preSelPhotons) {
+    // Take the first photon passing overlap and put it into selPhotons
+    if (!HG::EleAcc::passElePhOverlap(*ph)) continue;
+    m_selPhotons.push_back(ph);
+    break;
+  }
 
   //==== CUT 12 : Whether SF leptons survive OR
   if (return_mmumu < 0 && return_mtrktrk < 0) return ZBOSON_ASSIGNMENT;
@@ -1269,6 +1359,15 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
       if (tmp_chan == HG::RESOLVED_DIELECTRON) {
         if (tmp_eles.size() != 2) HG::fatal("Z boson assignment error (resolved).");
 
+        tmp_eles.sort(HG::ElectronHandler::comparePt);
+
+        // Overlap with a (presumed) photon in the photon container.
+        if (!HG::EleAcc::passElePhOverlap(*(tmp_eles[0]))) continue;
+        if (!HG::EleAcc::passElePhOverlap(*(tmp_eles[1]))) continue;
+
+        // Reject ambiguity != 0 resolved, leading electrons.
+        if (int(HG::EleAcc::ambiguityType(*(tmp_eles[0]))) != 0) continue;
+
         // Resolved preselection
         if (!m_eleIDPreselection.IsNull()) {
           if (!electronHandler()->passPIDCut(tmp_eles[0],m_eleIDPreselection)) continue;
@@ -1290,6 +1389,8 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
       }
       else if (tmp_chan == HG::MERGED_DIELECTRON) {
         if (tmp_eles.size() != 1) HG::fatal("Z boson assignment error (merged).");
+
+        if (!HG::EleAcc::passElePhOverlap(*(tmp_eles[0]))) continue;
 
         // apply resolved preselection cuts
         if (!m_mergedElectronID->passPreselection(*tmp_eles[0],*tracki,*trackj)) continue;

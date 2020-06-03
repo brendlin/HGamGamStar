@@ -99,6 +99,22 @@ void HG::MapHelpers::AddTrackElectronMapEntry(const xAOD::TrackParticle* trkPart
 }
 
 //______________________________________________________________________________
+void HG::MapHelpers::RemoveTrackElectronMapElectron(const xAOD::Electron* electron,
+                                                    TrackElectronMap& trkEleMap)
+{
+  const xAOD::Electron* electron_p = (xAOD::Electron*)getTheOriginalPointer(*electron);
+
+  for(auto it = trkEleMap.begin(); it != trkEleMap.end(); ) {
+    if(it->second == electron_p)
+      it = trkEleMap.erase(it);
+    else
+      ++it;
+  }
+
+  return;
+}
+
+//______________________________________________________________________________
 void HG::MapHelpers::AddTruthTrackMapEntry(const xAOD::TrackParticle* trkParticle,TruthTrackMap& truthTrkMap) {
   if ( !HG::isMC() ) fatal("Should not call MakeTruthTrackMap on data!");
 
