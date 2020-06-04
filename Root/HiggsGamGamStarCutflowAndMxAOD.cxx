@@ -127,6 +127,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   // Whether to save objects (photons, jets ...)
   m_saveObjects = config()->getBool("SaveObjects",false);
   m_skipElectronObjects = false; // to be filled in execute, when the mcChannelNumber is known
+  m_skipTruthElectronObjects = false; // to be filled in execute, when the mcChannelNumber is known
   m_skipMuonObjects = false; // to be filled in execute, when the mcChannelNumber is known
 
   // Whether to save the list of differential variables
@@ -294,6 +295,12 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
       for (auto mcChanNum : skipElectronsV) {
         if ( std::atoi(mcChanNum.Data()) == (int)eventInfo()->mcChannelNumber() )
         { m_skipElectronObjects = true; }
+      }
+
+      StrV skipTruthElectronsV = config()->getStrV("SkipSavingTruthElectronObjects",{});
+      for (auto mcChanNum : skipTruthElectronsV) {
+        if ( std::atoi(mcChanNum.Data()) == (int)eventInfo()->mcChannelNumber() )
+        { m_skipTruthElectronObjects = true; }
       }
 
     }
@@ -1162,14 +1169,16 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   // Save truth containers, if configured
   if (m_saveTruthObjects) {
     truthHandler()->writePhotons    (all_photons  );
-    if (!m_skipElectronObjects) truthHandler()->writeElectrons  (all_electrons);
-    if (!m_skipMuonObjects)     truthHandler()->writeMuons      (all_muons    );
+    if (!m_skipElectronObjects && !m_skipTruthElectronObjects)
+      truthHandler()->writeElectrons(all_electrons);
+    if (!m_skipMuonObjects)
+      truthHandler()->writeMuons    (all_muons    );
     truthHandler()->writeJets       (all_jets     );
     truthHandler()->writeHiggsBosons(all_higgs    );
     truthHandler()->writeTruthEvents(             );
 
     addTruthLinks(m_photonContainerName.Data(), m_photonTruthContainerName.Data());
-    if (!m_skipElectronObjects)
+    if (!m_skipElectronObjects && !m_skipTruthElectronObjects)
     { addTruthLinks(m_elecContainerName.Data()  , m_elecTruthContainerName.Data()); }
   }
 
