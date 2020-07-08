@@ -352,6 +352,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   // check if we should apply systematics or not
   if (m_applySystematics) {
 
+    AddTheorySystematics();
     AddMergedIDSFSystematics();
 
     for (auto sys: getSystematics()) {
@@ -1590,6 +1591,178 @@ void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
   }
 }
 
+void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
+  
+    float m_lly = var::m_lly();
+    float m_lly_gev = var::m_lly_gev();
+    float weight = var::weight();
+    int category = var::yyStarCategory();
+    int channel = var::yyStarChannel();
+
+    TruthWeightTools::HiggsWeights hw = eventHandler()->higgsWeights();
+    
+    //now fill all weight values into one array
+    std::vector<double> sys_weights;
+    std::vector<std::string> sys_names;
+    
+    //pdf uncertainties
+    if (hw.pdf4lhc_unc.size()!=30){
+      HG::fatal("Got unexpected number of PDF theory systs: " + std::to_string(hw.pdf4lhc_unc.size()) + " (expected 30)");
+    }
+    for(unsigned i=0; i<30; i++){
+        sys_names.push_back("TheorySig_PDF4LHC_NLO_30_EV" + std::to_string(i+1));
+        sys_weights.push_back(hw.pdf4lhc_unc[i]);
+    }
+    
+    //alpha_S uncertainties
+    sys_names.push_back("TheorySig_QCDalphaS__1up");
+    sys_weights.push_back(hw.alphaS_up);
+    sys_names.push_back("TheorySig_QCDalphaS__1down");
+    sys_weights.push_back(hw.alphaS_dn);
+    
+        
+    //Get prodMode (copy-pasted from EventHandler.cxx)
+    int mcid = eventInfo()->mcChannelNumber();
+    TString prodMode = "";
+    std::map<TString, std::vector<int> > weightDSIDs;
+    HG::StrV higgsTypes = config()->getStrV("EventHandler.HiggsWeights.Types", {});
+
+    for (TString sample : higgsTypes) {
+    HG::StrV dsids = config()->getStrV("EventHandler.HiggsWeights." + sample, {""});
+
+        for (TString dsid : dsids) {
+            weightDSIDs[sample].push_back(std::atoi(dsid.Data()));
+
+            if (mcid == std::atoi(dsid.Data())) {
+
+                if (sample == "NNLOPS") { prodMode = "ggF"; }
+                else { prodMode = sample; }
+            }
+        }
+    }
+    
+    //adapted from TruthWeightTools README example
+    // Sample dependant QCD scale variations:
+    
+    //ggF
+    std::vector<std::string> ggf_names = {
+        "TheorySig_QCDscale_ggF_mu",
+        "TheorySig_QCDscale_ggF_res",
+        "TheorySig_QCDscale_ggF_mig01",
+        "TheorySig_QCDscale_ggF_mig12",
+        "TheorySig_QCDscale_ggF_vbf2j",
+        "TheorySig_QCDscale_ggF_vbf3j",
+        "TheorySig_QCDscale_ggF_pTH60",
+        "TheorySig_QCDscale_ggF_pTH120",
+        "TheorySig_QCDscale_ggF_qm_t",
+        "TheorySig_QCDscale_ggF_pTH_nJ0"
+    };
+    for (unsigned i=0;i<ggf_names.size();i++)
+        sys_names.push_back(ggf_names[i]);
+    if (prodMode == "ggF")
+    {
+        if (hw.ggF_qcd_2017.size()!=9){
+            HG::fatal("Got unexpected number of ggF QCD theory systs: " + std::to_string(hw.ggF_qcd_2017.size()) + " (expected 9)");
+        }
+        for (unsigned i = 0; i<9; i++)
+            sys_weights.push_back(hw.ggF_qcd_2017[i]);
+        sys_weights.push_back(hw.ggF_qcd_pTH_nJ0);
+    } else{ //fill dummy values
+        for (unsigned i = 0; i<ggf_names.size(); i++)
+            sys_weights.push_back(hw.nominal);
+    }
+    
+    //VBF
+    std::vector<std::string> vbf_names = {
+        "TheorySig_QCDscale_VBF_mu",
+        "TheorySig_QCDscale_VBF_PTH200",
+        "TheorySig_QCDscale_VBF_Mjj60",
+        "TheorySig_QCDscale_VBF_Mjj120",
+        "TheorySig_QCDscale_VBF_Mjj350",
+        "TheorySig_QCDscale_VBF_Mjj700",
+        "TheorySig_QCDscale_VBF_Mjj1000",
+        "TheorySig_QCDscale_VBF_Mjj1500",
+        "TheorySig_QCDscale_VBF_pTjH25",
+        "TheorySig_QCDscale_VBF_JET01"
+    };
+    for (unsigned i=0;i<vbf_names.size();i++)
+        sys_names.push_back(vbf_names[i]);
+    if (prodMode == "VBF")
+    {
+        if (hw.qq2Hqq_VBF_scheme.size()!=10){
+            HG::fatal("Got unexpected number of VBF QCD theory systs: " + std::to_string(hw.ggF_qcd_2017.size()) + " (expected 10)");
+        }
+        for (unsigned i = 0; i<10; i++)
+            sys_weights.push_back(hw.qq2Hqq_VBF_scheme[i]);
+    } else{ //fill dummy values
+        for (unsigned i = 0; i<vbf_names.size(); i++)
+            sys_weights.push_back(hw.nominal);
+    }
+    
+    //VH
+    std::vector<std::string> vh_names = {
+        "TheorySig_QCDscale_qqVH_mu",
+        "TheorySig_QCDscale_qqVH_PTV75",
+        "TheorySig_QCDscale_qqVH_PTV150",
+        "TheorySig_QCDscale_qqVH_PTV250",
+        "TheorySig_QCDscale_qqVH_PTV400",
+        "TheorySig_QCDscale_qqVH_mig01",
+        "TheorySig_QCDscale_qqVH_mig12",
+        "TheorySig_QCDscale_ggVH_mu",
+        "TheorySig_QCDscale_ggVH_PTV75",
+        "TheorySig_QCDscale_ggVH_PTV150",
+        "TheorySig_QCDscale_ggVH_PTV250",
+        "TheorySig_QCDscale_ggVH_PTV400",
+        "TheorySig_QCDscale_ggVH_mig01",
+        "TheorySig_QCDscale_ggVH_mig12"
+    };
+    for (unsigned i=0;i<vh_names.size();i++)
+        sys_names.push_back(vh_names[i]);
+    if ( prodMode == "WH" || prodMode == "qqZH" || prodMode == "ggZH" )
+    {
+        if (hw.qq2Hll_scheme.size()!=7){
+            HG::fatal("Got unexpected number of qqVH QCD theory systs: " + std::to_string(hw.qq2Hll_scheme.size()) + " (expected 7)");
+        }
+        for (unsigned i = 0; i<7; i++)
+            sys_weights.push_back(hw.qq2Hll_scheme[i]);
+        
+        if (hw.gg2Hll_scheme.size()!=7){
+            HG::fatal("Got unexpected number of ggVH QCD theory systs: " + std::to_string(hw.gg2Hll_scheme.size()) + " (expected 7)");
+        }
+        for (unsigned i = 0; i<7; i++)
+            sys_weights.push_back(hw.gg2Hll_scheme[i]);
+    } else{ //fill dummy values
+        for (unsigned i = 0; i<vh_names.size(); i++)
+            sys_weights.push_back(hw.nominal);
+    }
+    //now create all systematic branches
+    for (unsigned i=0; i<sys_names.size(); ++i) {
+
+        CP::SystematicSet sys(sys_names[i]);
+
+        // This is the magic call to get a fresh EventInfo:
+        HG::VarHandler::getInstance()->applySystematicVariation(sys);
+
+        // These are unchanged variables:
+        var::cutFlow.setValue(m_cutFlow);
+        var::m_lly.setValue(m_lly);
+        var::m_lly_gev.setValue(m_lly_gev);
+        eventHandler()->storeVar<char>("isPassedEventSelection",m_cutFlow >= PASSALL);
+        var::yyStarCategory.setValue(category);
+        var::yyStarChannel.setValue(channel);
+        
+        if (hw.nominal != sys_weights[i]){ //only update the weight if there's a difference to avoid numerical errors "faking" systematic
+            var::weight.setValue(weight / hw.nominal * sys_weights[i]);
+        }
+        else var::weight.setValue(weight);
+
+        // Write out the syst in each case:
+        HG::VarHandler::getInstance()->write();
+    }
+    //reset the weight to nominal
+    var::weight.setValue(weight);
+}
+
 void HiggsGamGamStarCutflowAndMxAOD::AddMergedIDSFSystematics() {
 
   bool is_mergedChan = (var::yyStarChannel()==HG::MERGED_DIELECTRON);
@@ -1636,5 +1809,7 @@ void HiggsGamGamStarCutflowAndMxAOD::AddMergedIDSFSystematics() {
     HG::VarHandler::getInstance()->write();
   }
 
+  //reset the weight to nominal
+  var::weight.setValue(weight);
   return;
 }
