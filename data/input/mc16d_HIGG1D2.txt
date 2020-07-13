@@ -21,6 +21,17 @@ mc16_13TeV.343981.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamgam.deriv.DAOD_HI
 mc16_13TeV.700001.Sh_228_ysyLO_ee.deriv.DAOD_HIGG1D2.e7987_s3126_r10201_p4114
 mc16_13TeV.700002.Sh_228_ysyLO_mumu.deriv.DAOD_HIGG1D2.e7987_s3126_r10201_p4114
 
+# SM Diphoton
+# ------------------------------------------------------------------------------
+mc16_13TeV.364352.Sherpa_224_NNPDF30NNLO_Diphoton_myy_90_175.deriv.DAOD_HIGG1D2.e6452_s3126_r10201_p4112
+
+# enugamma
+# ------------------------------------------------------------------------------
+mc16_13TeV.364522.Sherpa_222_NNPDF30NNLO_enugamma_pty_15_35.deriv.DAOD_HIGG1D2.e5928_s3126_r10201_p4112
+mc16_13TeV.364523.Sherpa_222_NNPDF30NNLO_enugamma_pty_35_70.deriv.DAOD_HIGG1D2.e5928_s3126_r10201_p4112
+mc16_13TeV.364524.Sherpa_222_NNPDF30NNLO_enugamma_pty_70_140.deriv.DAOD_HIGG1D2.e5928_s3126_r10201_p4112
+mc16_13TeV.364525.Sherpa_222_NNPDF30NNLO_enugamma_pty_140_E_CMS.deriv.DAOD_HIGG1D2.e5928_s3126_r10201_p4112
+
 # Zgam background
 # ------------------------------------------------------------------------------
 # mc16_13TeV.301535.Sherpa_CT10_eegammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
