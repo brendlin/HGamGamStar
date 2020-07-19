@@ -6,6 +6,7 @@
 #include "HGamGamStar/ExtraHggStarObjects.h"
 #include "HGamGamStar/TrackElectronMap.h"
 #include "xAODTracking/VertexAuxContainer.h"
+#include "ElectronPhotonShowerShapeFudgeTool/ElectronPhotonShowerShapeFudgeTool.h"
 
 
 
@@ -18,6 +19,7 @@ ClassImp(HiggsGamGamStarCutflowAndMxAOD)
 HiggsGamGamStarCutflowAndMxAOD::HiggsGamGamStarCutflowAndMxAOD(const char *name)
 : MxAODTool(name)
   , m_trackHandler(nullptr)
+  , m_fudgeMC(nullptr)
 { }
 
 HiggsGamGamStarCutflowAndMxAOD::~HiggsGamGamStarCutflowAndMxAOD() {}
@@ -59,6 +61,21 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
   // Working points used for cutflow
   m_eleMergedIsoWP = electronHandler()->getIsoType(config()->getStr("MergedElectrons.IsoCriteria"));
   m_eleResolvedIsoWP = electronHandler()->getIsoType(config()->getStr("ResolvedElectrons.IsoCriteria"));
+
+  // Whether to use converted photon fudge factors on the Merged object
+  m_doFudge = config()->getBool("MergedElectrons.DoFudgeFactor", true);
+
+  // photon fudge tool
+  m_fudgeMC  = new ElectronPhotonShowerShapeFudgeTool("FudgeMCTool");
+  int fudgeSet = config()->getNum("MergedElectrons.FFSet");
+  TString ffCalibFile = config()->getStr("MergedElectrons.FFCalibFile");
+
+  CP_CHECK("MergedID", m_fudgeMC->setProperty("Preselection", fudgeSet));
+  CP_CHECK("MergedID", m_fudgeMC->setProperty("FFCalibFile", ffCalibFile.Data()));
+
+  if (m_fudgeMC->initialize().isFailure()) {
+    HG::fatal("Failed to initialize FudgeMCTool");
+  }
 
   for (auto isoStr : eleIsoWPs) {
     HG::Iso::IsolationType iso = electronHandler()->getIsoType(isoStr);
@@ -632,24 +649,24 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
     var::yyStarChannel.setValue(echan);
 
     if (m_selElectrons.size() == 1) {
-      TLorentzVector merged = HG::MergedEleTLV(*m_selTracks[0],*m_selTracks[1],*m_selElectrons[0]);
-      m_ll = merged.M();
-      pt_ll = merged.Pt();
-      m_lly = (merged + m_selPhotons[0]->p4()).M();
       // Decorate merged variables as soon as you find out the channel is merged
       xAOD::Electron* ele = m_selElectrons[0];
       xAOD::TrackParticle* trk0 = m_selTracks[0];
       xAOD::TrackParticle* trk1 = m_selTracks[1];
+
+      // Some decorations
       m_mergedElectronID->decorateMergedVariables(*ele,*trk0,*trk1);
-      // Need to cut on lead track pt in merged case when processing MxAODs, for that need a variable which is defined for each event (i.e. also need it in muon/resolved events where the value is -99)
 
-      // Save multiple versions of the PID:
-      HG::EleAcc::passPID(*ele) = m_mergedElectronID->passPIDCut(*ele,*trk0,*trk1);
-      HG::EleAcc::passTMVAPIDv2(*ele) = m_mergedElectronID_v2->passPIDCut(*ele, HG::isMC() );
-      HG::EleAcc::passTMVAPIDv3(*ele) = m_mergedElectronID_v3->passPIDCut(*ele, HG::isMC() );
+      // Some more decorations (that e.g. need different tools)
+      // This is where the merged electron is calibrated, and
+      // where fudge factors are applied if requested.
+      // This is also where ID working points are evaluted!
+      AddMergedDecorationsAndIDWPs(*ele,*trk0,*trk1);
 
-      // This is what we use:
-      HG::EleAcc::passTMVAPID  (*ele) = HG::EleAcc::passTMVAPIDv2(*ele);
+      TLorentzVector merged = HG::MergedEleTLV(*m_selTracks[0],*m_selTracks[1],*m_selElectrons[0]);
+      m_ll = merged.M();
+      pt_ll = merged.Pt();
+      m_lly = (merged + m_selPhotons[0]->p4()).M();
 
     }
     else if (m_selElectrons.size() == 2) {
@@ -1300,6 +1317,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::finalize() {
   HgammaAnalysis::finalize();
 
   SafeDelete(m_trackHandler);
+  SafeDelete(m_fudgeMC);
 
   return EL::StatusCode::SUCCESS;
 }
@@ -1427,8 +1445,12 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
         // apply resolved preselection cuts
         if (!m_mergedElectronID->passPreselection(*tmp_eles[0],*tracki,*trackj)) continue;
 
-        TLorentzVector merged = HG::MergedEleTLV(*tracki,*trackj,*tmp_eles[0]);
-        tmp_m  = merged.M();
+        //TLorentzVector merged = HG::MergedEleTLV(*tracki,*trackj,*tmp_eles[0]);
+        //tmp_m  = merged.M();
+        // At this stage in the cutflow, the Merged TLV is not calibrated. Therefore,
+        // we will simply return an mll > 0 in order to get through to the next step.
+        // I am setting into to 95 GeV though, just so we don't forget to re-set it later.
+        tmp_m = 95000.;
       }
 
       // Sort by max (vector sum) pt of the di-track system.
@@ -1472,6 +1494,64 @@ void HiggsGamGamStarCutflowAndMxAOD::AddMuonDecorations(xAOD::MuonContainer& muo
 
 void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
 
+  for (auto electron : electrons) {
+
+    //set corrected iso decision same as non-corrected by default
+    for (auto dec : m_eleIsoAccCorr){
+      (*dec.second)(*electron) = electronHandler()->passIsoCut(electron,dec.first);
+    }
+
+    // NEED TO initialize merged electron ID variables here!
+    HG::EleAcc::EOverP0P1(*electron) = -999;
+    HG::EleAcc::dRExtrapTrk12(*electron) = -999;
+    HG::EleAcc::dRExtrapTrk12_LM(*electron) = -999;
+    HG::EleAcc::delta_z0sinTheta_tracks(*electron) = -999;
+    HG::EleAcc::delta_z0_tracks(*electron) = -999;
+    HG::EleAcc::passPID(*electron) = false;
+    HG::EleAcc::passTMVAPID(*electron) = false;
+    HG::EleAcc::passTMVAPIDv2(*electron) = false;
+    HG::EleAcc::passTMVAPIDv2_nofudge(*electron) = false;
+    HG::EleAcc::passTMVAPIDv3(*electron) = false;
+    HG::EleAcc::passDeltaPhiIPCut(*electron) = false;
+    HG::EleAcc::deltaPhiTrksIP(*electron) = -999;
+
+    HG::EleAcc::Eratio_nofudge(*electron) = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Eratio);
+    HG::EleAcc::wtots1_nofudge(*electron) = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::wtots1);
+    HG::EleAcc::Reta_nofudge(*electron)   = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Reta);
+    HG::EleAcc::Rphi_nofudge(*electron)   = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rphi);
+    HG::EleAcc::weta2_nofudge(*electron)  = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::weta2);
+
+    // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
+    // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
+    // HG::EleAcc::dRbetweenTracks_P_L1(*electron) = -999;
+    // HG::EleAcc::dRbetweenTracks_P_L2(*electron) = -999;
+
+    // Decorate Rhad
+    double feta = fabs(electron->eta());
+    HG::EleAcc::RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
+      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
+      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+
+
+    HG::EleAcc::RhadForPID_nofudge(*electron) = HG::EleAcc::RhadForPID(*electron);
+
+    int index1 = HG::EleAcc::vtxTrkIndex1(*electron);
+    int index2 = HG::EleAcc::vtxTrkIndex2(*electron);
+    HG::EleAcc::vtxTrk1_TRT_PID_trans(*electron) = index1<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index1)) ;
+    HG::EleAcc::vtxTrk2_TRT_PID_trans(*electron) = index2<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index2)) ;
+
+    HG::EleAcc::calibratedPhotonEnergy(*electron) = -999;
+
+  } // end of loop over electrons
+
+  return;
+}
+
+//______________________________________________________________________________
+void HiggsGamGamStarCutflowAndMxAOD::AddMergedDecorationsAndIDWPs(xAOD::Electron& ele,
+                                                                  const xAOD::TrackParticle& trk0,
+                                                                  const xAOD::TrackParticle& trk1) {
+
   // Make a dummy vertex container (does not need to be fancy because we do not save it
   // but it does need to be safe for running over systematics (i.e. do not make many copies of it)
   // (to avoid "Trying to overwrite object with key" errors)
@@ -1489,63 +1569,71 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::fatal("Could not retrieve TempVertices. Exiting.");
   }
 
-  for (auto electron : electrons) {
-
-    //set corrected iso decision same as non-corrected by default
-    for (auto dec : m_eleIsoAccCorr){
-      (*dec.second)(*electron) = electronHandler()->passIsoCut(electron,dec.first);
-    }
-
-    // NEED TO initialize merged electron ID variables here!
-    HG::EleAcc::EOverP0P1(*electron) = -999;
-    HG::EleAcc::dRExtrapTrk12(*electron) = -999;
-    HG::EleAcc::dRExtrapTrk12_LM(*electron) = -999;
-    HG::EleAcc::delta_z0sinTheta_tracks(*electron) = -999;
-    HG::EleAcc::delta_z0_tracks(*electron) = -999;
-    HG::EleAcc::passPID(*electron) = false;
-    HG::EleAcc::passTMVAPID(*electron) = false;
-    HG::EleAcc::passTMVAPIDv2(*electron) = false;
-    HG::EleAcc::passTMVAPIDv3(*electron) = false;
-    HG::EleAcc::passDeltaPhiIPCut(*electron) = false;
-    HG::EleAcc::deltaPhiTrksIP(*electron) = -999;
-
-    // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
-    // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
-    // HG::EleAcc::dRbetweenTracks_P_L1(*electron) = -999;
-    // HG::EleAcc::dRbetweenTracks_P_L2(*electron) = -999;
-
-    // Decorate Rhad
-    double feta = fabs(electron->eta());
-    HG::EleAcc::RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
-      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
-      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
-
-
-
-    int index1 = HG::EleAcc::vtxTrkIndex1(*electron);
-    int index2 = HG::EleAcc::vtxTrkIndex2(*electron);
-    HG::EleAcc::vtxTrk1_TRT_PID_trans(*electron) = index1<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index1)) ;
-    HG::EleAcc::vtxTrk2_TRT_PID_trans(*electron) = index2<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index2)) ;
-
-    xAOD::Photon* photon = HG::createPhotonFromElectron(electron);
-
-
-    if(photon)
-    {
-      HG::setPhotonConversionVertex( electron, photon, 30, outVertices);
-      photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
-      HG::EleAcc::calibratedPhotonEnergy(*electron) = photon->e();
-
-      if(photon->usingPrivateStore()) photon->releasePrivateStore();
-      delete photon;
-    } else {
-      HG::EleAcc::calibratedPhotonEnergy(*electron) = -999;
-    }
-    photon = 0;
-
+  xAOD::Photon* photon = HG::createPhotonFromElectron(&ele);
+  if(!photon)
+  {
+    HG::fatal("Could not create photon from merged electron.");
   }
 
-    return;
+  HG::setPhotonConversionVertex( &ele, photon, 30, outVertices);
+  photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
+
+  HG::EleAcc::calibratedPhotonEnergy(ele) = photon->e();
+
+  // Compute the no-fudge versions before applying the fudge factor
+  HG::EleAcc::passTMVAPIDv2_nofudge(ele) = m_mergedElectronID_v2->passPIDCut(ele, HG::isMC() );
+
+  if (m_doFudge && HG::isMC()) {
+
+    // Feed shower shape values into photon
+    photon->setShowerShapeValue(ele.showerShapeValue(xAOD::EgammaParameters::Rhad  ),xAOD::EgammaParameters::Rhad  );
+    photon->setShowerShapeValue(ele.showerShapeValue(xAOD::EgammaParameters::Rhad1 ),xAOD::EgammaParameters::Rhad1 );
+    photon->setShowerShapeValue(ele.showerShapeValue(xAOD::EgammaParameters::Eratio),xAOD::EgammaParameters::Eratio);
+    photon->setShowerShapeValue(ele.showerShapeValue(xAOD::EgammaParameters::wtots1),xAOD::EgammaParameters::wtots1);
+    photon->setShowerShapeValue(ele.showerShapeValue(xAOD::EgammaParameters::Reta  ),xAOD::EgammaParameters::Reta  );
+    photon->setShowerShapeValue(ele.showerShapeValue(xAOD::EgammaParameters::Rphi  ),xAOD::EgammaParameters::Rphi  );
+    photon->setShowerShapeValue(ele.showerShapeValue(xAOD::EgammaParameters::weta2 ),xAOD::EgammaParameters::weta2 );
+
+    // Correct them as if they were this (converted) photon
+    CP::CorrectionCode cc = m_fudgeMC->applyCorrection(*photon);
+
+    if (cc == CP::CorrectionCode::Error)
+    { HG::fatal("Error in MergedElectronID::applyFudgeFactor(): Fudging returned error"); }
+
+    if (cc == CP::CorrectionCode::OutOfValidityRange)
+    { HG::fatal("Warning in MergedElectronID::applyFudgeFactor(): Current photon has no valid fudging due to out-of-range"); }
+
+    // Feed the corrected values back to the electron
+    ele.setShowerShapeValue(photon->showerShapeValue(xAOD::EgammaParameters::Rhad  ),xAOD::EgammaParameters::Rhad  );
+    ele.setShowerShapeValue(photon->showerShapeValue(xAOD::EgammaParameters::Rhad1 ),xAOD::EgammaParameters::Rhad1 );
+    ele.setShowerShapeValue(photon->showerShapeValue(xAOD::EgammaParameters::Eratio),xAOD::EgammaParameters::Eratio);
+    ele.setShowerShapeValue(photon->showerShapeValue(xAOD::EgammaParameters::wtots1),xAOD::EgammaParameters::wtots1);
+    ele.setShowerShapeValue(photon->showerShapeValue(xAOD::EgammaParameters::Reta  ),xAOD::EgammaParameters::Reta  );
+    ele.setShowerShapeValue(photon->showerShapeValue(xAOD::EgammaParameters::Rphi  ),xAOD::EgammaParameters::Rphi  );
+    ele.setShowerShapeValue(photon->showerShapeValue(xAOD::EgammaParameters::weta2 ),xAOD::EgammaParameters::weta2 );
+
+    // Recalculate RhadForPID (which is derived from Rhad, which is fudged)
+    double feta = fabs(ele.eta());
+    HG::EleAcc::RhadForPID(ele) = (0.8 < feta && feta < 1.37) ?
+      ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
+      ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+
+  } // end of fudging
+
+  // Save multiple versions of the PID (after applying fudge factors)
+  HG::EleAcc::passPID(ele) = m_mergedElectronID->passPIDCut(ele,trk0,trk1);
+  HG::EleAcc::passTMVAPIDv2(ele) = m_mergedElectronID_v2->passPIDCut(ele, HG::isMC() );
+  HG::EleAcc::passTMVAPIDv3(ele) = m_mergedElectronID_v3->passPIDCut(ele, HG::isMC() );
+
+  // This is what we use:
+  HG::EleAcc::passTMVAPID  (ele) = HG::EleAcc::passTMVAPIDv2(ele);
+
+  // clean up photon
+  if(photon->usingPrivateStore()) photon->releasePrivateStore();
+  delete photon;
+  photon = 0;
+
+  return;
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {

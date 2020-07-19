@@ -94,6 +94,7 @@ namespace HG {
 
     // New ID variables
     static SG::AuxElement::Accessor<float> RhadForPID("RhadForPID");
+    static SG::AuxElement::Accessor<float> RhadForPID_nofudge("RhadForPID_nofudge");
     static SG::AuxElement::Accessor<float> EOverP0P1("EOverP0P1");
     static SG::AuxElement::Accessor<float> delta_z0_tracks("delta_z0_tracks");
     static SG::AuxElement::Accessor<float> delta_z0sinTheta_tracks("delta_z0sinTheta_tracks");
@@ -135,12 +136,19 @@ namespace HG {
     static SG::AuxElement::Accessor< int >   truthTrackIndexA("truthTrackIndexA");
     static SG::AuxElement::Accessor< int >   truthTrackIndexB("truthTrackIndexB");
 
+    static SG::AuxElement::Accessor< float > Eratio_nofudge("Eratio_nofudge");
+    static SG::AuxElement::Accessor< float > wtots1_nofudge("wtots1_nofudge");
+    static SG::AuxElement::Accessor< float > Reta_nofudge("Reta_nofudge");
+    static SG::AuxElement::Accessor< float > Rphi_nofudge("Rphi_nofudge");
+    static SG::AuxElement::Accessor< float > weta2_nofudge("weta2_nofudge");
 
     static SG::AuxElement::Accessor<int>     passTMVAPIDv2("passTMVAPIDv2") ;
+    static SG::AuxElement::Accessor<int>     passTMVAPIDv2_nofudge("passTMVAPIDv2_nofudge") ;
     static SG::AuxElement::Accessor<int>     passTMVAPIDv3("passTMVAPIDv3") ;
     static SG::AuxElement::Accessor<int>     passTMVAPID("passTMVAPID") ;
     static SG::AuxElement::Accessor<int>     passPID("passPID") ;
     static SG::AuxElement::Accessor<int>     passDeltaPhiIPCut("passDeltaPhiIPCut") ;
+
 
     static SG::AuxElement::Accessor<float>   deltaPhiTrksIP("deltaPhiTrksIP") ;
 

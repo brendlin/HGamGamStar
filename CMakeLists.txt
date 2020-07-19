@@ -14,6 +14,7 @@ atlas_depends_on_subdirs( PUBLIC
                           PhysicsAnalysis/AnalysisCommon/IsolationSelection/IsolationSelection
                           InnerDetector/InDetRecTools/InDetTrackSelectionTool
                           InnerDetector/InDetRecTools/TrackVertexAssociationTool
+                          PhysicsAnalysis/ElectronPhotonID/ElectronPhotonShowerShapeFudgeTool
                           )
 
 # Find the needed external(s):
@@ -48,6 +49,7 @@ atlas_add_library( HGamGamStarLib
                    IsolationSelectionLib
                    InDetTrackSelectionToolLib
                    TrackVertexAssociationToolLib
+                   ElectronPhotonShowerShapeFudgeToolLib
                    )
 
 
