@@ -18,6 +18,8 @@
 
 #include "xAODTracking/TrackParticlexAODHelpers.h"
 
+class ElectronPhotonShowerShapeFudgeTool;
+
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
 
@@ -79,6 +81,8 @@ private:
   // whether to apply systematics, save the differential variables and the truth
   bool m_applySystematics, m_saveObjects, m_saveTruthObjects, m_saveTruthVars;
   bool m_skipElectronObjects, m_skipMuonObjects, m_skipTruthElectronObjects;
+
+  bool m_doFudge;
 
   // Containers
   xAOD::PhotonContainer m_allPhotons; //!
@@ -155,6 +159,8 @@ private:
 
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
+  void AddMergedDecorationsAndIDWPs(xAOD::Electron& electron,
+                                    const xAOD::TrackParticle& trk0, const xAOD::TrackParticle& trk1);
   void AddMuonDecorations(xAOD::MuonContainer& muons);
   void AddTheorySystematics(void);
   void AddMergedIDSFSystematics(void);
@@ -184,6 +190,7 @@ private:
   HG::MergedElectronID * m_mergedElectronID; //!
   HG::MergedElectronID_v2 * m_mergedElectronID_v2; //!
   HG::MergedElectronID_v3 * m_mergedElectronID_v3; //!
+  ElectronPhotonShowerShapeFudgeTool * m_fudgeMC; //!
 #endif // __CINT__
 
 protected:
