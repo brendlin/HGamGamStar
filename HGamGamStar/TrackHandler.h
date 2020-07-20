@@ -58,6 +58,7 @@ namespace HG {
     float calculateTRT_PID(const xAOD::TrackParticle& trk)const;
 
     void decorateAdditionalCuts(xAOD::TrackParticle& trk);
+    void recalculateTrackIsolation(xAOD::Electron &ele);
 
     size_t nMatchedElectrons(const xAOD::TrackParticle& trk) const;
 

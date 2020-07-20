@@ -183,6 +183,8 @@ namespace HG {
     // DAOD Accessors:
     //
 
+    static SG::AuxElement::Accessor< float > ptvarcone20_TightTTVA_pt1000("ptvarcone20_TightTTVA_pt1000");
+
     // Stored in the DAOD
     static SG::AuxElement::Accessor< int >  vtxTrkIndex1("vtxTrkParticleIndex1");
     static SG::AuxElement::Accessor< int >  vtxTrkIndex2("vtxTrkParticleIndex2");
@@ -191,6 +193,7 @@ namespace HG {
     static SG::AuxElement::Accessor<float>   vtxdPhi("vtxdPhi") ;
     static SG::AuxElement::Accessor<float>   vtxPhi("vtxPhi") ;
     static SG::AuxElement::Accessor<float>   vtxEta("vtxEta") ;
+    static SG::AuxElement::Accessor<float>   vtxPt("vtxPt") ;
     static SG::AuxElement::Accessor<float>   vtxZ("vtxZ") ;
     static SG::AuxElement::Accessor<float>   vtxR("vtxR") ;
     static SG::AuxElement::Accessor<float>   vtxE("vtxE") ;

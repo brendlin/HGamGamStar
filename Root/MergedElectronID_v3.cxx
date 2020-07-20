@@ -100,7 +100,7 @@ bool HG::MergedElectronID_v3::passPIDCut(const xAOD::Electron &ele, bool isMC) c
     float Rhad = HG::EleAcc::RhadForPID(ele);
     float trk_TRT_PID1 = HG::EleAcc::vtxTrk1_TRT_PID_trans(ele);
     float trk_TRT_PID2 = HG::EleAcc::vtxTrk2_TRT_PID_trans(ele);
-    float EoP =  HG::EleAcc::calibratedPhotonEnergy(ele) / HG::EleAcc::vtxE(ele);
+    float EoP =  ele.e() / HG::EleAcc::vtxE(ele); // The ele energy is calibrated earlier.
 
 
     float Eratio = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Eratio);
