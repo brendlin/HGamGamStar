@@ -781,6 +781,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     float trueMass = -999;
     float trueEta = -999;
     float truePhi = -999;
+    float trueDphiIP = -999;
 
     int nFromHiggs(0);
     TLorentzVector sumOfTruthProducts;
@@ -788,6 +789,8 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     std::vector <const xAOD::TrackParticle*> trksToFit;
     std::vector <int>  indexToFit;
     std::vector <int>  trackParticleIndex_MxAOD;
+
+    std::vector <const xAOD::TruthParticle*> truthToFit;
 
     for( unsigned int trk_i(0); trk_i < electron->nTrackParticles(); ++trk_i){
       auto ele_tp =  electron->trackParticle(trk_i);
@@ -824,6 +827,7 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       if (HG::TrkAcc::isTrueHiggsElectron(*cont_tp))
       {
         const xAOD::TruthParticle* truthPart = xAOD::TruthHelpers::getTruthParticle(*ele_tp);
+        truthToFit.push_back( truthPart ) ;
         sumOfTruthProducts += truthPart->p4();
         ++nFromHiggs;
       }
@@ -843,7 +847,17 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
       trueMass = sumOfTruthProducts.M();
       trueEta = sumOfTruthProducts.Eta();
       truePhi = sumOfTruthProducts.Phi();
+      
+      trueDphiIP = (truthToFit[0]->phi() - truthToFit[1]->phi() )* truthToFit[0]->charge();
+      while( trueDphiIP < -TMath::Pi() )
+        trueDphiIP += 2*TMath::Pi();
+      while( trueDphiIP > TMath::Pi() )
+        trueDphiIP -= 2*TMath::Pi();
+
+
+
     }
+
 
     if( trksToFit.size() == 2 ){
       SimpleVertexFit svf;
@@ -867,12 +881,15 @@ void MergedElectronMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electr
     HG::EleAcc::trueMass(*electron)      = trueMass;
     HG::EleAcc::trueEta(*electron)       = trueEta;
     HG::EleAcc::truePhi(*electron)       = truePhi;
+    HG::EleAcc::trueDphiIP(*electron)    = trueDphiIP;
 
     HG::EleAcc::trkParticleIndex_MxAOD(*electron) = trackParticleIndex_MxAOD;
     HG::EleAcc::vtxTrkParticleIndex1_MxAOD(*electron) = -999;
     HG::EleAcc::vtxTrkParticleIndex2_MxAOD(*electron) = -999;
 
-    if(  false && HG::EleAcc::vtxTrkIndex1.isAvailable(*electron) && HG::EleAcc::vtxTrkIndex2.isAvailable(*electron)  ){
+
+    // Dont enter loop for non HIGG1D2 derivations
+    if(  HG::EleAcc::vtxTrkIndex1.isAvailable(*electron) && HG::EleAcc::vtxTrkIndex2.isAvailable(*electron)  ){
       int index = HG::EleAcc::vtxTrkIndex1(*electron);
       bool hasIndex = index >= 0;
 

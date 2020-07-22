@@ -115,6 +115,7 @@ namespace HG {
     static SG::AuxElement::Accessor< float > trueMass("trueMass");
     static SG::AuxElement::Accessor< float > trueEta("trueEta");
     static SG::AuxElement::Accessor< float > truePhi("truePhi");
+    static SG::AuxElement::Accessor< float > trueDphiIP("trueDphiIP");
     static SG::AuxElement::Accessor< float > standAloneVertexR("standAloneVertexR");
     static SG::AuxElement::Accessor< int >   standAloneIndexA("standAloneIndexA");
     static SG::AuxElement::Accessor< int >   standAloneIndexB("standAloneIndexB");
