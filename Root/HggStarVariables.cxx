@@ -182,27 +182,23 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
   return;
 }
 
-TLorentzVector HG::MergedEleTLV(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2, const xAOD::Electron& ele)
-{
-  // New way: use the photon calibration, but the track TLVs.
-  // The di-track "mass" is usually very close to the true one!
-  float calibrated_e = HG::EleAcc::calibratedPhotonEnergy(ele);
-  if (calibrated_e < 0) HG::fatal("Something went wrong - the energy of the photon is not calibrated correctly.");
-  float scale_pt = calibrated_e/(trk1.e() + trk2.e());
-  TLorentzVector tlv1;
-  TLorentzVector tlv2;
-  tlv1.SetPtEtaPhiM( trk1.pt() * scale_pt, trk1.eta(), trk1.phi(), ele.m() ); // ele.m == 0.510998
-  tlv2.SetPtEtaPhiM( trk2.pt() * scale_pt, trk2.eta(), trk2.phi(), ele.m() );
-  return (tlv1 + tlv2);
+void HG::SetMergedFourMomentum(xAOD::Electron& ele,const float calibrated_e) {
+  // Using the example from:
+  // acode-browser.usatlas.bnl.gov/lxr/source/athena/Reconstruction/egamma/egammaTools/src/EMFourMomBuilder.cxx?v=21.2
+  // calibrated_e should come from calibration of the merged electron as a converted photon.
 
-  // Old way: electron pt
-  //
-  // float scale_pt = ele.pt()/(trk1.pt() + trk2.pt());
-  // TLorentzVector tlv1;
-  // TLorentzVector tlv2;
-  // tlv1.SetPtEtaPhiM( trk1.pt() * scale_pt, trk1.eta(), trk1.phi(), ele.m() ); // ele.m == 0.510998
-  // tlv2.SetPtEtaPhiM( trk2.pt() * scale_pt, trk2.eta(), trk2.phi(), ele.m() );
-  // return (tlv1 + tlv2);
+  const float E = calibrated_e;
+  const float eta = HG::EleAcc::vtxEta(ele);
+  const float phi = HG::EleAcc::vtxPhi(ele);
+  const float mass = HG::EleAcc::vtxM(ele);
+  const double pt = (E > mass) ? sqrt(E*E - mass*mass)/cosh(eta) : 0;
+
+  ele.setP4(pt, eta, phi, mass);
+
+  // std::cout << "New pt: " << ele.pt() << " eta: " << ele.eta()
+  //           << " phi: " << ele.phi() << " Mass: " << ele.m() << std::endl;
+
+  return;
 }
 
 HG::TruthPtcls HG::getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl)

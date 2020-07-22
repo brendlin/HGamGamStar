@@ -17,7 +17,7 @@ namespace HG {
   TruthPtcls getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl);
   TruthPtcls FilterLeptons(const TruthPtcls& stableHiggsDecayProducts);
   TruthPtcls FilterDirectPhotons(const TruthPtcls& stableHiggsDecayProducts);
-  TLorentzVector MergedEleTLV(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2, const xAOD::Electron& ele);
+  void SetMergedFourMomentum(xAOD::Electron& ele,const float calibrated_e);
 
   //____________________________________________________________________________
   class m_lly : public VarBase<float> {
@@ -42,9 +42,9 @@ namespace HG {
       if (eles->size() >= 2 && gams->size() >= 1)
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).M();
 
-      // If the electron container size is 1, then take the (cluster) e-gamma mass (yystar)
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail() && gams->size() >= 1)
-        return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).M();
+      // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+      if (!truth && eles->size() == 1)
+        return ((*gams)[0]->p4() + (*eles)[0]->p4()).M();
 
       return m_default;
     }
@@ -78,9 +78,9 @@ namespace HG {
       if (eles->size() >= 2)
         return ((*eles)[0]->p4() + (*eles)[1]->p4()).M();
 
-      // For merged electrons, take the TLV set in ExtraHggStarObjects
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail())
-        return HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()->M();
+      // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+      if (!truth && eles->size() == 1)
+        return (*eles)[0]->p4().M();
 
       return m_default;
     }
@@ -572,8 +572,10 @@ namespace HG {
         return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4()).Pt();
       if (eles->size() >= 2 && gams->size() >= 1)
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).Pt();
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail() && gams->size() >= 1)
-        return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).Pt();
+
+      // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+      if (!truth && eles->size() == 1 && gams->size() >= 1)
+        return ((*gams)[0]->p4() + (*eles)[0]->p4()).Pt();
 
       return m_default;
     }
@@ -593,8 +595,10 @@ namespace HG {
         return ((*mus)[0]->p4() + (*mus)[1]->p4()).Pt();
       if (eles->size() >= 2)
         return ((*eles)[0]->p4() + (*eles)[1]->p4()).Pt();
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail())
-        return HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()->Pt();
+
+      // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+      if (!truth && eles->size() == 1)
+        return (*eles)[0]->p4().Pt();
       return m_default;
     }
   };
@@ -1013,6 +1017,7 @@ namespace HG {
   };
 
 
+  //____________________________________________________________________________
   class Dphi_lly_jj : public VarBase<float> {
   public:
     Dphi_lly_jj() : VarBase("Dphi_lly_jj") { m_default = -99; }
@@ -1040,8 +1045,9 @@ namespace HG {
       if (eles->size() >= 2){
         return fabs(((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).DeltaPhi((*js)[0]->p4() + (*js)[1]->p4()));
       }
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-        return fabs(((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).DeltaPhi((*js)[0]->p4() + (*js)[1]->p4()));
+      if (!truth && eles->size() == 1){
+        // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+        return fabs(((*gams)[0]->p4() + (*eles)[0]->p4()).DeltaPhi((*js)[0]->p4() + (*js)[1]->p4()));
       }
       return m_default;
     }
@@ -1073,8 +1079,9 @@ namespace HG {
       if (eles->size() >= 2){
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).Eta() - ((*js)[0]->eta() + (*js)[1]->eta()) / 2.0;
       }
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-        return (*HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV() + (*gams)[0]->p4()).Eta() - ((*js)[0]->eta() + (*js)[1]->eta()) / 2.0;
+      if (!truth && eles->size() == 1){
+        // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+        return ((*eles)[0]->p4() + (*gams)[0]->p4()).Eta() - ((*js)[0]->eta() + (*js)[1]->eta()) / 2.0;
       }
       return m_default;
     }
@@ -1105,8 +1112,9 @@ namespace HG {
         TLorentzVector g2 = (*eles)[0]->p4() + (*eles)[1]->p4();
         return fabs(g1.Px() * g2.Py() - g2.Px() * g1.Py()) / (g1 - g2).Pt() * 2.0;
       }
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-        TLorentzVector g2 = *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV();
+      if (!truth && eles->size() == 1){
+        // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+        TLorentzVector g2 = (*eles)[0]->p4();
         return fabs(g1.Px() * g2.Py() - g2.Px() * g1.Py()) / (g1 - g2).Pt() * 2.0;
       }
       return m_default;
@@ -1139,8 +1147,9 @@ namespace HG {
       if (eles->size() >= 2){
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4() + (*js)[0]->p4() + (*js)[1]->p4()).Pt();
       }
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-        return (*HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV() + (*gams)[0]->p4() + (*js)[0]->p4() + (*js)[1]->p4()).Pt();
+      if (!truth && eles->size() == 1){
+        // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+        return ((*eles)[0]->p4() + (*gams)[0]->p4() + (*js)[0]->p4() + (*js)[1]->p4()).Pt();
       }
       return m_default;
     }
@@ -1184,8 +1193,9 @@ namespace HG {
           dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
           if (dR2 < dR2min) { dR2min = dR2; }
         }
-        if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-          gamStar = *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV();
+        if (!truth && eles->size() == 1){
+          // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+          gamStar = (*eles)[0]->p4();
           dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
           if (dR2 < dR2min) { dR2min = dR2; }
         }
@@ -1235,9 +1245,9 @@ namespace HG {
             if (dR2 < dR2min) { dR2min = dR2; }
           }
         }
-        if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-          auto gamStar = *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV();
-          dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
+        if (!truth && eles->size() == 1){
+          // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+          dR2 = xAOD::P4Helpers::deltaR2(*jet, (*eles)[0]->eta(), (*eles)[0]->phi(), false);
           if (dR2 < dR2min) { dR2min = dR2; }
         }
       }

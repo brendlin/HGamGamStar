@@ -159,8 +159,8 @@ private:
 
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
-  void AddMergedDecorationsAndIDWPs(xAOD::Electron& electron,
-                                    const xAOD::TrackParticle& trk0, const xAOD::TrackParticle& trk1);
+  void CalibrateAndDecorateMergedE(xAOD::Electron& electron,
+                                   const xAOD::TrackParticle& trk0, const xAOD::TrackParticle& trk1);
   void AddMuonDecorations(xAOD::MuonContainer& muons);
   void AddTheorySystematics(void);
   void AddMergedIDSFSystematics(void);

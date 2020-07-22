@@ -431,3 +431,30 @@ void HG::TrackHandler::decorateAdditionalCuts(xAOD::TrackParticle& trk)
   }
 
 }
+
+//______________________________________________________________________________
+void HG::TrackHandler::recalculateTrackIsolation(xAOD::Electron &ele)
+{
+  // Note that a lot of the setup of this tool is handled in HgammaHandler.hpp
+
+  std::set<const xAOD::TrackParticle *> tracksToExclude;
+
+  for (auto tp : xAOD::EgammaHelpers::getTrackParticles(&ele, true)) {
+    tracksToExclude.insert(tp);
+  }
+
+  // TTVA result:
+  xAOD::TrackIsolation TrackIsoResult;
+  static const std::vector<xAOD::Iso::IsolationType>  isoT = {xAOD::Iso::ptcone20};
+  bool bsc = m_trackIsoToolTTVA->trackIsolation(TrackIsoResult, ele, isoT,
+                                                m_corrList, 0, &tracksToExclude);
+
+  if (bsc) {
+    HG::EleAcc::ptvarcone20_TightTTVA_pt1000(ele) = TrackIsoResult.ptvarcones_10GeVDivPt[0];
+  }
+  else {
+    fatal("Could not recompute the pile-up robust version of ptvarcone20.");
+  }
+
+  return;
+}

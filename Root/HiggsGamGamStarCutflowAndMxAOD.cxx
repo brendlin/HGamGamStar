@@ -661,12 +661,12 @@ HiggsGamGamStarCutflowAndMxAOD::CutEnum HiggsGamGamStarCutflowAndMxAOD::cutflow(
       // This is where the merged electron is calibrated, and
       // where fudge factors are applied if requested.
       // This is also where ID working points are evaluted!
-      AddMergedDecorationsAndIDWPs(*ele,*trk0,*trk1);
+      CalibrateAndDecorateMergedE(*ele,*trk0,*trk1);
 
-      TLorentzVector merged = HG::MergedEleTLV(*m_selTracks[0],*m_selTracks[1],*m_selElectrons[0]);
-      m_ll = merged.M();
-      pt_ll = merged.Pt();
-      m_lly = (merged + m_selPhotons[0]->p4()).M();
+      // These now correspond to the calibrated values, using the vertex mass:
+      m_ll = ele->m();
+      pt_ll = ele->pt();
+      m_lly = (ele->p4() + m_selPhotons[0]->p4()).M();
 
     }
     else if (m_selElectrons.size() == 2) {
@@ -916,11 +916,6 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doReco(bool isSys){
   }
 
   var::weight.setValue(myweight);
-
-  // Set the Merged electron TLV
-  if (var::yyStarChannel() == HG::MERGED_DIELECTRON) {
-    HG::ExtraHggStarObjects::getInstance()->setMergedElectronTLV(*m_selTracks[0],*m_selTracks[1],*m_selElectrons[0]);
-  }
 
   // Adds event-level variables to TStore
   // Write in the nominal and systematics loops
@@ -1445,9 +1440,7 @@ HG::ChannelEnum HiggsGamGamStarCutflowAndMxAOD::FindZboson_ElectronChannelAware(
         // apply resolved preselection cuts
         if (!m_mergedElectronID->passPreselection(*tmp_eles[0],*tracki,*trackj)) continue;
 
-        //TLorentzVector merged = HG::MergedEleTLV(*tracki,*trackj,*tmp_eles[0]);
-        //tmp_m  = merged.M();
-        // At this stage in the cutflow, the Merged TLV is not calibrated. Therefore,
+        // At this stage in the cutflow, the Merged electron is not calibrated. Therefore,
         // we will simply return an mll > 0 in order to get through to the next step.
         // I am setting into to 95 GeV though, just so we don't forget to re-set it later.
         tmp_m = 95000.;
@@ -1540,17 +1533,15 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::EleAcc::vtxTrk1_TRT_PID_trans(*electron) = index1<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index1)) ;
     HG::EleAcc::vtxTrk2_TRT_PID_trans(*electron) = index2<0 ? -999 : trackHandler()->calculateTRT_PID(*electron->trackParticle(index2)) ;
 
-    HG::EleAcc::calibratedPhotonEnergy(*electron) = -999;
-
   } // end of loop over electrons
 
   return;
 }
 
 //______________________________________________________________________________
-void HiggsGamGamStarCutflowAndMxAOD::AddMergedDecorationsAndIDWPs(xAOD::Electron& ele,
-                                                                  const xAOD::TrackParticle& trk0,
-                                                                  const xAOD::TrackParticle& trk1) {
+void HiggsGamGamStarCutflowAndMxAOD::CalibrateAndDecorateMergedE(xAOD::Electron& ele,
+                                                                 const xAOD::TrackParticle& trk0,
+                                                                 const xAOD::TrackParticle& trk1) {
 
   // Make a dummy vertex container (does not need to be fancy because we do not save it
   // but it does need to be safe for running over systematics (i.e. do not make many copies of it)
@@ -1578,7 +1569,8 @@ void HiggsGamGamStarCutflowAndMxAOD::AddMergedDecorationsAndIDWPs(xAOD::Electron
   HG::setPhotonConversionVertex( &ele, photon, 30, outVertices);
   photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
 
-  HG::EleAcc::calibratedPhotonEnergy(ele) = photon->e();
+  // Reset the energy and direction of the Merged object
+  HG::SetMergedFourMomentum(ele,photon->e());
 
   // Compute the no-fudge versions before applying the fudge factor
   HG::EleAcc::passTMVAPIDv2_nofudge(ele) = m_mergedElectronID_v2->passPIDCut(ele, HG::isMC() );
@@ -1632,6 +1624,15 @@ void HiggsGamGamStarCutflowAndMxAOD::AddMergedDecorationsAndIDWPs(xAOD::Electron
   if(photon->usingPrivateStore()) photon->releasePrivateStore();
   delete photon;
   photon = 0;
+
+  // Recalculate track isolation variables using the new energy and direction
+  // (e.g. ptvarcone20_TightTTVA_pt1000)
+  trackHandler()->recalculateTrackIsolation(ele);
+
+  // Recalculate track and calo isolation decisions using the new energy
+  // (the direction comes from the cluster())
+  // and using the recalculated track iso (where the eta and phi have been changed)
+  electronHandler()->decorateIso(ele);
 
   return;
 }
