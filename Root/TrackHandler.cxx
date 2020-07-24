@@ -231,9 +231,9 @@ xAOD::TrackParticleContainer HG::TrackHandler::findTracksFromElectrons(xAOD::Tra
 
       // If doing index-based track selection, take only index 0, vtx1, or vtx2
       if (m_doIndexBasedTrackSelection) {
-        if (i != 0 &&
-            i != tmp_vtxTrkIndex1 &&
-            i != tmp_vtxTrkIndex2)
+        if ((int)i != 0 &&
+            (int)i != tmp_vtxTrkIndex1 &&
+            (int)i != tmp_vtxTrkIndex2)
           continue;
       }
 

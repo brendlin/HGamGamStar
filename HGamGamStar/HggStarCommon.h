@@ -143,6 +143,7 @@ namespace HG {
     static SG::AuxElement::Accessor< float > weta2_nofudge("weta2_nofudge");
 
     static SG::AuxElement::Accessor<int>     passTMVAPIDv2("passTMVAPIDv2") ;
+    static SG::AuxElement::Accessor<int>     passTMVAPIDv2F("passTMVAPIDv2F") ;
     static SG::AuxElement::Accessor<int>     passTMVAPIDv2_nofudge("passTMVAPIDv2_nofudge") ;
     static SG::AuxElement::Accessor<int>     passTMVAPIDv3("passTMVAPIDv3") ;
     static SG::AuxElement::Accessor<int>     passTMVAPID("passTMVAPID") ;

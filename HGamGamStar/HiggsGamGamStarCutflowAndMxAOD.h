@@ -11,6 +11,7 @@
 #include "HGamGamStar/TrackHandler.h"
 #include "HGamGamStar/MergedElectronID.h"
 #include "HGamGamStar/MergedElectronID_v2.h"
+#include "HGamGamStar/MergedElectronID_v2F.h"
 #include "HGamGamStar/MergedElectronID_v3.h"
 
 #include "IsolationSelection/IsolationCloseByCorrectionTool.h"
@@ -192,6 +193,7 @@ private:
   HG::TrackHandler *m_trackHandler; //!
   HG::MergedElectronID * m_mergedElectronID; //!
   HG::MergedElectronID_v2 * m_mergedElectronID_v2; //!
+  HG::MergedElectronID_v2F * m_mergedElectronID_v2F; //!
   HG::MergedElectronID_v3 * m_mergedElectronID_v3; //!
   ElectronPhotonShowerShapeFudgeTool * m_fudgeMC; //!
 #endif // __CINT__
