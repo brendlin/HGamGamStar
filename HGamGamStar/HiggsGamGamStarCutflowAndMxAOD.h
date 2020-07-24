@@ -161,9 +161,12 @@ private:
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
   void CalibrateAndDecorateMergedE(xAOD::Electron& electron,
                                    const xAOD::TrackParticle& trk0, const xAOD::TrackParticle& trk1);
+  float GetSmearedMergedE(float energy, float eta, float sisiReso, int);
+                                 
   void AddMuonDecorations(xAOD::MuonContainer& muons);
   void AddTheorySystematics(void);
   void AddMergedIDSFSystematics(void);
+  EL::StatusCode AddMergedResolutionSystematics(void);
 
   HG::ChannelEnum FindZboson_ElectronChannelAware(xAOD::TrackParticleContainer* inTracks,
                                                   xAOD::TrackParticle*& sel_trk1,
@@ -231,6 +234,8 @@ public:
   void writeNominalOnlyVars(bool truth = false);
   void writeDetailedVars(bool truth = false);
   void writeTruthOnlyVars();
+
+  //
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(HiggsGamGamStarCutflowAndMxAOD, 1);

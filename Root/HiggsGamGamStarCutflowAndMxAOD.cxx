@@ -9,7 +9,6 @@
 #include "ElectronPhotonShowerShapeFudgeTool/ElectronPhotonShowerShapeFudgeTool.h"
 
 
-
 // #include "PhotonVertexSelection/PhotonPointingTool.h"
 // #include "ZMassConstraint/ConstraintFit.h"
 
@@ -371,6 +370,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
 
     AddTheorySystematics();
     AddMergedIDSFSystematics();
+    ANA_CHECK(AddMergedResolutionSystematics());
 
     for (auto sys: getSystematics()) {
       // ignore nominal case, already done!
@@ -1569,8 +1569,17 @@ void HiggsGamGamStarCutflowAndMxAOD::CalibrateAndDecorateMergedE(xAOD::Electron&
   HG::setPhotonConversionVertex( &ele, photon, 30, outVertices);
   photonHandler()->getCalibrationAndSmearingTool()->applyCorrection(*photon, *eventInfo());
 
+  // Calculate 
+  auto e = photon->e();
+  if( !HG::VarHandler::getInstance()->getSysName().empty() && 
+      (HG::VarHandler::getInstance()->getSysName() == "_MERGED_RESOLUTION__1up" 
+      || HG::VarHandler::getInstance()->getSysName() == "_MERGED_RESOLUTION__1down")){
+    int updown =  HG::VarHandler::getInstance()->getSysName() == "_MERGED_RESOLUTION__1up" ? 1 : -1;
+    float resolution = photonHandler()->getCalibrationAndSmearingTool()->getResolution( *photon );
+    e = GetSmearedMergedE( e, ele.eta(), resolution, updown );
+  }
   // Reset the energy and direction of the Merged object
-  HG::SetMergedFourMomentum(ele,photon->e());
+  HG::SetMergedFourMomentum(ele,e);
 
   // Compute the no-fudge versions before applying the fudge factor
   HG::EleAcc::passTMVAPIDv2_nofudge(ele) = m_mergedElectronID_v2->passPIDCut(ele, HG::isMC() );
@@ -1635,6 +1644,52 @@ void HiggsGamGamStarCutflowAndMxAOD::CalibrateAndDecorateMergedE(xAOD::Electron&
   electronHandler()->decorateIso(ele);
 
   return;
+}
+
+float HiggsGamGamStarCutflowAndMxAOD::GetSmearedMergedE(float energy, float eta, float sisiRes, int updown){
+  
+  if(sisiRes <=0 ){
+    return energy;
+  }
+  
+  auto TruthLeptons = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+  if(TruthLeptons->size()!=2 || TruthLeptons->at(0)->absPdgId() != 11 ){
+    return energy;
+  }
+
+  float trueEnergy = (TruthLeptons->at(0)->p4() +  TruthLeptons->at(1)->p4()).E();  
+  float oneOnE = 1./(energy*1e-3);
+  float oneOnSqrtE = sqrt(oneOnE);
+  float resoMergedE(0);
+  float resoPhoton(0);
+  
+
+  // Resolution smearing based on the difference in the resolution between photons and ME's
+  if( std::abs(eta) > 1.5 ){
+    static const std::vector<float> mergedE_pars{2.45885e-03, 6.02925e-02, 4.66127e-02};
+    static const std::vector<float> photon_pars {3.85605e-03, 3.13161e-02, 1.93781e-01};
+    resoMergedE =  mergedE_pars[0] + mergedE_pars[1]*oneOnSqrtE + mergedE_pars[2]*oneOnE;
+    resoPhoton =  photon_pars[0] + photon_pars[1]*oneOnSqrtE + photon_pars[2]*oneOnE;
+  }else{
+    static const std::vector<float> mergedE_pars{1.38994e-02, -2.75895e-01, 3.73848e+00};
+    static const std::vector<float> photon_pars {9.43558e-03, -1.59185e-01, 2.59706e+00}; 
+    resoMergedE =  mergedE_pars[0] + mergedE_pars[1]*oneOnSqrtE + mergedE_pars[2]*oneOnE;
+    resoPhoton =  photon_pars[0] + photon_pars[1]*oneOnSqrtE + photon_pars[2]*oneOnE;
+  }
+  
+  // Scale the difference between the reco and true energy based on the change in resolution
+  float deltaE = energy - trueEnergy;
+  float deltaRes2 = resoMergedE*resoMergedE - resoPhoton*resoPhoton ;
+  float nominalRes = sqrt(sisiRes*sisiRes + deltaRes2);
+  float targetRes =  nominalRes;
+  if(updown > 0){
+    targetRes = sqrt(sisiRes*sisiRes + 4*deltaRes2);
+  } else if( updown < 0) {
+    targetRes = sisiRes;
+  }  
+  auto newEnergy = trueEnergy  + deltaE * targetRes/nominalRes;
+
+  return newEnergy;
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
@@ -1901,4 +1956,27 @@ void HiggsGamGamStarCutflowAndMxAOD::AddMergedIDSFSystematics() {
   //reset the weight to nominal
   var::weight.setValue(weight);
   return;
+}
+EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::AddMergedResolutionSystematics() {
+
+    std::vector<std::string> sysNames = {
+        "MERGED_RESOLUTION__1up",
+        "MERGED_RESOLUTION__1down",
+    };
+
+    // Cycle over all systs :
+    for (unsigned i=0; i<sysNames.size(); ++i) {
+
+        CP::SystematicSet sys(sysNames[i]);
+
+        // This is the magic call to get a fresh EventInfo:
+        CP_CHECK("HiggsGamGamStarCutflowAndMxAOD::execute()", applySystematicVariation(sys));
+
+        // Set this for every event, just in case.
+        var::yyStarChannel.setValue(HG::CHANNELUNKNOWN);
+
+        m_cutFlow = cutflow();
+        doReco(true);
+    }
+    return EL::StatusCode::SUCCESS;
 }
