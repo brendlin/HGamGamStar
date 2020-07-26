@@ -1009,6 +1009,15 @@ namespace HG {
   };
   
   //____________________________________________________________________________
+  class yyStarCategory_electronOnly : public VarBase<int> {
+  public:
+  yyStarCategory_electronOnly() : VarBase("yyStarCategory_electronOnly") { m_default = -99; }
+    ~yyStarCategory_electronOnly() { }
+
+    int calculateValue(bool truth); // See cxx file
+  };
+
+  //____________________________________________________________________________
   class vertexTruthFitRadius : public VarBase<float> {
     public:
      vertexTruthFitRadius() : VarBase("vertexTruthFitRadius") { m_default = -99; }
@@ -1347,6 +1356,7 @@ namespace var {
   extern HG::vertexTruthFitRadius vertexTruthFitRadius;
   extern HG::trk_lead_pt trk_lead_pt;
   extern HG::yyStarCategory yyStarCategory;
+  extern HG::yyStarCategory_electronOnly yyStarCategory_electronOnly;
   extern HG::Dphi_lly_jj Dphi_lly_jj;
   extern HG::Zepp_lly Zepp_lly;
   extern HG::pTt_lly pTt_lly;
