@@ -1083,6 +1083,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
 
   if (!truth)
   {
+    var::yyStarCategory_electronOnly.addToStore(false);
     var::m_lly_track4mom.addToStore(false);
     var::m_ll_track4mom.addToStore(false);
     var::Resolved_deltaPhiRescaled2.addToStore(false);

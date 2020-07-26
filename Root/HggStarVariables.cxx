@@ -53,6 +53,7 @@ namespace var {
   HG::vertexTruthFitRadius vertexTruthFitRadius;
   HG::trk_lead_pt trk_lead_pt;
   HG::yyStarCategory yyStarCategory;
+  HG::yyStarCategory_electronOnly yyStarCategory_electronOnly;
   HG::Dphi_lly_jj Dphi_lly_jj;
   HG::Zepp_lly Zepp_lly;
   HG::pTt_lly pTt_lly;
@@ -109,6 +110,21 @@ int HG::yyStarCategory::calculateValue(bool truth)
       return CategoryEnum::GGF_MERGED_DIELECTRON;
   }
   return CategoryEnum::CATEGORYUNKNOWN;
+}
+
+int HG::yyStarCategory_electronOnly::calculateValue(bool truth)
+{
+  int chan = var::yyStarChannel();
+  int cat = var::yyStarCategory();
+
+  // If it is a muon channel, set to 0 (we do not want it here)
+  if (chan == ChannelEnum::DIMUON) return CategoryEnum::CATEGORYUNKNOWN;
+
+  // Assuming the muon category is always 1, 4, 7, ...
+  // here is how to translate from 2, 3, 5, 6, 8, 9, ... to 1, 2, 3, 4, 5, 6:
+  cat = cat - int( (cat+1)/3 );
+
+  return cat;
 }
 
 float HG::Resolved_dRExtrapTrk12::calculateValue(bool /* truth*/)
