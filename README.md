@@ -27,9 +27,9 @@ To checkout the necessary packages, do:
 Compiling
 ---------
 
-To compile in Rel 21.2.113, do:
+To compile in Rel 21.2.128, do:
 
-    asetup AnalysisBase,21.2.113,here # only needed once per login session
+    asetup AnalysisBase,21.2.128,here # only needed once per login session
     cd $TestArea/../build
     cmake ../source
     cmake --build .
@@ -198,6 +198,8 @@ Information on MxAOD Productions
 | ysy011 | [ysy011](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy011) | 21.2.99 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy011<br>EOS: /eos/user/b/brendlin/ysy/ysy011  |
 | ysy012 | [ysy012](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy012) | 21.2.109 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy012<br>EOS: /eos/user/b/brendlin/ysy/ysy012  |
 | ysy013 | [ysy013](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy013) | 21.2.113 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy013<br>EOS: /eos/user/b/brendlin/ysy/ysy013  |
+| ysy014 | [ysy014](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy014) | 21.2.113 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy014<br>EOS: /eos/user/b/brendlin/ysy/ysy014  |
+| ysy015 | [ysy015](https://gitlab.cern.ch/brendlin/HGamGamStar/tags/ysy015) | 21.2.128 | Browse HggStarEventSelection.md in tag | DESY: /nfs/dust/atlas/user/brendlik/eos/ysy/ysy015<br>EOS: /eos/user/b/brendlin/ysy/ysy015  |
 
 Updating the HGamCore Tag
 ================
@@ -232,3 +234,4 @@ hashes used in this package:
 | master commit | f2e09974   | 21.2.99    | Updated muon and jet recommendations |
 | untagged commit | 9d640507 | 21.2.109   | Update our code for p4061, p4062 |
 | v1.9.12-h025 | 135f317b    | 21.2.113   | Update our code to h025 |
+| untagged commit | 5dcef52e | 21.2.128   | Update our code to h026 (new photon recommendations) |
