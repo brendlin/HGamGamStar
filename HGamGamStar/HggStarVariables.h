@@ -798,6 +798,64 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class pT_l1 : public VarBase<float> {
+  public:
+  pT_l1() : VarBase("pT_l1") { m_default = -99; }
+    ~pT_l1() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      if (mus->size() >= 2)
+        return ((*mus)[0]->pt());
+      if (eles->size() >= 2)
+        return ((*eles)[0]->pt());
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class eta_j1 : public VarBase<float> {
+  public:
+    eta_j1() : VarBase("eta_j1") { m_default = -99; }
+    ~eta_j1() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+
+      if (jets->size() < 1)
+      { return m_default; }
+
+      return (*jets)[0]->eta();
+    }
+  };
+
+  //____________________________________________________________________________
+  class N_j_gap : public VarBase<int> {
+  public:
+    N_j_gap() : VarBase("N_j_gap") { m_default = -99; }
+    ~N_j_gap() { }
+
+    int calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+      int ngapjets = 0;
+      int njets = jets->size();
+      if (njets >= 2) {
+        float j1_eta = (*jets)[0]->eta();
+        float j2_eta = (*jets)[1]->eta(); 
+        for (int i = 2; i < njets; i++) {
+          if ( ((*jets)[i]->eta() < j1_eta && (*jets)[i]->eta() > j2_eta) || ((*jets)[i]->eta() > j1_eta && (*jets)[i]->eta() < j2_eta) ) { ngapjets++; }
+        }
+      }
+
+      return ngapjets;
+    }
+  };
+
+  //____________________________________________________________________________
   class Zy_centrality: public VarBase<float> {
   public:
   Zy_centrality(): VarBase("Zy_centrality") {m_default = -99; }
@@ -1341,6 +1399,9 @@ namespace var {
   extern HG::m_emu m_emu;
   extern HG::m_emuy m_emuy;
   extern HG::Dy_j_j_50 Dy_j_j_50;
+  extern HG::pT_l1 pT_l1;
+  extern HG::eta_j1 eta_j1;
+  extern HG::N_j_gap N_j_gap;
   extern HG::Zy_centrality Zy_centrality;
   extern HG::DR_Zy_jj DR_Zy_jj;
   extern HG::pT_l1_h1 pT_l1_h1;

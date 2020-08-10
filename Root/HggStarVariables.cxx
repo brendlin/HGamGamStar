@@ -38,6 +38,9 @@ namespace var {
   HG::m_emu m_emu;
   HG::m_emuy m_emuy;
   HG::Dy_j_j_50 Dy_j_j_50;
+  HG::pT_l1 pT_l1;
+  HG::eta_j1 eta_j1;
+  HG::N_j_gap N_j_gap;
   HG::Zy_centrality Zy_centrality;
   HG::DR_Zy_jj DR_Zy_jj;
   HG::pT_l1_h1 pT_l1_h1;
