@@ -699,10 +699,11 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   eventHandler()->storeVar<int>("N_j_btag", bjets.size());
 
   xAOD::JetContainer jets30(SG::VIEW_ELEMENTS);
-  double weightBJet30 = 1.0;
+  double weightBJet30 = 1.0, weightBJet = 1.0;
   static SG::AuxElement::ConstAccessor<float> SF_bjet("SF_DL1r_FixedCutBEff_70");
   for (auto jet : m_selJets) {
-    if (jet->pt() < 30.0 * HG::GeV) { continue; }
+    weightBJet *= SF_bjet(*jet);
+    if (jet->pt() < 30.0 * HG::GeV) continue;
     jets30.push_back(jet);
     weightBJet30 *= SF_bjet(*jet);
   }
@@ -712,6 +713,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   eventHandler()->storeVar<int>("N_j_btag30", nbjet30);
   eventHandler()->storeVar<float>("weightJvt", HG::JetHandler::multiplyJvtWeights(&m_jvtJets));
   eventHandler()->storeVar<float>("weightBJet30", weightBJet30);
+  eventHandler()->storeVar<float>("weightBJet", weightBJet);
 
   //store passAll flag
   bool passPID = false, passIso = false, passPre = false, passAll = false, passVBSPre = false, passVBS = false;
@@ -762,6 +764,9 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::N_j_central.addToStore(truth);
   var::m_jj_50.addToStore(truth);
   var::Dy_j_j_50.addToStore(truth);
+  var::pT_l1.addToStore(truth);
+  var::eta_j1.addToStore(truth);
+  var::N_j_gap.addToStore(truth);
   var::Zy_centrality.addToStore(truth);
   var::m_jj.addToStore(truth);
   var::pT_j1.addToStore(truth);
