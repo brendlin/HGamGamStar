@@ -334,6 +334,11 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   // Set this for every event, just in case.
   var::yyStarChannel.setValue(HG::CHANNELUNKNOWN);
 
+  // Initialize the nofudge variables in the electron container. This is important
+  // for resetting the shower shapes after each systematic variation, to prevent duplicate
+  // fudge factor applications.
+  InitializeElectronNoFudgeShowerShapes();
+
   // apply cuts. Returned value will be the last passed cut
   m_cutFlow = cutflow();
 
@@ -382,8 +387,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
       // apply the systmeatic variation and calculate the outupt
       CP_CHECK("HiggsGamGamStarCutflowAndMxAOD::execute()", applySystematicVariation(sys));
 
-      // Set this for every event, just in case.
+      // Reset these for every event - important!
       var::yyStarChannel.setValue(HG::CHANNELUNKNOWN);
+      ResetElectronShowerShapes();
 
       m_cutFlow = cutflow();
       doReco(true);
@@ -1157,6 +1163,9 @@ void HiggsGamGamStarCutflowAndMxAOD::SetTruthHiggsInformation(void)
   if (HG::isMC() && eventInfo()->mcChannelNumber() == 343981) {
     m_isNonHyyStarHiggs = !HG::eventIsHyyHiggs(all_particles);
   }
+  if (HG::isMC() && eventInfo()->mcChannelNumber() == 346214) {
+    m_isNonHyyStarHiggs = !HG::eventIsHyyHiggs(all_particles);
+  }
 
   var::isNonHyyStarHiggs.setTruthValue(m_isNonHyyStarHiggs);
 
@@ -1489,6 +1498,59 @@ void HiggsGamGamStarCutflowAndMxAOD::AddMuonDecorations(xAOD::MuonContainer& muo
   return;
 }
 
+//______________________________________________________________________________
+void HiggsGamGamStarCutflowAndMxAOD::InitializeElectronNoFudgeShowerShapes() {
+  // This is required in order to prevent duplicate application of fudge factors.
+  // Call only once per event -- or if a systematic causes a new named electron container
+  // to be created.
+
+  for (auto ele : electronHandler()->getCorrectedContainer()) {
+    HG::EleAcc::Rhad_nofudge  (*ele) = ele->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad);
+    HG::EleAcc::Rhad1_nofudge (*ele) = ele->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+    HG::EleAcc::Eratio_nofudge(*ele) = ele->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Eratio);
+    HG::EleAcc::wtots1_nofudge(*ele) = ele->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::wtots1);
+    HG::EleAcc::Reta_nofudge  (*ele) = ele->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Reta);
+    HG::EleAcc::Rphi_nofudge  (*ele) = ele->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rphi);
+    HG::EleAcc::weta2_nofudge (*ele) = ele->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::weta2);
+
+    // Decorate Rhad
+    double feta = fabs(ele->eta());
+    HG::EleAcc::RhadForPID(*ele) = (0.8 < feta && feta < 1.37) ?
+      ele->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
+      ele->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
+
+    HG::EleAcc::RhadForPID_nofudge(*ele) = HG::EleAcc::RhadForPID(*ele);
+
+    HG::EleAcc::noFudgeVarsInitialized(*ele) = true;
+  }
+
+  return;
+}
+
+//______________________________________________________________________________
+void HiggsGamGamStarCutflowAndMxAOD::ResetElectronShowerShapes() {
+  // This is required in order to prevent duplicate application of fudge factors.
+
+  for (auto ele : electronHandler()->getCorrectedContainer()) {
+
+    // If a new systematics set is made, it is possible that the nofudge shapes are not initialized.
+    if (!HG::EleAcc::noFudgeVarsInitialized (*ele)) InitializeElectronNoFudgeShowerShapes();
+
+    // Feed the corrected values back to the electron
+    ele->setShowerShapeValue(HG::EleAcc::Rhad_nofudge  (*ele),xAOD::EgammaParameters::Rhad  );
+    ele->setShowerShapeValue(HG::EleAcc::Rhad1_nofudge (*ele),xAOD::EgammaParameters::Rhad1 );
+    ele->setShowerShapeValue(HG::EleAcc::Eratio_nofudge(*ele),xAOD::EgammaParameters::Eratio);
+    ele->setShowerShapeValue(HG::EleAcc::wtots1_nofudge(*ele),xAOD::EgammaParameters::wtots1);
+    ele->setShowerShapeValue(HG::EleAcc::Reta_nofudge  (*ele),xAOD::EgammaParameters::Reta  );
+    ele->setShowerShapeValue(HG::EleAcc::Rphi_nofudge  (*ele),xAOD::EgammaParameters::Rphi  );
+    ele->setShowerShapeValue(HG::EleAcc::weta2_nofudge (*ele),xAOD::EgammaParameters::weta2 );
+    HG::EleAcc::RhadForPID(*ele) = HG::EleAcc::RhadForPID_nofudge(*ele);
+  }
+
+  return;
+}
+
+//______________________________________________________________________________
 void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContainer& electrons) {
 
   for (auto electron : electrons) {
@@ -1513,25 +1575,10 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::EleAcc::passDeltaPhiIPCut(*electron) = false;
     HG::EleAcc::deltaPhiTrksIP(*electron) = -999;
 
-    HG::EleAcc::Eratio_nofudge(*electron) = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Eratio);
-    HG::EleAcc::wtots1_nofudge(*electron) = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::wtots1);
-    HG::EleAcc::Reta_nofudge(*electron)   = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Reta);
-    HG::EleAcc::Rphi_nofudge(*electron)   = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rphi);
-    HG::EleAcc::weta2_nofudge(*electron)  = electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::weta2);
-
     // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_P_L1(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_P_L2(*electron) = -999;
-
-    // Decorate Rhad
-    double feta = fabs(electron->eta());
-    HG::EleAcc::RhadForPID(*electron) = (0.8 < feta && feta < 1.37) ?
-      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad) :
-      electron->showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::Rhad1);
-
-
-    HG::EleAcc::RhadForPID_nofudge(*electron) = HG::EleAcc::RhadForPID(*electron);
 
     int index1 = HG::EleAcc::vtxTrkIndex1(*electron);
     int index2 = HG::EleAcc::vtxTrkIndex2(*electron);
@@ -1978,8 +2025,9 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::AddMergedResolutionSystematics() 
         // This is the magic call to get a fresh EventInfo:
         CP_CHECK("HiggsGamGamStarCutflowAndMxAOD::execute()", applySystematicVariation(sys));
 
-        // Set this for every event, just in case.
+        // Reset these for every event - important!
         var::yyStarChannel.setValue(HG::CHANNELUNKNOWN);
+        ResetElectronShowerShapes();
 
         m_cutFlow = cutflow();
         doReco(true);

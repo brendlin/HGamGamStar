@@ -8,9 +8,10 @@ mc16_13TeV.345963.PowhegPythia8EvtGen_NNPDF30_AZNLO_WmH125J_Hgamstargam_MINLO.de
 mc16_13TeV.345964.PowhegPythia8EvtGen_NNPDF30_AZNLO_WpH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p4114
 mc16_13TeV.345965.PowhegPythia8EvtGen_NNPDF30_AZNLO_ZH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r9364_p4114
 
-# ggH125 gamgam Background
+# ggH125 and VBF gamgam Background
 # ------------------------------------------------------------------------------
 mc16_13TeV.343981.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamgam.deriv.DAOD_HIGG1D2.e5607_s3126_r9364_p4062
+mc16_13TeV.346214.PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_gamgam.deriv.DAOD_HIGG1D2.e6970_s3126_r9364_p4112
 
 # Z->ee Background (must be run on the grid)
 # ------------------------------------------------------------------------------
@@ -23,7 +24,7 @@ mc16_13TeV.700002.Sh_228_ysyLO_mumu.deriv.DAOD_HIGG1D2.e7987_s3126_r9364_p4114
 
 # SM Diphoton
 # ------------------------------------------------------------------------------
-mc16_13TeV.364352.Sherpa_224_NNPDF30NNLO_Diphoton_myy_90_175.deriv.DAOD_HIGG1D2.e6452_s3126_r9364_p4112
+# mc16_13TeV.364352.Sherpa_224_NNPDF30NNLO_Diphoton_myy_90_175.deriv.DAOD_HIGG1D2.e6452_s3126_r9364_p4112
 
 # enugamma
 # ------------------------------------------------------------------------------

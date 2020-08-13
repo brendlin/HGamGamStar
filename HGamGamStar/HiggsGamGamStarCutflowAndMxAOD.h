@@ -159,6 +159,8 @@ private:
   void SetTruthHiggsInformation(void);
 
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
+  void InitializeElectronNoFudgeShowerShapes();
+  void ResetElectronShowerShapes();
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
   void CalibrateAndDecorateMergedE(xAOD::Electron& electron,
                                    const xAOD::TrackParticle& trk0, const xAOD::TrackParticle& trk1);
