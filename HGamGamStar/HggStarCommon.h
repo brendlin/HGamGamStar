@@ -136,6 +136,9 @@ namespace HG {
     static SG::AuxElement::Accessor< int >   truthTrackIndexA("truthTrackIndexA");
     static SG::AuxElement::Accessor< int >   truthTrackIndexB("truthTrackIndexB");
 
+    static SG::AuxElement::Accessor< char > noFudgeVarsInitialized("noFudgeVarsInitialized");
+    static SG::AuxElement::Accessor< float > Rhad_nofudge("Rhad_nofudge");
+    static SG::AuxElement::Accessor< float > Rhad1_nofudge("Rhad1_nofudge");
     static SG::AuxElement::Accessor< float > Eratio_nofudge("Eratio_nofudge");
     static SG::AuxElement::Accessor< float > wtots1_nofudge("wtots1_nofudge");
     static SG::AuxElement::Accessor< float > Reta_nofudge("Reta_nofudge");
