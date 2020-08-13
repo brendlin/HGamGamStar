@@ -145,6 +145,11 @@ namespace HG {
     static SG::AuxElement::Accessor< float > Rphi_nofudge("Rphi_nofudge");
     static SG::AuxElement::Accessor< float > weta2_nofudge("weta2_nofudge");
 
+    static SG::AuxElement::Accessor< float > pt_orig("pt_orig");
+    static SG::AuxElement::Accessor< float > eta_orig("eta_orig");
+    static SG::AuxElement::Accessor< float > phi_orig("phi_orig");
+    static SG::AuxElement::Accessor< float > m_orig("m_orig");
+
     static SG::AuxElement::Accessor<int>     passTMVAPIDv2("passTMVAPIDv2") ;
     static SG::AuxElement::Accessor<int>     passTMVAPIDv2F("passTMVAPIDv2F") ;
     static SG::AuxElement::Accessor<int>     passTMVAPIDv2_nofudge("passTMVAPIDv2_nofudge") ;

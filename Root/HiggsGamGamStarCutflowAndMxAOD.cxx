@@ -1521,6 +1521,12 @@ void HiggsGamGamStarCutflowAndMxAOD::InitializeElectronNoFudgeShowerShapes() {
 
     HG::EleAcc::RhadForPID_nofudge(*ele) = HG::EleAcc::RhadForPID(*ele);
 
+    // Save original four-momentum
+    HG::EleAcc::pt_orig(*ele) = ele->p4().Pt();
+    HG::EleAcc::eta_orig(*ele) = ele->p4().Eta();
+    HG::EleAcc::phi_orig(*ele) = ele->p4().Phi();
+    HG::EleAcc::m_orig(*ele) = ele->p4().M();
+
     HG::EleAcc::noFudgeVarsInitialized(*ele) = true;
   }
 
@@ -1535,6 +1541,12 @@ void HiggsGamGamStarCutflowAndMxAOD::ResetElectronShowerShapes() {
 
     // If a new systematics set is made, it is possible that the nofudge shapes are not initialized.
     if (!HG::EleAcc::noFudgeVarsInitialized (*ele)) InitializeElectronNoFudgeShowerShapes();
+
+    // Reset the electron p4 to its original value
+    ele->setP4(HG::EleAcc::pt_orig(*ele),
+               HG::EleAcc::eta_orig(*ele),
+               HG::EleAcc::phi_orig(*ele),
+               HG::EleAcc::m_orig(*ele));
 
     // Feed the corrected values back to the electron
     ele->setShowerShapeValue(HG::EleAcc::Rhad_nofudge  (*ele),xAOD::EgammaParameters::Rhad  );
