@@ -1748,7 +1748,7 @@ float HiggsGamGamStarCutflowAndMxAOD::GetSmearedMergedE(float energy, float eta,
   float nominalRes = sqrt(sisiRes*sisiRes + deltaRes2);
   float targetRes =  nominalRes;
   if(updown > 0){
-    targetRes = sqrt(sisiRes*sisiRes + 4*deltaRes2);
+    targetRes = sqrt(sisiRes*sisiRes + 2*deltaRes2);
   } else if( updown < 0) {
     targetRes = sisiRes;
   }  
