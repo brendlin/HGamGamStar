@@ -511,7 +511,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   }
 
   //==== CUT 11 : 30 GeV cut on leading lepton ====
-  if (!m_isVBSsel && !((m_selElectrons.size()>0 && m_selElectrons[0]->pt()>30*HG::GeV) || (m_selMuons.size()>0 && m_selMuons[0]->pt()>30*HG::GeV))) return LEADLEPTON_PT;
+  if (!((m_selElectrons.size()>0 && m_selElectrons[0]->pt()>30*HG::GeV) || (m_selMuons.size()>0 && m_selMuons[0]->pt()>30*HG::GeV))) return LEADLEPTON_PT;
 
   //==== CUT 12 : MLL>40 GeV ====
   double m_ll=-99, m_emu=-99;
