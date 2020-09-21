@@ -295,7 +295,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   m_selJets = jetHandler()->applySelection(m_allJets);
 
   // Removes overlap with candidate diphoton system, and any additional tight photons (if option set)
-  overlapHandler()->removeOverlap(&m_selPhotons, &m_selJets, &m_preSelElectrons, &dirtyMuons, nullptr);
+  if (m_cutFlow > VERTEX) overlapHandler()->removeOverlap(&m_selPhotons, &m_selJets, &m_preSelElectrons, &dirtyMuons, nullptr);
 
   //above doesn't have option to remove photon overlapping with lepton
   overlapHandler()->removeOverlap(m_selPhotons, m_preSelElectrons, 0.4);
@@ -567,7 +567,7 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
   m_jvtJets = jetHandler()->applySelectionNoJvt(m_allJets);
   xAOD::ElectronContainer jvtElecs = m_selElectrons;
   xAOD::MuonContainer jvtMuons = m_selMuons;
-  overlapHandler()->removeOverlap(&m_selPhotons, &m_jvtJets, &jvtElecs, &jvtMuons, nullptr);
+  if (m_cutFlow > VERTEX) overlapHandler()->removeOverlap(&m_selPhotons, &m_jvtJets, &jvtElecs, &jvtMuons, nullptr);
 
   
   // Adds event weights and catgory to TStore
@@ -670,7 +670,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   xAOD::JetContainer       uncleanJets = jetHandler()->applySelectionNoCleaning(m_allJets);
   xAOD::ElectronContainer uncleanElecs = m_selElectrons;
   xAOD::MuonContainer     uncleanMuons = m_selMuons;
-  overlapHandler()->removeOverlap(&m_selPhotons, &uncleanJets, &uncleanElecs, &uncleanMuons, nullptr);
+  if (m_cutFlow > VERTEX) overlapHandler()->removeOverlap(&m_selPhotons, &uncleanJets, &uncleanElecs, &uncleanMuons, nullptr);
   static SG::AuxElement::ConstAccessor<char>  isClean("isClean");
   bool isEventClean = true;
   for (auto jet : uncleanJets) {
@@ -690,29 +690,14 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
     eventHandler()->getPassedTriggers();
   }
 
-  // Additional variables useful for non-framework analysis
-  int Nloose = m_preSelPhotons.size();
-  eventHandler()->storeVar<int>("NLoosePhotons",Nloose);
-  eventHandler()->storeVar<float>("met_hardVertexTST", m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->met() : m_selMET["TST"]->met());
-
   xAOD::JetContainer bjets = jetHandler()->applyBJetSelection(m_selJets);
   eventHandler()->storeVar<int>("N_j_btag", bjets.size());
-
-  xAOD::JetContainer jets30(SG::VIEW_ELEMENTS);
-  double weightBJet30 = 1.0, weightBJet = 1.0;
+  double weightBJet = 1.0;
   static SG::AuxElement::ConstAccessor<float> SF_bjet("SF_DL1r_FixedCutBEff_70");
   for (auto jet : m_selJets) {
     weightBJet *= SF_bjet(*jet);
-    if (jet->pt() < 30.0 * HG::GeV) continue;
-    jets30.push_back(jet);
-    weightBJet30 *= SF_bjet(*jet);
   }
-  xAOD::JetContainer bjets30 = jetHandler()->applyBJetSelection(jets30);
-  int nbjet30 = bjets30.size();
-
-  eventHandler()->storeVar<int>("N_j_btag30", nbjet30);
   eventHandler()->storeVar<float>("weightJvt", HG::JetHandler::multiplyJvtWeights(&m_jvtJets));
-  eventHandler()->storeVar<float>("weightBJet30", weightBJet30);
   eventHandler()->storeVar<float>("weightBJet", weightBJet);
 
   //store passAll flag
@@ -763,7 +748,6 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::N_j.addToStore(truth);
   var::N_j_central.addToStore(truth);
   var::m_jj_50.addToStore(truth);
-  var::Dy_j_j_50.addToStore(truth);
   var::pT_l1.addToStore(truth);
   var::eta_j1.addToStore(truth);
   var::N_j_gap.addToStore(truth);
