@@ -295,7 +295,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   m_selJets = jetHandler()->applySelection(m_allJets);
 
   // Removes overlap with candidate diphoton system, and any additional tight photons (if option set)
-  if (m_cutFlow > VERTEX) overlapHandler()->removeOverlap(&m_selPhotons, &m_selJets, &m_preSelElectrons, &dirtyMuons, nullptr);
+  overlapHandler()->removeOverlap(&m_selPhotons, &m_selJets, &m_preSelElectrons, &dirtyMuons, nullptr);
 
   //above doesn't have option to remove photon overlapping with lepton
   overlapHandler()->removeOverlap(m_selPhotons, m_preSelElectrons, 0.4);
