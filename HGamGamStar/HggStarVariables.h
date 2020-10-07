@@ -50,6 +50,37 @@ namespace HG {
     }
   };
 
+//____________________________________________________________________________
+  class m_llyj : public VarBase<float> {
+  public:
+  m_llyj() : VarBase("m_llyj") { m_default = -99; }
+    ~m_llyj() { }
+
+    float calculateValue(bool truth)
+    {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      // getPhotons only returns the leading photon candidate.
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+
+      // >= 2 muons and >= 1 photon
+      if (mus->size() >= 2 && gams->size() >= 1 && jets->size() >= 1)
+        return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4() + (*jets)[0]->p4()  ).M();
+
+      // >= 2 electrons and >= 1 photon
+      if (eles->size() >= 2 && gams->size() >= 1 && jets->size() >= 1)
+        return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4() + (*jets)[0]->p4() ).M();
+
+      // If the electron container size is 1, then take the (cluster) e-gamma mass (yystar)
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail() && gams->size() >= 1 && jets->size() >= 1)
+        return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV() + (*jets)[0]->p4()).M();
+
+      return m_default;
+    }
+  };
   //____________________________________________________________________________
   class m_lly_gev : public VarBase<float> {
   public:
@@ -854,7 +885,48 @@ namespace HG {
       return ngapjets;
     }
   };
+//____________________________________________________________________________
+  class N_j_Mix : public VarBase<int> {
+  public:
+    N_j_Mix() : VarBase("N_j_Mix") { m_default = -99; }
+    ~N_j_Mix() { }
 
+    int calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+      int njets = 0;
+      for (auto jet : *jets){
+
+      bool Central_Cond = jet->pt() >= 25.0 * HG::GeV && fabs(jet->eta()) < 2.5 ;
+      bool Forward_Cond = jet->pt() >= 50.0 * HG::GeV && fabs(jet->eta()) > 2.5 ;
+
+      if(Central_Cond || Forward_Cond) njets++;
+
+      }
+      return njets;
+    }
+  };
+  //____________________________________________________________________________
+  class N_j_Mix30 : public VarBase<int> {
+  public:
+    N_j_Mix30() : VarBase("N_j_Mix30") { m_default = -99; }
+    ~N_j_Mix30() { }
+
+    int calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+      int njets = 0;
+      for (auto jet : *jets){
+
+      bool Central_Cond = jet->pt() >= 30.0 * HG::GeV && fabs(jet->eta()) < 2.5 ;
+      bool Forward_Cond = jet->pt() >= 50.0 * HG::GeV && fabs(jet->eta()) > 2.5 ;
+
+      if(Central_Cond || Forward_Cond) njets++;
+
+      }
+      return njets;
+    }
+  };
   //____________________________________________________________________________
   class Zy_centrality: public VarBase<float> {
   public:
@@ -1083,6 +1155,29 @@ namespace HG {
   //
   };
 
+//____________________________________________________________________________
+  class Dphi_yj : public VarBase<float> {
+  public:
+    Dphi_yj() : VarBase("Dphi_yj") { m_default = -99; }
+    ~Dphi_yj() { }
+
+    float calculateValue(bool truth)
+    {
+      // Note - for truth, this is calculated from the raw containers, and not
+      // the true Higgs
+
+      const xAOD::IParticleContainer *js = HG::VarHandler::getInstance()->getJets(truth);
+
+      if (js->size() < 1)
+      { return m_default; }
+
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+
+      if (gams->size() < 1) return m_default;
+      return fabs(  ( (*gams)[0]->p4()).DeltaPhi((*js)[0]->p4() ));
+    }
+
+  };
 
   //____________________________________________________________________________
   class Dphi_lly_jj : public VarBase<float> {
@@ -1222,7 +1317,31 @@ namespace HG {
     }
 
   };
+//____________________________________________________________________________
+  class pt_llyj : public VarBase<float> {
+  public:
+  pt_llyj() : VarBase("pt_llyj") { m_default = -99; }
+    ~pt_llyj() { }
 
+    float calculateValue(bool truth)
+    {
+      // For Reco:
+      // getElectrons and getMuons only return elecs / muons selected as the candidate y*.
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+
+      if (mus->size() >= 2 && gams->size() >= 1 && jets->size() >= 1)
+        return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4() + (*jets)[0]->p4()  ).Pt();
+      if (eles->size() >= 2 && gams->size() >= 1 && jets->size() >= 1)
+        return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4() + (*jets)[0]->p4()).Pt();
+      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail() && gams->size() >= 1 && jets->size() >= 1)
+        return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV() + (*jets)[0]->p4()).Pt();
+
+      return m_default;
+    }
+  };
   //____________________________________________________________________________
   class DRmin_y_ystar_2jets : public VarBase<float> {
   public:
@@ -1370,6 +1489,7 @@ namespace HG {
 namespace var {
   extern HG::m_lly m_lly;
   extern HG::m_lly_gev m_lly_gev;
+  extern HG::m_llyj m_llyj;
   extern HG::m_ll m_ll;
   extern HG::m_l1y m_l1y;
   extern HG::m_l2y m_l2y;
@@ -1402,6 +1522,8 @@ namespace var {
   extern HG::pT_l1 pT_l1;
   extern HG::eta_j1 eta_j1;
   extern HG::N_j_gap N_j_gap;
+  extern HG::N_j_Mix N_j_Mix;
+  extern HG::N_j_Mix30 N_j_Mix30;
   extern HG::Zy_centrality Zy_centrality;
   extern HG::DR_Zy_jj DR_Zy_jj;
   extern HG::pT_l1_h1 pT_l1_h1;
@@ -1419,9 +1541,11 @@ namespace var {
   extern HG::yyStarCategory yyStarCategory;
   extern HG::yyStarCategory_electronOnly yyStarCategory_electronOnly;
   extern HG::Dphi_lly_jj Dphi_lly_jj;
+  extern HG::Dphi_yj Dphi_yj;
   extern HG::Zepp_lly Zepp_lly;
   extern HG::pTt_lly pTt_lly;
   extern HG::pT_llyjj pT_llyjj;
+  extern HG::pt_llyj pt_llyj;
   extern HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   extern HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
   extern HG::m_lly2 m_lly2;

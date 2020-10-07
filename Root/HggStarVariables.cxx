@@ -9,6 +9,7 @@
 namespace var {
   HG::m_lly m_lly;
   HG::m_lly_gev m_lly_gev;
+  HG::m_llyj m_llyj;
   HG::m_ll m_ll;
   HG::m_l1y m_l1y;
   HG::m_l2y m_l2y;
@@ -41,6 +42,8 @@ namespace var {
   HG::pT_l1 pT_l1;
   HG::eta_j1 eta_j1;
   HG::N_j_gap N_j_gap;
+  HG::N_j_Mix N_j_Mix;
+  HG::N_j_Mix30 N_j_Mix30;
   HG::Zy_centrality Zy_centrality;
   HG::DR_Zy_jj DR_Zy_jj;
   HG::pT_l1_h1 pT_l1_h1;
@@ -58,9 +61,11 @@ namespace var {
   HG::yyStarCategory yyStarCategory;
   HG::yyStarCategory_electronOnly yyStarCategory_electronOnly;
   HG::Dphi_lly_jj Dphi_lly_jj;
+  HG::Dphi_yj Dphi_yj;
   HG::Zepp_lly Zepp_lly;
   HG::pTt_lly pTt_lly;
   HG::pT_llyjj pT_llyjj;
+  HG::pt_llyj pt_llyj;
   HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
   HG::m_lly2 m_lly2;
