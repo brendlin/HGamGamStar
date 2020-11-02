@@ -380,6 +380,15 @@ namespace HG {
 
     float calculateValue(bool truth); // See cxx file
   };
+  
+  //____________________________________________________________________________
+  class passVBFpresel : public VarBase<bool> {
+  public:
+  passVBFpresel() : VarBase("passVBFpresel") { m_default = false; m_recoOnly = true; }
+    ~passVBFpresel() { }
+
+    bool calculateValue(bool truth); // See cxx file
+  };
 
   //____________________________________________________________________________
   class deltaPhi2_trktrk_LM : public VarBase<float> {
@@ -1425,6 +1434,7 @@ namespace var {
   extern HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   extern HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
   extern HG::m_lly2 m_lly2;
+  extern HG::passVBFpresel passVBFpresel;
 }
 
 

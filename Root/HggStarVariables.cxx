@@ -64,6 +64,7 @@ namespace var {
   HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
   HG::m_lly2 m_lly2;
+  HG::passVBFpresel passVBFpresel;
 }
 
 // A special implementation of calculateValue that references another "var"
@@ -73,27 +74,33 @@ float HG::m_lly_gev::calculateValue(bool truth)
   return var::m_lly()/1000.;
 }
 
-int HG::yyStarCategory::calculateValue(bool truth)
+bool HG::passVBFpresel::calculateValue(bool  truth)
 {
-  if (truth) return CategoryEnum::CATEGORYUNKNOWN;
+  bool passVBFpresel = false;
   const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
-  bool passVBF = false;
   if (jets->size() > 1){ //we have two or more jets - prerequisite to pass VBF
-      passVBF =  
+      passVBFpresel =  
       (*jets)[0]->pt() > 25 * HG::GeV   &&
       (*jets)[1]->pt() > 25 * HG::GeV   &&
       fabs(var::Zepp_lly()) < 2.0       &&
       var::DRmin_y_leps_2jets() > 1.5   &&
-      var::Dphi_lly_jj() > 2.8          &&
+//       var::Dphi_lly_jj() > 2.8          && //needed w/o this cut for theory systematics
       var::m_jj() > 500.0 * HG::GeV     &&
       var::Deta_j_j() > 2.7;
       //if all cuts pass finally check if we have forward jets and cut on min pT
-      if (passVBF){
+      if (passVBFpresel){
         float fw_jet0_pt = fabs((*jets)[0]->eta()) > 2.5 ? (*jets)[0]->pt() : 999 * HG::GeV;
         float fw_jet1_pt = fabs((*jets)[1]->eta()) > 2.5 ? (*jets)[1]->pt() : 999 * HG::GeV;
-        passVBF = (fw_jet0_pt > 30 * HG::GeV && fw_jet1_pt > 30 * HG::GeV);
+        passVBFpresel = (fw_jet0_pt > 30 * HG::GeV && fw_jet1_pt > 30 * HG::GeV);
       }
   }
+  return passVBFpresel;
+}
+
+int HG::yyStarCategory::calculateValue(bool truth)
+{
+  if (truth) return CategoryEnum::CATEGORYUNKNOWN;
+  bool passVBF = var::passVBFpresel() && var::Dphi_lly_jj() > 2.8;
   bool passPtT = (var::pTt_lly() > 100.0 * HG::GeV);
 
   //prioritize first VBF, then high pTt, then fall back to Inclusive

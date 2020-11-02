@@ -394,6 +394,7 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
       m_cutFlow = cutflow();
       doReco(true);
     }
+    
   }
 
   if ( HG::isMC() && (m_saveTruthObjects || m_saveTruthVars))
@@ -1104,6 +1105,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnlyVars(bool truth)
     var::deltaPhi2_trktrk_perigee.addToStore(false);
     var::deltaEta2_trktrk_perigee.addToStore(false);
     var::deltaRL2_trktrk_perigee.addToStore(false);
+    var::passVBFpresel.addToStore(false);
     var::deltaPhi2_trktrk_LM.addToStore(false);
     var::deltaEta2_trktrk_LM.addToStore(false);
     var::deltaRL2_trktrk_LM.addToStore(false);
@@ -1873,8 +1875,28 @@ void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
         if (hw.ggF_qcd_2017.size()!=9){
             HG::fatal("Got unexpected number of ggF QCD theory systs: " + std::to_string(hw.ggF_qcd_2017.size()) + " (expected 9)");
         }
-        for (unsigned i = 0; i<9; i++)
-            sys_weights.push_back(hw.ggF_qcd_2017[i]);
+        
+        int category = var::yyStarCategory();
+         //need to know if ggF event passes vbf cuts for custom vbf2j,vbf3j uncertainties
+        bool passVBF = category > 3 && category < 7; //passes all VBF cuts
+        bool passVBFpresel = var::passVBFpresel(); //passes all except Dphi_lly_jj() > 2.8
+        
+        for (unsigned i = 0; i<9; i++){
+            if (i==4){ //override vbf2j uncertainty by customly derived ones
+                if (passVBFpresel) sys_weights.push_back(hw.nominal * 1.208); //20.8%, same for Dphi_lly_jj() > 2.8 and Dphi_lly_jj() < 2.8
+                else sys_weights.push_back(hw.nominal);
+            }
+            else if (i==5){ //override vbf3j uncertainty by customly derived ones
+                if (passVBFpresel){
+                    if (passVBF) //passes all VBF cuts incl. Dphi_lly_jj() > 2.8
+                        sys_weights.push_back(hw.nominal * (1.0 - 0.233)); //-23.3%
+                    else //passes all VBF cuts except Dphi_lly_jj, Dphi_lly_jj() < 2.8
+                        sys_weights.push_back(hw.nominal * 1.713); //71.3% 
+                }
+                else sys_weights.push_back(hw.nominal);
+            }
+            else sys_weights.push_back(hw.ggF_qcd_2017[i]);
+        }
         sys_weights.push_back(hw.ggF_qcd_pTH_nJ0);
     } else{ //fill dummy values
         for (unsigned i = 0; i<ggf_names.size(); i++)
