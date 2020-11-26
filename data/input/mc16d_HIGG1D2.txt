@@ -2,24 +2,45 @@
 # Signal
 # ------------------------------------------------------------------------------
 
-mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_s3126_r10201_p4062
-mc16_13TeV.345834.PowhegPythia8EvtGen_NNPDF30_AZNLOCTEQ6L1_VBFH125_gamstargam.deriv.DAOD_HIGG1D2.e7111_s3126_r10201_p4062
-mc16_13TeV.345963.PowhegPythia8EvtGen_NNPDF30_AZNLO_WmH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r10201_p4062
-mc16_13TeV.345964.PowhegPythia8EvtGen_NNPDF30_AZNLO_WpH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r10201_p4062
-mc16_13TeV.345965.PowhegPythia8EvtGen_NNPDF30_AZNLO_ZH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r10201_p4062
+mc16_13TeV.345961.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamstargam.deriv.DAOD_HIGG1D2.e6740_s3126_r10201_p4114
+mc16_13TeV.345834.PowhegPythia8EvtGen_NNPDF30_AZNLOCTEQ6L1_VBFH125_gamstargam.deriv.DAOD_HIGG1D2.e7111_s3126_r10201_p4114
+mc16_13TeV.345963.PowhegPythia8EvtGen_NNPDF30_AZNLO_WmH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r10201_p4114
+mc16_13TeV.345964.PowhegPythia8EvtGen_NNPDF30_AZNLO_WpH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r10201_p4114
+mc16_13TeV.345965.PowhegPythia8EvtGen_NNPDF30_AZNLO_ZH125J_Hgamstargam_MINLO.deriv.DAOD_HIGG1D2.e6740_s3126_r10201_p4114
 
-# ggH125 gamgam Background
+# ggH125 and VBF gamgam Background
 # ------------------------------------------------------------------------------
 mc16_13TeV.343981.PowhegPythia8EvtGen_NNLOPS_nnlo_30_ggH125_gamgam.deriv.DAOD_HIGG1D2.e5607_s3126_r10201_p4062
+mc16_13TeV.346214.PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_gamgam.deriv.DAOD_HIGG1D2.e6970_s3126_r10201_p4112
+
+# Z->ee Background (must be run on the grid)
+# ------------------------------------------------------------------------------
+# mc16_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.deriv.DAOD_HIGG1D2.e3601_s3126_r10201_p4060
+
+# Sherpa LO lly Background
+# ------------------------------------------------------------------------------
+mc16_13TeV.700001.Sh_228_ysyLO_ee.deriv.DAOD_HIGG1D2.e7987_s3126_r10201_p4114
+mc16_13TeV.700002.Sh_228_ysyLO_mumu.deriv.DAOD_HIGG1D2.e7987_s3126_r10201_p4114
+
+# SM Diphoton
+# ------------------------------------------------------------------------------
+mc16_13TeV.364352.Sherpa_224_NNPDF30NNLO_Diphoton_myy_90_175.deriv.DAOD_HIGG1D2.e6452_s3126_r10201_p4112
+
+# enugamma
+# ------------------------------------------------------------------------------
+mc16_13TeV.364522.Sherpa_222_NNPDF30NNLO_enugamma_pty_15_35.deriv.DAOD_HIGG1D2.e5928_s3126_r10201_p4112
+mc16_13TeV.364523.Sherpa_222_NNPDF30NNLO_enugamma_pty_35_70.deriv.DAOD_HIGG1D2.e5928_s3126_r10201_p4112
+mc16_13TeV.364524.Sherpa_222_NNPDF30NNLO_enugamma_pty_70_140.deriv.DAOD_HIGG1D2.e5928_s3126_r10201_p4112
+mc16_13TeV.364525.Sherpa_222_NNPDF30NNLO_enugamma_pty_140_E_CMS.deriv.DAOD_HIGG1D2.e5928_s3126_r10201_p4112
 
 # Zgam background
 # ------------------------------------------------------------------------------
-mc16_13TeV.301535.Sherpa_CT10_eegammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
-mc16_13TeV.301899.Sherpa_CT10_eegammaPt35_70.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
-mc16_13TeV.301900.Sherpa_CT10_eegammaPt70_140.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
-mc16_13TeV.301901.Sherpa_CT10_eegammaPt140.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
+# mc16_13TeV.301535.Sherpa_CT10_eegammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
+# mc16_13TeV.301899.Sherpa_CT10_eegammaPt35_70.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
+# mc16_13TeV.301900.Sherpa_CT10_eegammaPt70_140.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
+# mc16_13TeV.301901.Sherpa_CT10_eegammaPt140.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
 
-mc16_13TeV.301536.Sherpa_CT10_mumugammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
-mc16_13TeV.301902.Sherpa_CT10_mumugammaPt35_70.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
-mc16_13TeV.301903.Sherpa_CT10_mumugammaPt70_140.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
-mc16_13TeV.301904.Sherpa_CT10_mumugammaPt140.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
+# mc16_13TeV.301536.Sherpa_CT10_mumugammaPt10_35.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
+# mc16_13TeV.301902.Sherpa_CT10_mumugammaPt35_70.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
+# mc16_13TeV.301903.Sherpa_CT10_mumugammaPt70_140.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062
+# mc16_13TeV.301904.Sherpa_CT10_mumugammaPt140.deriv.DAOD_HIGG1D2.e3952_s3126_r10201_p4062

@@ -38,6 +38,9 @@ namespace var {
   HG::m_emu m_emu;
   HG::m_emuy m_emuy;
   HG::Dy_j_j_50 Dy_j_j_50;
+  HG::pT_l1 pT_l1;
+  HG::eta_j1 eta_j1;
+  HG::N_j_gap N_j_gap;
   HG::Zy_centrality Zy_centrality;
   HG::DR_Zy_jj DR_Zy_jj;
   HG::pT_l1_h1 pT_l1_h1;
@@ -48,10 +51,12 @@ namespace var {
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   HG::yyStarChannel yyStarChannel;
+  HG::yyStarChannelSimple yyStarChannelSimple;
   HG::ZyChannel ZyChannel;
   HG::vertexTruthFitRadius vertexTruthFitRadius;
   HG::trk_lead_pt trk_lead_pt;
   HG::yyStarCategory yyStarCategory;
+  HG::yyStarCategory_electronOnly yyStarCategory_electronOnly;
   HG::Dphi_lly_jj Dphi_lly_jj;
   HG::Zepp_lly Zepp_lly;
   HG::pTt_lly pTt_lly;
@@ -59,6 +64,7 @@ namespace var {
   HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
   HG::m_lly2 m_lly2;
+  HG::passVBFpresel passVBFpresel;
 }
 
 // A special implementation of calculateValue that references another "var"
@@ -68,32 +74,67 @@ float HG::m_lly_gev::calculateValue(bool truth)
   return var::m_lly()/1000.;
 }
 
+bool HG::passVBFpresel::calculateValue(bool  truth)
+{
+  bool passVBFpresel = false;
+  const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+  if (jets->size() > 1){ //we have two or more jets - prerequisite to pass VBF
+      passVBFpresel =  
+      (*jets)[0]->pt() > 25 * HG::GeV   &&
+      (*jets)[1]->pt() > 25 * HG::GeV   &&
+      fabs(var::Zepp_lly()) < 2.0       &&
+      var::DRmin_y_leps_2jets() > 1.5   &&
+//       var::Dphi_lly_jj() > 2.8          && //needed w/o this cut for theory systematics
+      var::m_jj() > 500.0 * HG::GeV     &&
+      var::Deta_j_j() > 2.7;
+      //if all cuts pass finally check if we have forward jets and cut on min pT
+      if (passVBFpresel){
+        float fw_jet0_pt = fabs((*jets)[0]->eta()) > 2.5 ? (*jets)[0]->pt() : 999 * HG::GeV;
+        float fw_jet1_pt = fabs((*jets)[1]->eta()) > 2.5 ? (*jets)[1]->pt() : 999 * HG::GeV;
+        passVBFpresel = (fw_jet0_pt > 30 * HG::GeV && fw_jet1_pt > 30 * HG::GeV);
+      }
+  }
+  return passVBFpresel;
+}
+
 int HG::yyStarCategory::calculateValue(bool truth)
 {
   if (truth) return CategoryEnum::CATEGORYUNKNOWN;
-  const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
-  bool passVBF = false;
-  if (jets->size() > 1){ //we have two or more jets - prerequisite to pass VBF
-      passVBF = true;
-      passVBF = passVBF && var::m_jj() > 400 * HG::GeV;
-      passVBF = passVBF && var::Deta_j_j() > 2.5;
-      passVBF = passVBF && (*jets)[0]->pt() > 25 * HG::GeV;
-      passVBF = passVBF && (*jets)[1]->pt() > 25 * HG::GeV;
-  }
+  bool passVBF = var::passVBFpresel() && var::Dphi_lly_jj() > 2.8;
+  bool passPtT = (var::pTt_lly() > 100.0 * HG::GeV);
 
+  //prioritize first VBF, then high pTt, then fall back to Inclusive
   if (var::yyStarChannel()==ChannelEnum::DIMUON){
       if(passVBF) return CategoryEnum::VBF_DIMUON;
-      else return CategoryEnum::GGF_DIMUON;
+      if(passPtT) return CategoryEnum::HIPTT_DIMUON;
+      return CategoryEnum::GGF_DIMUON;
   }
   else if (var::yyStarChannel()==ChannelEnum::RESOLVED_DIELECTRON){
       if(passVBF) return CategoryEnum::VBF_RESOLVED_DIELECTRON;
-      else return CategoryEnum::GGF_RESOLVED_DIELECTRON;
+      if(passPtT) return CategoryEnum::HIPTT_RESOLVED_DIELECTRON;
+      return CategoryEnum::GGF_RESOLVED_DIELECTRON;
   }
   else if(var::yyStarChannel()==ChannelEnum::MERGED_DIELECTRON){
       if(passVBF) return CategoryEnum::VBF_MERGED_DIELECTRON;
-      else return CategoryEnum::GGF_MERGED_DIELECTRON;
+      if(passPtT) return CategoryEnum::HIPTT_MERGED_DIELECTRON;
+      return CategoryEnum::GGF_MERGED_DIELECTRON;
   }
   return CategoryEnum::CATEGORYUNKNOWN;
+}
+
+int HG::yyStarCategory_electronOnly::calculateValue(bool truth)
+{
+  int chan = var::yyStarChannel();
+  int cat = var::yyStarCategory();
+
+  // If it is a muon channel, set to 0 (we do not want it here)
+  if (chan == ChannelEnum::DIMUON) return CategoryEnum::CATEGORYUNKNOWN;
+
+  // Assuming the muon category is always 1, 4, 7, ...
+  // here is how to translate from 2, 3, 5, 6, 8, 9, ... to 1, 2, 3, 4, 5, 6:
+  cat = cat - int( (cat+1)/3 );
+
+  return cat;
 }
 
 float HG::Resolved_dRExtrapTrk12::calculateValue(bool /* truth*/)
@@ -167,27 +208,23 @@ void HG::AssignZbosonIndices(const xAOD::IParticleContainer& leps,int& return_le
   return;
 }
 
-TLorentzVector HG::MergedEleTLV(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2, const xAOD::Electron& ele)
-{
-  // New way: use the photon calibration, but the track TLVs.
-  // The di-track "mass" is usually very close to the true one!
-  float calibrated_e = HG::EleAcc::calibratedPhotonEnergy(ele);
-  if (calibrated_e < 0) HG::fatal("Something went wrong - the energy of the photon is not calibrated correctly.");
-  float scale_pt = calibrated_e/(trk1.e() + trk2.e());
-  TLorentzVector tlv1;
-  TLorentzVector tlv2;
-  tlv1.SetPtEtaPhiM( trk1.pt() * scale_pt, trk1.eta(), trk1.phi(), ele.m() ); // ele.m == 0.510998
-  tlv2.SetPtEtaPhiM( trk2.pt() * scale_pt, trk2.eta(), trk2.phi(), ele.m() );
-  return (tlv1 + tlv2);
+void HG::SetMergedFourMomentum(xAOD::Electron& ele,const float calibrated_e) {
+  // Using the example from:
+  // acode-browser.usatlas.bnl.gov/lxr/source/athena/Reconstruction/egamma/egammaTools/src/EMFourMomBuilder.cxx?v=21.2
+  // calibrated_e should come from calibration of the merged electron as a converted photon.
 
-  // Old way: electron pt
-  //
-  // float scale_pt = ele.pt()/(trk1.pt() + trk2.pt());
-  // TLorentzVector tlv1;
-  // TLorentzVector tlv2;
-  // tlv1.SetPtEtaPhiM( trk1.pt() * scale_pt, trk1.eta(), trk1.phi(), ele.m() ); // ele.m == 0.510998
-  // tlv2.SetPtEtaPhiM( trk2.pt() * scale_pt, trk2.eta(), trk2.phi(), ele.m() );
-  // return (tlv1 + tlv2);
+  const float E = calibrated_e;
+  const float eta = HG::EleAcc::vtxEta(ele);
+  const float phi = HG::EleAcc::vtxPhi(ele);
+  const float mass = HG::EleAcc::vtxM(ele);
+  const double pt = (E > mass) ? sqrt(E*E - mass*mass)/cosh(eta) : 0;
+
+  ele.setP4(pt, eta, phi, mass);
+
+  // std::cout << "New pt: " << ele.pt() << " eta: " << ele.eta()
+  //           << " phi: " << ele.phi() << " Mass: " << ele.m() << std::endl;
+
+  return;
 }
 
 HG::TruthPtcls HG::getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl)
@@ -287,6 +324,23 @@ bool HG::eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer * allParticle
   if (directphots.size() != 1) return true;
 
   return false;
+}
+
+bool HG::eventIsHyyHiggs(const xAOD::TruthParticleContainer * allParticles) {
+
+  TruthPtcls higgses = getFinalHiggsBosons(allParticles);
+
+  if (higgses.size() == 0) return false;
+
+  TruthPtcls decayProds = getHyyStarSignalDecayProducts(higgses[0]);
+
+  TruthPtcls childleps = HG::FilterLeptons(decayProds);
+  if (childleps.size() != 0) return false;
+
+  TruthPtcls directphots = HG::FilterDirectPhotons(decayProds);
+  if (directphots.size() != 2) return false;
+
+  return true;
 }
 
 void HG::DecorateLeptonDressing(const xAOD::IParticleContainer& leps, const xAOD::TruthParticleContainer& truthLeps){

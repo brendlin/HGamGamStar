@@ -21,7 +21,13 @@ namespace HG {
     AMBIGUOUS_DIELECTRON=4,
     FAILEDTRKELECTRON=5, //// Tracking Failed Electron Decay
     OTHER=6, //// Other Decay
-    OUT_OF_ACCEPTANCE=7
+    OUT_OF_ACCEPTANCE=7,
+
+    // Below, for additional cutflows
+    DIMUON_FULLPHASESPACE=11, // For full-phase-space cutflow
+    DIELECTRON_FULLPHASESPACE=12, // For full-phase-space cutflow
+    DIELECTRON_FULLPHASESPACE_RECORESOLVED=13,
+    DIELECTRON_FULLPHASESPACE_RECOMERGED=14
   };
 
   TString GetChannelName(ChannelEnum channel);
@@ -34,6 +40,9 @@ namespace HG {
     VBF_DIMUON=4,
     VBF_RESOLVED_DIELECTRON=5,
     VBF_MERGED_DIELECTRON=6,
+    HIPTT_DIMUON=7,
+    HIPTT_RESOLVED_DIELECTRON=8,
+    HIPTT_MERGED_DIELECTRON=9,
   };
 
   namespace PhAcc {
@@ -80,8 +89,12 @@ namespace HG {
     // New Accessors for output MxAOD:
     //
 
+    // For our special photon-electron double-counting procedure.
+    static SG::AuxElement::Accessor<char>  passElePhOverlap("passElePhOverlap");
+
     // New ID variables
     static SG::AuxElement::Accessor<float> RhadForPID("RhadForPID");
+    static SG::AuxElement::Accessor<float> RhadForPID_nofudge("RhadForPID_nofudge");
     static SG::AuxElement::Accessor<float> EOverP0P1("EOverP0P1");
     static SG::AuxElement::Accessor<float> delta_z0_tracks("delta_z0_tracks");
     static SG::AuxElement::Accessor<float> delta_z0sinTheta_tracks("delta_z0sinTheta_tracks");
@@ -107,6 +120,9 @@ namespace HG {
     static SG::AuxElement::Accessor< int >  vtxTrkParticleIndex1_MxAOD("vtxTrkParticleIndex1_MxAOD");
     static SG::AuxElement::Accessor< int >  vtxTrkParticleIndex2_MxAOD("vtxTrkParticleIndex2_MxAOD");
 
+    static SG::AuxElement::Accessor< int > truthType("truthType");
+    static SG::AuxElement::Accessor< int > truthOrigin("truthOrigin");
+    static SG::AuxElement::Accessor< unsigned char > ambiguityType("ambiguityType");
     static SG::AuxElement::Accessor< float > ambiguousPhotonR("ambiguousPhotonR");
     static SG::AuxElement::Accessor< int >   ambiguousPhotonCT("ambiguousPhotonCT");
     static SG::AuxElement::Accessor< float > calibratedPhotonEnergy("calibratedPhotonEnergy");
@@ -120,9 +136,30 @@ namespace HG {
     static SG::AuxElement::Accessor< int >   truthTrackIndexA("truthTrackIndexA");
     static SG::AuxElement::Accessor< int >   truthTrackIndexB("truthTrackIndexB");
 
+    static SG::AuxElement::Accessor< char > noFudgeVarsInitialized("noFudgeVarsInitialized");
+    static SG::AuxElement::Accessor< float > Rhad_nofudge("Rhad_nofudge");
+    static SG::AuxElement::Accessor< float > Rhad1_nofudge("Rhad1_nofudge");
+    static SG::AuxElement::Accessor< float > Eratio_nofudge("Eratio_nofudge");
+    static SG::AuxElement::Accessor< float > wtots1_nofudge("wtots1_nofudge");
+    static SG::AuxElement::Accessor< float > Reta_nofudge("Reta_nofudge");
+    static SG::AuxElement::Accessor< float > Rphi_nofudge("Rphi_nofudge");
+    static SG::AuxElement::Accessor< float > weta2_nofudge("weta2_nofudge");
 
+    static SG::AuxElement::Accessor< float > pt_orig("pt_orig");
+    static SG::AuxElement::Accessor< float > eta_orig("eta_orig");
+    static SG::AuxElement::Accessor< float > phi_orig("phi_orig");
+    static SG::AuxElement::Accessor< float > m_orig("m_orig");
+
+    static SG::AuxElement::Accessor<int>     passTMVAPIDv2("passTMVAPIDv2") ;
+    static SG::AuxElement::Accessor<int>     passTMVAPIDv2F("passTMVAPIDv2F") ;
+    static SG::AuxElement::Accessor<int>     passTMVAPIDv2_nofudge("passTMVAPIDv2_nofudge") ;
+    static SG::AuxElement::Accessor<int>     passTMVAPIDv3("passTMVAPIDv3") ;
     static SG::AuxElement::Accessor<int>     passTMVAPID("passTMVAPID") ;
     static SG::AuxElement::Accessor<int>     passPID("passPID") ;
+    static SG::AuxElement::Accessor<int>     passDeltaPhiIPCut("passDeltaPhiIPCut") ;
+
+
+    static SG::AuxElement::Accessor<float>   deltaPhiTrksIP("deltaPhiTrksIP") ;
 
     static SG::AuxElement::Accessor< float > vtxTrk1_TRT_PID_trans("vtxTrk1_TRT_PID_trans");
     static SG::AuxElement::Accessor< float > vtxTrk1_dEta2_P("vtxTrk1_dEta2_P");
@@ -155,6 +192,8 @@ namespace HG {
     // DAOD Accessors:
     //
 
+    static SG::AuxElement::Accessor< float > ptvarcone20_TightTTVA_pt1000("ptvarcone20_TightTTVA_pt1000");
+
     // Stored in the DAOD
     static SG::AuxElement::Accessor< int >  vtxTrkIndex1("vtxTrkParticleIndex1");
     static SG::AuxElement::Accessor< int >  vtxTrkIndex2("vtxTrkParticleIndex2");
@@ -163,6 +202,7 @@ namespace HG {
     static SG::AuxElement::Accessor<float>   vtxdPhi("vtxdPhi") ;
     static SG::AuxElement::Accessor<float>   vtxPhi("vtxPhi") ;
     static SG::AuxElement::Accessor<float>   vtxEta("vtxEta") ;
+    static SG::AuxElement::Accessor<float>   vtxPt("vtxPt") ;
     static SG::AuxElement::Accessor<float>   vtxZ("vtxZ") ;
     static SG::AuxElement::Accessor<float>   vtxR("vtxR") ;
     static SG::AuxElement::Accessor<float>   vtxE("vtxE") ;
@@ -206,6 +246,11 @@ namespace HG {
 
   ChannelEnum truthChannel(const xAOD::TruthParticleContainer& childleps,
                            const xAOD::ElectronContainer& all_elecs);
+
+  // Returns either DIMUON_ or DIELECTRON_FULLPHASESPACE, or "other/none"
+  // No additional fiducial selection
+  ChannelEnum truthChannelSimpleMuOrE(const xAOD::TruthParticleContainer& childleps,
+                                      const xAOD::ElectronContainer& all_elecs);
 
   ChannelEnum ClassifyElectronChannelsByBestMatch(const xAOD::TrackParticle* trk0,
                                                   const xAOD::TrackParticle* trk1,

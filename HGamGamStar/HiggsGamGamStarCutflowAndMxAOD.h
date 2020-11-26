@@ -11,11 +11,15 @@
 #include "HGamGamStar/TrackHandler.h"
 #include "HGamGamStar/MergedElectronID.h"
 #include "HGamGamStar/MergedElectronID_v2.h"
+#include "HGamGamStar/MergedElectronID_v2F.h"
+#include "HGamGamStar/MergedElectronID_v3.h"
 
 #include "IsolationSelection/IsolationCloseByCorrectionTool.h"
 #include "IsolationSelection/IsolationSelectionTool.h"
 
 #include "xAODTracking/TrackParticlexAODHelpers.h"
+
+class ElectronPhotonShowerShapeFudgeTool;
 
 class HiggsGamGamStarCutflowAndMxAOD : public MxAODTool
 {
@@ -40,7 +44,7 @@ private:
      "Z-boson assignment","2 same-flavor leptons (post-OR)","Bad muon","1 loose photon (post-OR)",
      "Trigger match","lepton ID","lepton impact parameter","lepton isolation",
      "photon tight ID","photon isolation",
-     "#it{m}_{ll} < 45 GeV",
+     "#it{m}_{ll} < 30 GeV",
      "#it{m}_{ll#gamma} #in [105,160] GeV",
      "#it{m}_{ll} J/#Psi/#Upsilon window",
      "p^{ll}_{T}/#it{m}_{ll#gamma} > 0.3",
@@ -77,7 +81,9 @@ private:
 
   // whether to apply systematics, save the differential variables and the truth
   bool m_applySystematics, m_saveObjects, m_saveTruthObjects, m_saveTruthVars;
-  bool m_skipElectronObjects, m_skipMuonObjects;
+  bool m_skipElectronObjects, m_skipMuonObjects, m_skipTruthElectronObjects;
+
+  bool m_doFudge;
 
   // Containers
   xAOD::PhotonContainer m_allPhotons; //!
@@ -153,9 +159,17 @@ private:
   void SetTruthHiggsInformation(void);
 
   void decorateCorrectedIsoCut(xAOD::ElectronContainer & electrons, xAOD::MuonContainer & muons);
+  void InitializeElectronNoFudgeShowerShapes();
+  void ResetElectronShowerShapes();
   void AddElectronDecorations(xAOD::ElectronContainer& electrons);
+  void CalibrateAndDecorateMergedE(xAOD::Electron& electron,
+                                   const xAOD::TrackParticle& trk0, const xAOD::TrackParticle& trk1);
+  float GetSmearedMergedE(float energy, float eta, float sisiReso, int);
+                                 
   void AddMuonDecorations(xAOD::MuonContainer& muons);
+  void AddTheorySystematics(void);
   void AddMergedIDSFSystematics(void);
+  EL::StatusCode AddMergedResolutionSystematics(void);
 
   HG::ChannelEnum FindZboson_ElectronChannelAware(xAOD::TrackParticleContainer* inTracks,
                                                   xAOD::TrackParticle*& sel_trk1,
@@ -181,6 +195,9 @@ private:
   HG::TrackHandler *m_trackHandler; //!
   HG::MergedElectronID * m_mergedElectronID; //!
   HG::MergedElectronID_v2 * m_mergedElectronID_v2; //!
+  HG::MergedElectronID_v2F * m_mergedElectronID_v2F; //!
+  HG::MergedElectronID_v3 * m_mergedElectronID_v3; //!
+  ElectronPhotonShowerShapeFudgeTool * m_fudgeMC; //!
 #endif // __CINT__
 
 protected:
@@ -221,6 +238,8 @@ public:
   void writeNominalOnlyVars(bool truth = false);
   void writeDetailedVars(bool truth = false);
   void writeTruthOnlyVars();
+
+  //
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(HiggsGamGamStarCutflowAndMxAOD, 1);

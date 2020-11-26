@@ -501,7 +501,11 @@ RadiativeZCutflowAndMxAOD::CutEnum RadiativeZCutflowAndMxAOD::cutflow()
   m_selJets = jetHandler()->applySelection(m_allJets);
 
   // Removes overlap with candidate photon, and any additional tight photons (if option set)
-  overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_selElectrons, m_selMuons);
+  overlapHandler()->removeOverlap(&m_selPhotons, &m_selJets, &m_selElectrons, &m_selMuons, nullptr);
+
+  // Add decoration for isolation SF : note that this also call applyScaleFactor for the muons !!!
+  // MuonHandler.Efficiency.UseInclusiveIsoSF is set to true, so dRJet is set to -2.
+  muonHandler()->decorateDeltaRJet(m_selMuons, m_selJets);
 
   //==== CUT 13 : Whether SF leptons survive OR
   if (m_selElectrons.size() == 0 && m_selMuons.size() < 2) return TWO_SF_LEPTONS_POSTOR;
@@ -522,7 +526,7 @@ RadiativeZCutflowAndMxAOD::CutEnum RadiativeZCutflowAndMxAOD::cutflow()
     for (auto trig: eventHandler()->getRequiredTriggers()) {
       // You need passTrigger() here in order to make sure the RunNumbers restriction is imposed on trigs.
       if (eventHandler()->passTrigger(trig) &&
-          eventHandler()->passTriggerMatch(trig, &m_selPhotons, &m_selElectrons, &m_selMuons, NULL))
+          eventHandler()->passTriggerMatch(trig, &m_selPhotons, &m_selElectrons, &m_selMuons, nullptr))
       {
         isTrigMatched = true;
         break;
@@ -563,7 +567,7 @@ EL::StatusCode  RadiativeZCutflowAndMxAOD::doReco(bool isSys){
 
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
-  HG::VarHandler::getInstance()->setContainers(&m_selPhotons,&m_selElectrons,&m_selMuons,&m_selJets);
+  HG::VarHandler::getInstance()->setContainers(&m_selPhotons,&m_selElectrons,&m_selMuons,nullptr,&m_selJets);
 
   // Weights
   // total weight (mc, prw, vtx, sf)
@@ -806,7 +810,8 @@ EL::StatusCode  RadiativeZCutflowAndMxAOD::doTruth()
   xAOD::JetContainer           bjets     = truthHandler()->applyBJetSelection     (jets);
 
   // remove truth jets that are from electrons or photons
-  truthHandler()->removeOverlap(photons, jets, electrons, muons);
+  xAOD::TruthParticleContainer tausEmpty;  
+  truthHandler()->removeOverlap(photons, jets, electrons, muons, tausEmpty);
 
   // Save truth containers, if configured
   if (m_saveTruthObjects) {
@@ -822,7 +827,7 @@ EL::StatusCode  RadiativeZCutflowAndMxAOD::doTruth()
     { addTruthLinks(m_elecContainerName.Data()  , m_elecTruthContainerName.Data()); }
   }
 
-  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, &jets);
+  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, nullptr, &jets);
 
   // Adds event-level variables to TStore (this time using truth containers)
   bool truth = true;

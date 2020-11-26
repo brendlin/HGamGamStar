@@ -408,7 +408,7 @@ EL::StatusCode  MergedElectronMxAOD::doReco(bool /*isSys*/){
   // Also sets pointer to photon container, etc., which is used by var's
   xAOD::MuonContainer noMuons = xAOD::MuonContainer(SG::VIEW_ELEMENTS);
 
-  setSelectedObjects(&m_selPhotons, &m_selElectrons, &noMuons, nullptr, nullptr, nullptr);
+  setSelectedObjects(&m_selPhotons, &m_selElectrons, &noMuons, nullptr, nullptr, nullptr, nullptr);
 
   xAOD::TrackParticleContainer noTracks = xAOD::TrackParticleContainer(SG::VIEW_ELEMENTS);
   HG::ExtraHggStarObjects::getInstance()->setElectronTrackContainer(&m_selTracks);
@@ -566,7 +566,8 @@ EL::StatusCode  MergedElectronMxAOD::doTruth()
   xAOD::JetContainer           bjets     = truthHandler()->applyBJetSelection     (jets);
 
   // remove truth jets that are from electrons or photons
-  truthHandler()->removeOverlap(photons, jets, electrons, muons);
+  xAOD::TruthParticleContainer tausEmpty;  
+  truthHandler()->removeOverlap(photons, jets, electrons, muons, tausEmpty);
 
   // Save truth containers, if configured
   if (m_saveTruthObjects) {
@@ -579,7 +580,7 @@ EL::StatusCode  MergedElectronMxAOD::doTruth()
     addTruthLinks(m_elecContainerName.Data()  , m_elecTruthContainerName.Data());
   }
 
-  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, &jets);
+  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, nullptr, &jets);
   HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);
 
   // Set the truth decay product containers in ExtraHggStarObjects

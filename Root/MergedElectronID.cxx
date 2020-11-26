@@ -55,6 +55,17 @@ void HG::MergedElectronID::decorateMergedVariables(xAOD::Electron &ele,xAOD::Tra
   AngularPosition trk2AngPos_LM = getExtrapolatedTrackPosition(&trk2, extrapolationStartPositionEnum::LastMeasurement, false, false, false);
   EleAcc::dRExtrapTrk12_LM(ele) = trk1AngPos_LM.deltaR(trk2AngPos_LM);
 
+  // Note - these tracks are already pt-sorted!
+  TLorentzVector tlv1 = trk1.p4();
+  TLorentzVector tlv2 = trk2.p4();
+  tlv1.SetPtEtaPhiM( tlv1.Pt(), tlv1.Eta(), tlv1.Phi(), 0.510998 ); // ele.m == 0.510998
+  tlv2.SetPtEtaPhiM( tlv2.Pt(), tlv2.Eta(), tlv2.Phi(), 0.510998 );
+
+  // New DeltaPhi_trktrk_IP decoration
+  float dPhiIP = trk1.charge() * tlv1.DeltaPhi( tlv2 );
+  float cutValue = 0.010*TMath::Exp(-0.374538*(tlv2.Pt()/1000.-0.5)) + 0.001;
+  EleAcc::deltaPhiTrksIP(ele) = dPhiIP;
+  EleAcc::passDeltaPhiIPCut(ele) = (-0.02 < dPhiIP && dPhiIP < cutValue);
 
   return;
 }

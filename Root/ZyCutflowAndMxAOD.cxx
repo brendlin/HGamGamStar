@@ -2,6 +2,7 @@
 #include "HGamAnalysisFramework/HGamVariables.h"
 #include <EventLoop/Worker.h>
 
+#include "PhotonVertexSelection/PhotonVertexHelpers.h"
 #include "PhotonVertexSelection/PhotonPointingTool.h"
 #include "ZMassConstraint/ConstraintFit.h"
 
@@ -294,7 +295,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   m_selJets = jetHandler()->applySelection(m_allJets);
 
   // Removes overlap with candidate diphoton system, and any additional tight photons (if option set)
-  overlapHandler()->removeOverlap(m_selPhotons, m_selJets, m_preSelElectrons, dirtyMuons);
+  overlapHandler()->removeOverlap(&m_selPhotons, &m_selJets, &m_preSelElectrons, &dirtyMuons, nullptr);
 
   //above doesn't have option to remove photon overlapping with lepton
   overlapHandler()->removeOverlap(m_selPhotons, m_preSelElectrons, 0.4);
@@ -304,6 +305,10 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   // Muon cleaning should be done after overlap removal
   m_preSelMuons = muonHandler()->applyCleaningSelection(dirtyMuons);
 
+  // Add decoration for isolation SF : note that this also call applyScaleFactor for the muons !!!
+  // MuonHandler.Efficiency.UseInclusiveIsoSF is set to true, so dRJet is set to -2.
+  muonHandler()->decorateDeltaRJet(m_preSelMuons, m_selJets);
+  
   // Select Z candidate after overlap removal.
   // choose leading OSSF pair
   int nOSSFpair=0;
@@ -506,7 +511,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   }
 
   //==== CUT 11 : 30 GeV cut on leading lepton ====
-  if (!m_isVBSsel && !((m_selElectrons.size()>0 && m_selElectrons[0]->pt()>30*HG::GeV) || (m_selMuons.size()>0 && m_selMuons[0]->pt()>30*HG::GeV))) return LEADLEPTON_PT;
+  if (!((m_selElectrons.size()>0 && m_selElectrons[0]->pt()>30*HG::GeV) || (m_selMuons.size()>0 && m_selMuons[0]->pt()>30*HG::GeV))) return LEADLEPTON_PT;
 
   //==== CUT 12 : MLL>40 GeV ====
   double m_ll=-99, m_emu=-99;
@@ -539,25 +544,6 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
 
   if (!photonHandler()->passIsoCut(m_selPhotons[0], HG::Iso::FixedCutLoose)) return GAM_ISOLATION;
 
-  //==== CUT 7 : Require two loose photons to pass trigger matching
-  // static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
-  // if ( requireTriggerMatch && !passTriggerMatch(&loosePhotons) ) return TRIG_MATCH;
-
-  // Our *Higgs candidate photons* are the two, leading pre-selected photons
-  // These are also the photons used to define the primary vertex
-  // xAOD::Photon* gam1 = loosePhotons[0];
-
-  //==== CUT 8 : Require both photons to pass photon ID (isEM) ====
-  // Do we really want to require the highest-pt photon to pass tight ID? Can we ask for lower-pt gam?
-  // static bool requireTight = config()->getBool("PhotonHandler.Selection.ApplyPIDCut", true);
-  // if (requireTight && (!photonHandler()->passPIDCut(gam1)) ) return GAM_TIGHTID;
-
-  //==== CUT 9 : Require both photons to fulfill the isolation criteria ===
-  // static bool requireIso = config()->getBool("PhotonHandler.Selection.ApplyIsoCut", true);
-  // if (requireIso && (!photonHandler()->passIsoCut(gam1))) return GAM_ISOLATION;
-
-  //==== CUT 11 : Mass window cut ====
-  // if ( !passMyyWindowCut(loosePhotons) ) return MASSCUT;
 
   return PASSALL;
 }
@@ -566,22 +552,27 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
   // Do anything you missed in cutflow, and save the objects.
 
   // Rebuild MET using selected objects
+  
+
+  xAOD::TauJetContainer tausEmpty(SG::VIEW_ELEMENTS);
   m_allMET = etmissHandler()->getCorrectedContainer(&m_selPhotons    ,
                                                     &m_allJets     ,
+                                                    &m_allJets     ,
                                                     &m_selElectrons,
-                                                    &m_selMuons    );
+                                                    &m_selMuons    ,
+                                                    &tausEmpty     );
   m_selMET = etmissHandler()->applySelection(m_allMET);
 
   // Save JVT weight (needs special overlap removal)
   m_jvtJets = jetHandler()->applySelectionNoJvt(m_allJets);
   xAOD::ElectronContainer jvtElecs = m_selElectrons;
   xAOD::MuonContainer jvtMuons = m_selMuons;
-  overlapHandler()->removeOverlap(m_selPhotons, m_jvtJets, jvtElecs, jvtMuons);
+  if (m_cutFlow > VERTEX) overlapHandler()->removeOverlap(&m_selPhotons, &m_jvtJets, &jvtElecs, &jvtMuons, nullptr);
 
   
   // Adds event weights and catgory to TStore
   // Also sets pointer to photon container, etc., which is used by var's
-  setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets, &m_selMET, &m_jvtJets);
+  setSelectedObjects(&m_selPhotons, &m_selElectrons, &m_selMuons, nullptr, &m_selJets, &m_selMET, &m_jvtJets);
 
   // add lepton SF and trigger SF weight to total weight, only for dilepton case!
   if (HG::isMC()) {
@@ -675,7 +666,20 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   // var::isPassed.setValue(m_goodFakeComb ? true : var::isPassedBasic() && pass(&m_selPhotons, &m_selElectrons, &m_selMuons, &m_selJets));
   var::cutFlow.setValue(m_cutFlow);
 
-  passJetEventCleaning();
+  // passJetEventCleaning(); //requires tau container
+  xAOD::JetContainer       uncleanJets = jetHandler()->applySelectionNoCleaning(m_allJets);
+  xAOD::ElectronContainer uncleanElecs = m_selElectrons;
+  xAOD::MuonContainer     uncleanMuons = m_selMuons;
+  if (m_cutFlow > VERTEX) overlapHandler()->removeOverlap(&m_selPhotons, &uncleanJets, &uncleanElecs, &uncleanMuons, nullptr);
+  static SG::AuxElement::ConstAccessor<char>  isClean("isClean");
+  bool isEventClean = true;
+  for (auto jet : uncleanJets) {
+    if (not isClean(*jet)) {
+      isEventClean = false;
+      break;
+    }
+  }
+  var::isPassedJetEventClean.setValue(isEventClean);
 
   // Basic event weights
   eventHandler()->pileupWeight();
@@ -686,10 +690,15 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
     eventHandler()->getPassedTriggers();
   }
 
-  // Additional variables useful for non-framework analysis
-  int Nloose = m_preSelPhotons.size();
-  eventHandler()->storeVar<int>("NLoosePhotons",Nloose);
-  eventHandler()->storeVar<float>("met_hardVertexTST", m_selMET["hardVertexTST"] ? m_selMET["hardVertexTST"]->met() : m_selMET["TST"]->met());
+  xAOD::JetContainer bjets = jetHandler()->applyBJetSelection(m_selJets);
+  eventHandler()->storeVar<int>("N_j_btag", bjets.size());
+  double weightBJet = 1.0;
+  static SG::AuxElement::ConstAccessor<float> SF_bjet("SF_DL1r_FixedCutBEff_70");
+  for (auto jet : m_selJets) {
+    weightBJet *= SF_bjet(*jet);
+  }
+  eventHandler()->storeVar<float>("weightJvt", HG::JetHandler::multiplyJvtWeights(&m_jvtJets));
+  eventHandler()->storeVar<float>("weightBJet", weightBJet);
 
   //store passAll flag
   bool passPID = false, passIso = false, passPre = false, passAll = false, passVBSPre = false, passVBS = false;
@@ -738,10 +747,10 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
   var::N_e.addToStore(truth);
   var::N_j.addToStore(truth);
   var::N_j_central.addToStore(truth);
-  //var::N_j_btag30.addToStore(truth);
-  //var::N_j_btag.addToStore(truth);
   var::m_jj_50.addToStore(truth);
-  var::Dy_j_j_50.addToStore(truth);
+  var::pT_l1.addToStore(truth);
+  var::eta_j1.addToStore(truth);
+  var::N_j_gap.addToStore(truth);
   var::Zy_centrality.addToStore(truth);
   var::m_jj.addToStore(truth);
   var::pT_j1.addToStore(truth);
@@ -770,21 +779,6 @@ void ZyCutflowAndMxAOD::writeNominalOnly()
   if (HG::isMC()) truthHandler()->centralEventShapeDensity();
   if (HG::isMC()) truthHandler()->forwardEventShapeDensity();
  
-  // Additional cut flow granularity
-  int Nloose = m_preSelPhotons.size();
-  bool passTrigMatch = passTriggerMatch(&m_preSelPhotons);
-  bool passIso = false, passPID = false;
-  if (Nloose>=2) {
-    xAOD::Photon* y1 = m_preSelPhotons[0], *y2 = m_preSelPhotons[1];
-    passIso = m_goodFakeComb ? true : photonHandler()->passIsoCut(y1) && photonHandler()->passIsoCut(y2);
-    passPID = m_goodFakeComb ? true : photonHandler()->passPIDCut(y1) && photonHandler()->passPIDCut(y2);
-  }
-  eventHandler()->storeVar<char>("isPassedPreselection",Nloose>=2);
-  eventHandler()->storeVar<char>("isPassedTriggerMatch",passTrigMatch);
-  eventHandler()->storeVar<char>("isPassedPID",passPID);
-  eventHandler()->storeVar<char>("isPassedIsolation",passIso);
-  eventHandler()->storeVar<char>("isPassedMassCut",passMyyWindowCut(m_preSelPhotons));
-
   // Vertex information
   eventHandler()->numberOfPrimaryVertices();
   eventHandler()->selectedVertexZ();
@@ -798,22 +792,26 @@ void ZyCutflowAndMxAOD::writeNominalOnly()
     if (event()->retrieve(vertices,"PrimaryVertices").isFailure())
       HG::fatal("Error retrieving PrimaryVertices, exiting");
 
-    //std::vector<float> verticesZ;
+    std::vector<float> verticesZ;
+    std::vector<float> verticesSumPt2;
     //std::vector<float> verticesScore;
     //static SG::AuxElement::ConstAccessor<float> vertexScore("vertexScore");
 
-    //if (vertices->size() == 1) {
-    //  // DxAODs in p2669 have issues with only dummy vertex and vertex score decoration
-    //  verticesZ.push_back(-999);
+    if (vertices->size() == 1) {
+      // DxAODs in p2669 have issues with only dummy vertex and vertex score decoration
+      verticesZ.push_back(-999);
+      verticesSumPt2.push_back(-999);
     //  verticesScore.push_back(-99);
-    //} else {
-    //  for (auto vertex : *vertices){
-    //    verticesZ.push_back(vertex->z());
+    } else {
+      for (auto vertex : *vertices){
+        verticesZ.push_back(vertex->z());
+        verticesSumPt2.push_back(xAOD::PVHelpers::getVertexSumPt(vertex, 2));
     //    verticesScore.push_back(vertexScore(*vertex));
-    //  }
-    //}
+      }
+    }
 
-    //eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesZ"    , verticesZ    ); 
+    eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesZ"    , verticesZ    ); 
+    eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesSumPt2"    , verticesSumPt2    );
     //eventHandler()->storeVar<std::vector<float> >("PrimaryVerticesScore", verticesScore); 
   }
 
@@ -875,7 +873,8 @@ EL::StatusCode  ZyCutflowAndMxAOD::doTruth()
   xAOD::MissingETContainer     met       = truthHandler()->applyMissingETSelection(all_met);
 
   // remove truth jets that are from electrons or photons
-  truthHandler()->removeOverlap(photons, jets, electrons, muons);
+  xAOD::TruthParticleContainer tausEmpty;
+  truthHandler()->removeOverlap(photons, jets, electrons, muons, tausEmpty);
 
   const xAOD::TruthParticleContainer *truthMuons = nullptr;
   if (event()->retrieve(truthMuons, "TruthMuons").isFailure()) {
@@ -919,7 +918,7 @@ EL::StatusCode  ZyCutflowAndMxAOD::doTruth()
     addTruthLinks(m_elecContainerName.Data()  , m_elecTruthContainerName.Data());
   }
 
-  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, &jets);
+  HG::VarHandler::getInstance()->setTruthContainers(&all_photons, &electrons, &muons, nullptr, &jets);
   HG::VarHandler::getInstance()->setHiggsBosons(&all_higgs);
 
   // Adds event-level variables to TStore (this time using truth containers)

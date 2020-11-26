@@ -17,7 +17,7 @@ namespace HG {
   TruthPtcls getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl);
   TruthPtcls FilterLeptons(const TruthPtcls& stableHiggsDecayProducts);
   TruthPtcls FilterDirectPhotons(const TruthPtcls& stableHiggsDecayProducts);
-  TLorentzVector MergedEleTLV(const xAOD::TrackParticle& trk1, const xAOD::TrackParticle& trk2, const xAOD::Electron& ele);
+  void SetMergedFourMomentum(xAOD::Electron& ele,const float calibrated_e);
 
   //____________________________________________________________________________
   class m_lly : public VarBase<float> {
@@ -42,9 +42,9 @@ namespace HG {
       if (eles->size() >= 2 && gams->size() >= 1)
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).M();
 
-      // If the electron container size is 1, then take the (cluster) e-gamma mass (yystar)
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail() && gams->size() >= 1)
-        return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).M();
+      // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+      if (!truth && eles->size() == 1)
+        return ((*gams)[0]->p4() + (*eles)[0]->p4()).M();
 
       return m_default;
     }
@@ -78,9 +78,9 @@ namespace HG {
       if (eles->size() >= 2)
         return ((*eles)[0]->p4() + (*eles)[1]->p4()).M();
 
-      // For merged electrons, take the TLV set in ExtraHggStarObjects
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail())
-        return HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()->M();
+      // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+      if (!truth && eles->size() == 1)
+        return (*eles)[0]->p4().M();
 
       return m_default;
     }
@@ -213,11 +213,20 @@ namespace HG {
   //____________________________________________________________________________
   class deltaPhi_trktrk_IP : public VarBase<float> {
   public:
-  deltaPhi_trktrk_IP() : VarBase("deltaPhi_trktrk_IP") { m_default = -99; m_recoOnly = true; }
+  deltaPhi_trktrk_IP() : VarBase("deltaPhi_trktrk_IP") { m_default = -99; }
     ~deltaPhi_trktrk_IP() { }
 
     float calculateValue(bool truth)
     {
+      if (truth) {
+        const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+        if (childleps->size() != 2) return m_default;
+
+        if ( (*childleps)[0]->pt() > (*childleps)[1]->pt())
+          return (*childleps)[0]->charge() * xAOD::P4Helpers::deltaPhi((*childleps)[0],(*childleps)[1]);
+        return   (*childleps)[1]->charge() * xAOD::P4Helpers::deltaPhi((*childleps)[1],(*childleps)[0]);
+      }
+
       const xAOD::MuonContainer *mus = (xAOD::MuonContainer*)HG::VarHandler::getInstance()->getMuons(truth);
       if (mus->size() >= 2)
         return (*mus)[0]->charge() * xAOD::P4Helpers::deltaPhi((*mus)[0],(*mus)[1]);
@@ -370,6 +379,15 @@ namespace HG {
     ~deltaRL2_trktrk_perigee() { }
 
     float calculateValue(bool truth); // See cxx file
+  };
+  
+  //____________________________________________________________________________
+  class passVBFpresel : public VarBase<bool> {
+  public:
+  passVBFpresel() : VarBase("passVBFpresel") { m_default = false; m_recoOnly = true; }
+    ~passVBFpresel() { }
+
+    bool calculateValue(bool truth); // See cxx file
   };
 
   //____________________________________________________________________________
@@ -563,8 +581,10 @@ namespace HG {
         return ((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4()).Pt();
       if (eles->size() >= 2 && gams->size() >= 1)
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).Pt();
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail() && gams->size() >= 1)
-        return ((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).Pt();
+
+      // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+      if (!truth && eles->size() == 1 && gams->size() >= 1)
+        return ((*gams)[0]->p4() + (*eles)[0]->p4()).Pt();
 
       return m_default;
     }
@@ -584,8 +604,10 @@ namespace HG {
         return ((*mus)[0]->p4() + (*mus)[1]->p4()).Pt();
       if (eles->size() >= 2)
         return ((*eles)[0]->p4() + (*eles)[1]->p4()).Pt();
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail())
-        return HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()->Pt();
+
+      // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+      if (!truth && eles->size() == 1)
+        return (*eles)[0]->p4().Pt();
       return m_default;
     }
   };
@@ -785,6 +807,64 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class pT_l1 : public VarBase<float> {
+  public:
+  pT_l1() : VarBase("pT_l1") { m_default = -99; }
+    ~pT_l1() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *eles = HG::VarHandler::getInstance()->getElectrons(truth);
+      const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
+      if (mus->size() >= 2)
+        return ((*mus)[0]->pt());
+      if (eles->size() >= 2)
+        return ((*eles)[0]->pt());
+      return m_default;
+    }
+  };
+
+  //____________________________________________________________________________
+  class eta_j1 : public VarBase<float> {
+  public:
+    eta_j1() : VarBase("eta_j1") { m_default = -99; }
+    ~eta_j1() { }
+
+    float calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+
+      if (jets->size() < 1)
+      { return m_default; }
+
+      return (*jets)[0]->eta();
+    }
+  };
+
+  //____________________________________________________________________________
+  class N_j_gap : public VarBase<int> {
+  public:
+    N_j_gap() : VarBase("N_j_gap") { m_default = -99; }
+    ~N_j_gap() { }
+
+    int calculateValue(bool truth)
+    {
+      const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+      int ngapjets = 0;
+      int njets = jets->size();
+      if (njets >= 2) {
+        float j1_eta = (*jets)[0]->eta();
+        float j2_eta = (*jets)[1]->eta(); 
+        for (int i = 2; i < njets; i++) {
+          if ( ((*jets)[i]->eta() < j1_eta && (*jets)[i]->eta() > j2_eta) || ((*jets)[i]->eta() > j1_eta && (*jets)[i]->eta() < j2_eta) ) { ngapjets++; }
+        }
+      }
+
+      return ngapjets;
+    }
+  };
+
+  //____________________________________________________________________________
   class Zy_centrality: public VarBase<float> {
   public:
   Zy_centrality(): VarBase("Zy_centrality") {m_default = -99; }
@@ -966,6 +1046,16 @@ namespace HG {
   };
   
   //____________________________________________________________________________
+  class yyStarChannelSimple : public VarBase<int> {
+  public:
+  yyStarChannelSimple() : VarBase("yyStarChannelSimple") { m_default = -99; m_truthOnly = true; }
+    ~yyStarChannelSimple() { }
+
+    // Set by hand in CutflowAndMxAOD
+    // Set the truth value by specifying var::yyStarChannelSimple.setTruthValue(val)
+  };
+
+  //____________________________________________________________________________
   class ZyChannel : public VarBase<int> {
   public:
   ZyChannel() : VarBase("ZyChannel") { m_default = -99; }
@@ -986,6 +1076,15 @@ namespace HG {
   };
   
   //____________________________________________________________________________
+  class yyStarCategory_electronOnly : public VarBase<int> {
+  public:
+  yyStarCategory_electronOnly() : VarBase("yyStarCategory_electronOnly") { m_default = -99; }
+    ~yyStarCategory_electronOnly() { }
+
+    int calculateValue(bool truth); // See cxx file
+  };
+
+  //____________________________________________________________________________
   class vertexTruthFitRadius : public VarBase<float> {
     public:
      vertexTruthFitRadius() : VarBase("vertexTruthFitRadius") { m_default = -99; }
@@ -994,6 +1093,7 @@ namespace HG {
   };
 
 
+  //____________________________________________________________________________
   class Dphi_lly_jj : public VarBase<float> {
   public:
     Dphi_lly_jj() : VarBase("Dphi_lly_jj") { m_default = -99; }
@@ -1021,8 +1121,9 @@ namespace HG {
       if (eles->size() >= 2){
         return fabs(((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).DeltaPhi((*js)[0]->p4() + (*js)[1]->p4()));
       }
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-        return fabs(((*gams)[0]->p4() + *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV()).DeltaPhi((*js)[0]->p4() + (*js)[1]->p4()));
+      if (!truth && eles->size() == 1){
+        // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+        return fabs(((*gams)[0]->p4() + (*eles)[0]->p4()).DeltaPhi((*js)[0]->p4() + (*js)[1]->p4()));
       }
       return m_default;
     }
@@ -1054,8 +1155,9 @@ namespace HG {
       if (eles->size() >= 2){
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).Eta() - ((*js)[0]->eta() + (*js)[1]->eta()) / 2.0;
       }
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-        return (*HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV() + (*gams)[0]->p4()).Eta() - ((*js)[0]->eta() + (*js)[1]->eta()) / 2.0;
+      if (!truth && eles->size() == 1){
+        // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+        return ((*eles)[0]->p4() + (*gams)[0]->p4()).Eta() - ((*js)[0]->eta() + (*js)[1]->eta()) / 2.0;
       }
       return m_default;
     }
@@ -1086,8 +1188,9 @@ namespace HG {
         TLorentzVector g2 = (*eles)[0]->p4() + (*eles)[1]->p4();
         return fabs(g1.Px() * g2.Py() - g2.Px() * g1.Py()) / (g1 - g2).Pt() * 2.0;
       }
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-        TLorentzVector g2 = *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV();
+      if (!truth && eles->size() == 1){
+        // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+        TLorentzVector g2 = (*eles)[0]->p4();
         return fabs(g1.Px() * g2.Py() - g2.Px() * g1.Py()) / (g1 - g2).Pt() * 2.0;
       }
       return m_default;
@@ -1120,8 +1223,9 @@ namespace HG {
       if (eles->size() >= 2){
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4() + (*js)[0]->p4() + (*js)[1]->p4()).Pt();
       }
-      if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-        return (*HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV() + (*gams)[0]->p4() + (*js)[0]->p4() + (*js)[1]->p4()).Pt();
+      if (!truth && eles->size() == 1){
+        // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+        return ((*eles)[0]->p4() + (*gams)[0]->p4() + (*js)[0]->p4() + (*js)[1]->p4()).Pt();
       }
       return m_default;
     }
@@ -1165,8 +1269,9 @@ namespace HG {
           dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
           if (dR2 < dR2min) { dR2min = dR2; }
         }
-        if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-          gamStar = *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV();
+        if (!truth && eles->size() == 1){
+          // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+          gamStar = (*eles)[0]->p4();
           dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
           if (dR2 < dR2min) { dR2min = dR2; }
         }
@@ -1216,9 +1321,9 @@ namespace HG {
             if (dR2 < dR2min) { dR2min = dR2; }
           }
         }
-        if (!truth && HG::ExtraHggStarObjects::getInstance()->mergedElectronTLVAvail()){
-          auto gamStar = *HG::ExtraHggStarObjects::getInstance()->getMergedElectronTLV();
-          dR2 = xAOD::P4Helpers::deltaR2(*jet, gamStar.Eta(), gamStar.Phi(), false);
+        if (!truth && eles->size() == 1){
+          // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
+          dR2 = xAOD::P4Helpers::deltaR2(*jet, (*eles)[0]->eta(), (*eles)[0]->phi(), false);
           if (dR2 < dR2min) { dR2min = dR2; }
         }
       }
@@ -1264,6 +1369,7 @@ namespace HG {
                            double closest_to_mev,float lead_pt_cut_gev=0); // Z = 91188
 
   bool eventIsNonHyyStarHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
+  bool eventIsHyyHiggs(const xAOD::TruthParticleContainer* allTruthParticles);
   bool isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl);
 
   void DecorateLeptonDressing(const xAOD::IParticleContainer& leps, const xAOD::TruthParticleContainer& truthLeps);
@@ -1302,6 +1408,9 @@ namespace var {
   extern HG::m_emu m_emu;
   extern HG::m_emuy m_emuy;
   extern HG::Dy_j_j_50 Dy_j_j_50;
+  extern HG::pT_l1 pT_l1;
+  extern HG::eta_j1 eta_j1;
+  extern HG::N_j_gap N_j_gap;
   extern HG::Zy_centrality Zy_centrality;
   extern HG::DR_Zy_jj DR_Zy_jj;
   extern HG::pT_l1_h1 pT_l1_h1;
@@ -1312,10 +1421,12 @@ namespace var {
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
   extern HG::yyStarChannel yyStarChannel;
+  extern HG::yyStarChannelSimple yyStarChannelSimple;
   extern HG::ZyChannel ZyChannel;
   extern HG::vertexTruthFitRadius vertexTruthFitRadius;
   extern HG::trk_lead_pt trk_lead_pt;
   extern HG::yyStarCategory yyStarCategory;
+  extern HG::yyStarCategory_electronOnly yyStarCategory_electronOnly;
   extern HG::Dphi_lly_jj Dphi_lly_jj;
   extern HG::Zepp_lly Zepp_lly;
   extern HG::pTt_lly pTt_lly;
@@ -1323,6 +1434,7 @@ namespace var {
   extern HG::DRmin_y_ystar_2jets DRmin_y_ystar_2jets;
   extern HG::DRmin_y_leps_2jets DRmin_y_leps_2jets;
   extern HG::m_lly2 m_lly2;
+  extern HG::passVBFpresel passVBFpresel;
 }
 
 
