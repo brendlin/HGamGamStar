@@ -1035,7 +1035,12 @@ void HiggsGamGamStarCutflowAndMxAOD::writeNominalOnly()
   // Put here the things that you want to save only in the nominal loop (not the systematics loops).
 
   eventHandler()->mu();
-  eventHandler()->runNumber();
+
+  unsigned int runNumber = eventHandler()->runNumber();
+  eventHandler()->storeVar<unsigned int>("runNumber",runNumber);
+
+  unsigned long long eventNumber = eventInfo()->eventNumber();
+  eventHandler()->storeVar<unsigned long long>("eventNumber",eventNumber);
 
   // Make sure every trigger is checked, and decorated to EventInfo
   eventHandler()->getPassedTriggers();
@@ -1280,6 +1285,24 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
   return EL::StatusCode::SUCCESS;
 }
 
+
+void HiggsGamGamStarCutflowAndMxAOD::fillSysCutFlow(const std::string& sysName,
+                                                    CutEnum cut, double w) {
+
+  if (m_isNonHyyStarHiggs) return;
+
+  TH1F* h = m_cFlowSysHistos[sysName];
+  if (h) {
+    h->Fill(cut,w);
+    return;
+  }
+
+  int ID = getSampleID();
+  TString suffix = "_" + sysName + "_onlyDalitz_weighted";
+  m_cFlowSysHistos[sysName] = makeCutFlowHisto(ID, s_cutDescs, suffix);
+  m_cFlowSysHistos[sysName]->Fill(cut,w);
+  return;
+}
 
 void HiggsGamGamStarCutflowAndMxAOD::fillCutFlow(CutEnum cut, double w) {
 
@@ -1986,6 +2009,12 @@ void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
             var::weight.setValue(weight / hw.nominal * sys_weights[i]);
         }
         else var::weight.setValue(weight);
+
+        // Fill the systematic cutflow with the weightInitial
+        float sys_weightInitial = sys_weights[i] * eventHandler()->pileupWeight() * eventHandler()->vertexWeight();
+        for (int cut=ALLEVTS; cut <= HIGGS_LEP_DALITZ; ++cut) {
+          fillSysCutFlow(sys_names[i],CutEnum(cut),sys_weightInitial);
+        }
 
         // Write out the syst in each case:
         HG::VarHandler::getInstance()->write();
