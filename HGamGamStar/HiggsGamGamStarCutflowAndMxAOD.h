@@ -148,6 +148,8 @@ private:
 
   /// \brief fill the cut flow histograms
   void fillCutFlow(CutEnum cut, double w);
+  void fillSysCutFlow(const std::string& sysName, CutEnum cut, double w);
+  std::map<std::string,TH1F*> m_cFlowSysHistos;
 
   // apply cut flow
   // returns enum corresponding to failed cut - or PASSALL if all cuts passed
