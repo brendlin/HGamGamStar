@@ -148,7 +148,7 @@ private:
 
   /// \brief fill the cut flow histograms
   void fillCutFlow(CutEnum cut, double w);
-  void fillSysCutFlow(const std::string& sysName, CutEnum cut, double w);
+  void fillSysCutFlow(const std::string& sysName, CutEnum cut, double w, bool applyFiducialMll30);
   std::map<std::string,TH1F*> m_cFlowSysHistos;
 
   // apply cut flow

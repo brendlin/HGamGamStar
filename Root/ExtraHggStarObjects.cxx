@@ -80,6 +80,10 @@ void HG::ExtraHggStarObjects::setTruthHiggsDecayProducts(const xAOD::TruthPartic
   xAOD::AuxContainerBase* leptonsCopyAux = new xAOD::AuxContainerBase();
   leptonsCopy->setStore(leptonsCopyAux);
 
+  xAOD::TruthParticleContainer* fsrPhotonsCopy = new xAOD::TruthParticleContainer();
+  xAOD::AuxContainerBase* fsrPhotonsCopyAux = new xAOD::AuxContainerBase();
+  fsrPhotonsCopy->setStore(fsrPhotonsCopyAux);
+
   TruthPtcls higgses = getFinalHiggsBosons(all_particles);
   if (higgses.size() > 0)
   {
@@ -111,8 +115,26 @@ void HG::ExtraHggStarObjects::setTruthHiggsDecayProducts(const xAOD::TruthPartic
         setOriginalObjectLink(*lep, *element);
 
       }
-      if (leptonsCopy->size() != 2) HG::fatal("Could not find the leptons in original container - this should not happen.");
+      if (leptonsCopy->size() != 2)
+        HG::fatal("Could not find the leptons in original container - this should not happen.");
+
+      // Only look for FSR photons if you found 2 leptons.
+      TruthPtcls childFSRPhotons = FilterHiggsFSRPhotons(decayProds);
+
+      for (auto phot : childFSRPhotons) {
+
+        // copy to output container
+        xAOD::TruthParticle *element = new xAOD::TruthParticle();
+        fsrPhotonsCopy->push_back(element);
+        *element = *phot;
+        setOriginalObjectLink(*phot, *element);
+
+      }
+      if (fsrPhotonsCopy->size() != childFSRPhotons.size())
+        HG::fatal("Could not find the fsr photon in original container - this should not happen.");
+
     }
+
   }
 
   if (m_store->record(photonCopy,"HiggsDirectPhotons").isFailure())
@@ -127,11 +149,21 @@ void HG::ExtraHggStarObjects::setTruthHiggsDecayProducts(const xAOD::TruthPartic
   if (m_store->record(leptonsCopyAux,"HiggsDecayLeptonsAux").isFailure())
   { fatal("Cannot store deep copy of HiggsDecayLeptonsAux to TStore, exiting."); }
 
+  if (m_store->record(fsrPhotonsCopy,"HiggsFSRPhotons").isFailure())
+  { fatal("Cannot store deep copy of HiggsFSRPhotons to TStore, exiting."); }
+
+  if (m_store->record(fsrPhotonsCopyAux,"HiggsFSRPhotonsAux").isFailure())
+  { fatal("Cannot store deep copy of HiggsFSRPhotonsAux to TStore, exiting."); }
+
   m_higgsPhotons = *photonCopy;
   m_higgsPhotonsAvail = true;
 
   m_higgsLeps = *leptonsCopy;
   m_higgsLepsAvail = true;
+
+  m_fsrPhotons = *fsrPhotonsCopy;
+  m_fsrPhotonsAvail = true;
+
   return;
 }
 
@@ -154,6 +186,15 @@ const xAOD::TruthParticleContainer *HG::ExtraHggStarObjects::getTruthHiggsPhoton
 }
 
 //____________________________________________________________________________
+const xAOD::TruthParticleContainer *HG::ExtraHggStarObjects::getTruthHiggsFSRPhotons() const
+{
+  if (!m_fsrPhotonsAvail)
+  { throw std::runtime_error("FSR photons requested but not set in ExtraHggStarObjects, throwing exception"); }
+
+  return &m_fsrPhotons;
+}
+
+//____________________________________________________________________________
 void HG::ExtraHggStarObjects::setEventAndStore(xAOD::TEvent *event, xAOD::TStore *store)
 {
   m_event = event;
@@ -171,5 +212,8 @@ void HG::ExtraHggStarObjects::clearContainers()
 
   m_higgsPhotons.clear();
   m_higgsPhotonsAvail = false;
+
+  m_fsrPhotons.clear();
+  m_fsrPhotonsAvail = false;
 
 }
