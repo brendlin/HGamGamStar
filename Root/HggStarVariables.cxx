@@ -50,6 +50,7 @@ namespace var {
   HG::isNonHyyStarHiggs isNonHyyStarHiggs;
   HG::pT_yDirect_h1 pT_yDirect_h1;
   HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
+  HG::m_yStar_born_h1 m_yStar_born_h1;
   HG::yyStarChannel yyStarChannel;
   HG::yyStarChannelSimple yyStarChannelSimple;
   HG::ZyChannel ZyChannel;
@@ -74,10 +75,10 @@ float HG::m_lly_gev::calculateValue(bool truth)
   return var::m_lly()/1000.;
 }
 
-bool HG::passVBFpresel::calculateValue(bool  truth)
+bool HG::passVBFpresel::calculateValue(bool /*truth*/)
 {
   bool passVBFpresel = false;
-  const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets(truth);
+  const xAOD::IParticleContainer *jets = HG::VarHandler::getInstance()->getJets();
   if (jets->size() > 1){ //we have two or more jets - prerequisite to pass VBF
       passVBFpresel =  
       (*jets)[0]->pt() > 25 * HG::GeV   &&
@@ -122,7 +123,7 @@ int HG::yyStarCategory::calculateValue(bool truth)
   return CategoryEnum::CATEGORYUNKNOWN;
 }
 
-int HG::yyStarCategory_electronOnly::calculateValue(bool truth)
+int HG::yyStarCategory_electronOnly::calculateValue(bool /* truth */)
 {
   int chan = var::yyStarChannel();
   int cat = var::yyStarCategory();
@@ -290,6 +291,23 @@ HG::TruthPtcls HG::FilterDirectPhotons(const TruthPtcls& stableHiggsDecayProduct
   }
 
   return directphots;
+}
+
+HG::TruthPtcls HG::FilterHiggsFSRPhotons(const TruthPtcls& stableHiggsDecayProducts) {
+  // Assuming leptons from taus or hadron decays already excluded
+  // This should give you all photons that reach a non-Higgs particle
+  // (e.g. the lepton) before reaching the Higgs.
+
+  TruthPtcls fsrphots(SG::VIEW_ELEMENTS);
+
+  for (auto child : stableHiggsDecayProducts) {
+    if (MCUtils::PID::isPhoton(child->pdgId()) && !isDirectlyFromHiggs(child) )
+    {
+      fsrphots.push_back(child);
+    }
+  }
+
+  return fsrphots;
 }
 
 bool HG::isDirectlyFromHiggs(const xAOD::TruthParticle *ptcl)

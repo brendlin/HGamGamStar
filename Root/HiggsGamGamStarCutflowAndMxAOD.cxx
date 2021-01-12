@@ -223,6 +223,10 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
   }
 
   if (m_applySystematics) {
+
+    ignore = {};
+    extra = {};
+
     for (auto sys: getSystematics()) {
       // ignore nominal case, already done!
       if (sys.name() == "") continue;
@@ -233,11 +237,63 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
 
       TString evtInfoNameSys = TString("HGam") + m_evtInfoName + sysName;
 
-      ignore = {};
-      extra = {};
       declareOutputVariables(evtInfoNameSys,"MxAOD.Variables.EventInfoSyst", extra, ignore);
-
     }
+
+    // Declare output variables for our custom systematics
+    std::vector<std::string> sysNames = {
+      "MERGEDID_EFF_STAT__1up",
+      "MERGEDID_EFF_STAT__1down",
+      "MERGEDID_EFF_SYST__1up",
+      "MERGEDID_EFF_SYST__1down",
+      "MERGED_RESOLUTION__1up",
+      "MERGED_RESOLUTION__1down",
+      "TheorySig_QCDscale_ggF_mu",
+      "TheorySig_QCDscale_ggF_res",
+      "TheorySig_QCDscale_ggF_mig01",
+      "TheorySig_QCDscale_ggF_mig12",
+      "TheorySig_QCDscale_ggF_vbf2j",
+      "TheorySig_QCDscale_ggF_vbf3j",
+      "TheorySig_QCDscale_ggF_pTH60",
+      "TheorySig_QCDscale_ggF_pTH120",
+      "TheorySig_QCDscale_ggF_qm_t",
+      "TheorySig_QCDscale_ggF_pTH_nJ0",
+      "TheorySig_QCDscale_VBF_mu",
+      "TheorySig_QCDscale_VBF_PTH200",
+      "TheorySig_QCDscale_VBF_Mjj60",
+      "TheorySig_QCDscale_VBF_Mjj120",
+      "TheorySig_QCDscale_VBF_Mjj350",
+      "TheorySig_QCDscale_VBF_Mjj700",
+      "TheorySig_QCDscale_VBF_Mjj1000",
+      "TheorySig_QCDscale_VBF_Mjj1500",
+      "TheorySig_QCDscale_VBF_pTjH25",
+      "TheorySig_QCDscale_VBF_JET01",
+      "TheorySig_QCDscale_qqVH_mu",
+      "TheorySig_QCDscale_qqVH_PTV75",
+      "TheorySig_QCDscale_qqVH_PTV150",
+      "TheorySig_QCDscale_qqVH_PTV250",
+      "TheorySig_QCDscale_qqVH_PTV400",
+      "TheorySig_QCDscale_qqVH_mig01",
+      "TheorySig_QCDscale_qqVH_mig12",
+      "TheorySig_QCDscale_ggVH_mu",
+      "TheorySig_QCDscale_ggVH_PTV75",
+      "TheorySig_QCDscale_ggVH_PTV150",
+      "TheorySig_QCDscale_ggVH_PTV250",
+      "TheorySig_QCDscale_ggVH_PTV400",
+      "TheorySig_QCDscale_ggVH_mig01",
+      "TheorySig_QCDscale_ggVH_mig12",
+      "TheorySig_QCDalphaS__1up",
+      "TheorySig_QCDalphaS__1down",
+    };
+    for(unsigned i=0; i<30; i++){
+        sysNames.push_back("TheorySig_PDF4LHC_NLO_30_EV" + std::to_string(i+1));
+    }
+
+    for (auto sysName : sysNames) {
+      TString evtInfoNameSys = TString("HGam") + m_evtInfoName + "_" + sysName;
+      declareOutputVariables(evtInfoNameSys,"MxAOD.Variables.EventInfoSyst", extra, ignore);
+    }
+
   }
 
   return EL::StatusCode::SUCCESS;
@@ -373,6 +429,10 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
   // variables that will be saved
   doReco();
 
+  // Need to run truth in order to calculate certain systematics.
+  if (HG::isMC() && (m_saveTruthObjects || m_saveTruthVars || m_applySystematics))
+    doTruth();
+
   // check if we should apply systematics or not
   if (m_applySystematics) {
 
@@ -396,9 +456,6 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::execute()
     }
     
   }
-
-  if ( HG::isMC() && (m_saveTruthObjects || m_saveTruthVars))
-    doTruth();
 
   // Write nominal EventInfo to output
   eventHandler()->writeEventInfo();
@@ -1026,6 +1083,7 @@ void HiggsGamGamStarCutflowAndMxAOD::writeTruthOnlyVars()
   var::ystar_pdg_flavor.addToStore(truth);
   var::pT_yDirect_h1.addToStore(truth);
   var::m_yStar_undressed_h1.addToStore(truth);
+  var::m_yStar_born_h1.addToStore(truth);
 
 }
 
@@ -1280,27 +1338,35 @@ EL::StatusCode  HiggsGamGamStarCutflowAndMxAOD::doTruth()
 
 
   // Adds all event variables to the TEvent output stream
-  HG::VarHandler::getInstance()->writeTruth();
+  if (m_saveTruthObjects || m_saveTruthVars)
+    HG::VarHandler::getInstance()->writeTruth();
 
   return EL::StatusCode::SUCCESS;
 }
 
 
 void HiggsGamGamStarCutflowAndMxAOD::fillSysCutFlow(const std::string& sysName,
-                                                    CutEnum cut, double w) {
+                                                    CutEnum cut, double w,
+                                                    bool applyFiducialMll30) {
 
   if (m_isNonHyyStarHiggs) return;
 
-  TH1F* h = m_cFlowSysHistos[sysName];
+  // For calculating fiducial correction factor, exclude truth mll > 30 GeV
+  if (applyFiducialMll30 && var::m_yStar_born_h1.truth() > 30.*HG::GeV) return;
+
+  std::string the_name = sysName;
+  if (applyFiducialMll30) the_name += "_fiducialMll30";
+
+  TH1F* h = m_cFlowSysHistos[the_name];
   if (h) {
     h->Fill(cut,w);
     return;
   }
 
   int ID = getSampleID();
-  TString suffix = "_" + sysName + "_onlyDalitz_weighted";
-  m_cFlowSysHistos[sysName] = makeCutFlowHisto(ID, s_cutDescs, suffix);
-  m_cFlowSysHistos[sysName]->Fill(cut,w);
+  TString suffix = "_" + the_name + "_onlyDalitz_weighted";
+  m_cFlowSysHistos[the_name] = makeCutFlowHisto(ID, s_cutDescs, suffix);
+  m_cFlowSysHistos[the_name]->Fill(cut,w);
   return;
 }
 
@@ -1826,6 +1892,11 @@ void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
 }
 
 void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
+
+    // We need to additionally save the nominal case where a fiducial truth cut is applied.
+    for (int cut=ALLEVTS; cut <= HIGGS_LEP_DALITZ; ++cut) {
+      fillSysCutFlow("NOMINAL",CutEnum(cut),var::weightInitial(),/* applyFiducialMll30 */ true);
+    }
   
     float m_lly = var::m_lly();
     float m_lly_gev = var::m_lly_gev();
@@ -2013,7 +2084,8 @@ void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
         // Fill the systematic cutflow with the weightInitial
         float sys_weightInitial = sys_weights[i] * eventHandler()->pileupWeight() * eventHandler()->vertexWeight();
         for (int cut=ALLEVTS; cut <= HIGGS_LEP_DALITZ; ++cut) {
-          fillSysCutFlow(sys_names[i],CutEnum(cut),sys_weightInitial);
+          fillSysCutFlow(sys_names[i],CutEnum(cut),sys_weightInitial,false);
+          fillSysCutFlow(sys_names[i],CutEnum(cut),sys_weightInitial,true);
         }
 
         // Write out the syst in each case:

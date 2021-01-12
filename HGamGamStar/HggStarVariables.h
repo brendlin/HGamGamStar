@@ -17,6 +17,7 @@ namespace HG {
   TruthPtcls getHyyStarSignalDecayProducts(const xAOD::TruthParticle *ptcl);
   TruthPtcls FilterLeptons(const TruthPtcls& stableHiggsDecayProducts);
   TruthPtcls FilterDirectPhotons(const TruthPtcls& stableHiggsDecayProducts);
+  TruthPtcls FilterHiggsFSRPhotons(const TruthPtcls& stableHiggsDecayProducts);
   void SetMergedFourMomentum(xAOD::Electron& ele,const float calibrated_e);
 
   //____________________________________________________________________________
@@ -1035,6 +1036,33 @@ namespace HG {
   };
 
   //____________________________________________________________________________
+  class m_yStar_born_h1 : public VarBase<float> {
+  public:
+  m_yStar_born_h1() : VarBase("m_yStar_born_h1") { m_default = -99; m_truthOnly = true; }
+    ~m_yStar_born_h1() { }
+
+    // "born" here means no final-state radiation off of the leptons included.
+
+    float calculateValue(bool truth)
+    {
+      if (not truth)
+      { return m_default; }
+
+      const xAOD::TruthParticleContainer *childleps = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsLeptons();
+      if (childleps->size() != 2) return m_default;
+
+      const xAOD::TruthParticleContainer *fsrPhots = HG::ExtraHggStarObjects::getInstance()->getTruthHiggsFSRPhotons();
+
+      TLorentzVector yStar = (*childleps)[0]->p4() + (*childleps)[1]->p4();
+      for (unsigned int i=0;i<fsrPhots->size();++i) {
+        yStar += (*fsrPhots)[i]->p4();
+      }
+
+      return yStar.M();
+    }
+  };
+
+  //____________________________________________________________________________
   class yyStarChannel : public VarBase<int> {
   public:
   yyStarChannel() : VarBase("yyStarChannel") { m_default = -99; }
@@ -1420,6 +1448,7 @@ namespace var {
   extern HG::isNonHyyStarHiggs isNonHyyStarHiggs;
   extern HG::pT_yDirect_h1 pT_yDirect_h1;
   extern HG::m_yStar_undressed_h1 m_yStar_undressed_h1;
+  extern HG::m_yStar_born_h1 m_yStar_born_h1;
   extern HG::yyStarChannel yyStarChannel;
   extern HG::yyStarChannelSimple yyStarChannelSimple;
   extern HG::ZyChannel ZyChannel;

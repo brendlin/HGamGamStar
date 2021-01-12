@@ -35,6 +35,9 @@ namespace HG {
     xAOD::TruthParticleContainer m_higgsPhotons;
     bool m_higgsPhotonsAvail;
 
+    xAOD::TruthParticleContainer m_fsrPhotons;
+    bool m_fsrPhotonsAvail;
+
   public:
     /// Get instance of singleton class
     static ExtraHggStarObjects *getInstance();
@@ -52,6 +55,7 @@ namespace HG {
 
     const xAOD::TruthParticleContainer *getTruthHiggsLeptons() const;
     const xAOD::TruthParticleContainer *getTruthHiggsPhotons() const;
+    const xAOD::TruthParticleContainer *getTruthHiggsFSRPhotons() const;
 
     /// Set TEvent and TStore
     void setEventAndStore(xAOD::TEvent *event, xAOD::TStore *store);
