@@ -200,6 +200,9 @@ private:
   HG::MergedElectronID_v2F * m_mergedElectronID_v2F; //!
   HG::MergedElectronID_v3 * m_mergedElectronID_v3; //!
   ElectronPhotonShowerShapeFudgeTool * m_fudgeMC; //!
+  TH3*  m_PS_Weight_ggF; //!
+  TH3*  m_PS_Weight_VBF; //!
+
 #endif // __CINT__
 
 protected:
@@ -240,7 +243,7 @@ public:
   void writeNominalOnlyVars(bool truth = false);
   void writeDetailedVars(bool truth = false);
   void writeTruthOnlyVars();
-
+  float PartonShowerSystematics();
   //
 
   // this is needed to distribute the algorithm to the workers
