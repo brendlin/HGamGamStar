@@ -3,6 +3,7 @@
 #include <EventLoop/Worker.h>
 #include "HGamAnalysisFramework/TruthUtils.h"
 
+#include "PathResolver/PathResolver.h"
 #include "HGamGamStar/ExtraHggStarObjects.h"
 #include "HGamGamStar/TrackElectronMap.h"
 #include "xAODTracking/VertexAuxContainer.h"
@@ -19,6 +20,8 @@ HiggsGamGamStarCutflowAndMxAOD::HiggsGamGamStarCutflowAndMxAOD(const char *name)
 : MxAODTool(name)
   , m_trackHandler(nullptr)
   , m_fudgeMC(nullptr)
+  , m_PS_Weight_ggF(nullptr)
+  , m_PS_Weight_VBF(nullptr)
 { }
 
 HiggsGamGamStarCutflowAndMxAOD::~HiggsGamGamStarCutflowAndMxAOD() {}
@@ -55,6 +58,17 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::initialize()
 
   m_mergedElectronID_v3 = new HG::MergedElectronID_v3();
   ANA_CHECK(m_mergedElectronID_v3->initialize(*config()));
+
+
+  TFile* file  = TFile::Open(  PathResolverFindCalibFile( "HGamGamStar/ysyPartonShowerRWHists.root").data() );
+  if( !file ) 
+    HG::fatal("Unable to open PartonShowerRWHists");
+
+
+  m_PS_Weight_ggF = (TH3*) file->Get("Ratio_ggF");
+  m_PS_Weight_ggF->SetDirectory(0);
+  m_PS_Weight_VBF = (TH3*) file->Get("Ratio_VBF");
+  m_PS_Weight_VBF->SetDirectory(0);
 
   // We will evaluate the close-by correction for every working point, provided that it falls
   // into the Resovled category.
@@ -284,6 +298,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
       "TheorySig_QCDscale_ggVH_mig12",
       "TheorySig_QCDalphaS__1up",
       "TheorySig_QCDalphaS__1down",
+      "TheorySig_PartonShower__1up",
+      "TheorySig_PartonShower__1down"
     };
     for(unsigned i=0; i<30; i++){
         sysNames.push_back("TheorySig_PDF4LHC_NLO_30_EV" + std::to_string(i+1));
@@ -1891,6 +1907,78 @@ void HiggsGamGamStarCutflowAndMxAOD::printCutFlowHistos() {
   }
 }
 
+float HiggsGamGamStarCutflowAndMxAOD::PartonShowerSystematics(){
+
+  //Only apply weights for ggF and VBF
+  if( getSampleID() != 345961 && getSampleID() != 345834 ){
+    return 1;
+  }
+
+  float pT_H  = var::pT_h1.truth() * 1e-3;
+  int n_jets = 0;
+  float pT_j1 = 0;
+
+  const xAOD::IParticleContainer *higgss= HG::VarHandler::getInstance()->getHiggsBosons();
+
+  const xAOD::JetContainer* jets = 0;
+  if (event()->retrieve( jets, "AntiKt4TruthWZJets" ).isFailure())
+  { HG::fatal("Cannot access Jets truth container in TEvent, exiting."); }
+
+  std::set<const xAOD::TruthParticle*> stableParticles;
+
+  std::function< void(const xAOD::TruthParticle*, std::set<const xAOD::TruthParticle*>&) > fillStable;
+  fillStable = [&fillStable](auto a, auto& vec) { for(size_t i(0) ; i < a->nChildren(); ++i){ if(a->child(i)->status()==1 ){vec.insert(a->child(i));}else{ fillStable( a->child(i), vec);}}};
+
+  for( auto higgs: *higgss){
+    xAOD::TruthParticle*  part= static_cast<xAOD::TruthParticle*>(higgs);
+    fillStable(part, stableParticles);
+  }
+
+  for (unsigned i = 0; i != jets->size(); i++) {
+
+    const xAOD::IParticle *truthjet = (*jets)[i];
+    float Pt = truthjet->pt();
+
+    bool overlaps = false;
+    for( auto part : stableParticles ){
+      if( truthjet->p4().DeltaR( part->p4() ) < 0.1  )
+        overlaps = true;
+    }
+
+    if( overlaps )
+      continue;
+
+    if (Pt > 10e3 ) {
+      ++n_jets;
+    }
+
+    if (Pt > 10e3 && pT_j1 < Pt) {
+      pT_j1 = Pt;
+    }
+
+  }
+
+  if( n_jets > m_PS_Weight_ggF->GetXaxis()->GetXmax() )
+    return 1.;
+  if( pT_H > m_PS_Weight_ggF->GetYaxis()->GetXmax() )
+    return 1.;
+  if( pT_j1 > m_PS_Weight_ggF->GetZaxis()->GetXmax() )
+    return 1.;
+
+  if( n_jets == 0 )
+    pT_j1 = 10;
+
+  // ggF
+  if( getSampleID() == 345961 ){
+    int bin = m_PS_Weight_ggF->FindBin( n_jets, pT_H, pT_j1);
+    return m_PS_Weight_ggF->GetBinContent( bin );
+  }
+
+  // VBF
+  int bin = m_PS_Weight_VBF->FindBin( n_jets, pT_H, pT_j1);
+  return m_PS_Weight_VBF->GetBinContent( bin );
+}
+
 void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
 
     // We need to additionally save the nominal case where a fiducial truth cut is applied.
@@ -1909,7 +1997,14 @@ void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
     //now fill all weight values into one array
     std::vector<double> sys_weights;
     std::vector<std::string> sys_names;
-    
+
+    // Parton Shower systematics
+    float weightScale = PartonShowerSystematics();
+    sys_names.push_back("TheorySig_PartonShower__1up");
+    sys_weights.push_back( hw.nominal  * weightScale );
+    sys_names.push_back("TheorySig_PartonShower__1down");
+    sys_weights.push_back( weightScale !=0 ? hw.nominal  / weightScale : hw.nominal );
+
     //pdf uncertainties
     if (hw.pdf4lhc_unc.size()!=30){
       HG::fatal("Got unexpected number of PDF theory systs: " + std::to_string(hw.pdf4lhc_unc.size()) + " (expected 30)");
@@ -1918,7 +2013,7 @@ void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
         sys_names.push_back("TheorySig_PDF4LHC_NLO_30_EV" + std::to_string(i+1));
         sys_weights.push_back(hw.pdf4lhc_unc[i]);
     }
-    
+
     //alpha_S uncertainties
     sys_names.push_back("TheorySig_QCDalphaS__1up");
     sys_weights.push_back(hw.alphaS_up);
