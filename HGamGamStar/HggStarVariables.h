@@ -44,7 +44,7 @@ namespace HG {
         return ((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).M();
 
       // If the electron container size is 1, it is merged (p4 set in SetMergedFourMomentum)
-      if (!truth && eles->size() == 1)
+      if (!truth && eles->size() == 1 && gams->size() >= 1)
         return ((*gams)[0]->p4() + (*eles)[0]->p4()).M();
 
       return m_default;
