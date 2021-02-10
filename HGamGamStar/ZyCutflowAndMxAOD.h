@@ -67,6 +67,7 @@ private:
   // Config for Triboson ntuples
   bool m_isWZysel;
   bool m_isZZysel;
+  bool m_isZyysel;
 
   // Tools
   ToolHandle<ZMassConstraint::IConstraintFit> m_massConstraint;

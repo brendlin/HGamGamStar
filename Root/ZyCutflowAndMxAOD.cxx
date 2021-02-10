@@ -72,6 +72,8 @@ EL::StatusCode ZyCutflowAndMxAOD::createOutput()
   //Triboson selection
   m_isWZysel = config()->getBool("WZyConfig",false);
   m_isZZysel = config()->getBool("ZZyConfig",false);
+  m_isZyysel = config()->getBool("ZyyConfig",false);
+
 
   // a. Event variables
   StrV ignore = {};
@@ -277,8 +279,9 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   }
 
   //==== CUT 6 : Require one loose photons, pT>15 GeV ====
-  if (nloose<1 && !m_saveAllZ) return ONE_LOOSE_GAM;
-  if (nloose<1 && m_saveAllZ) c_oneLooseGam = false;
+  if (nloose<2 && m_isZyysel) return ONE_LOOSE_GAM;
+  if (nloose<1 && !m_saveAllZ && !m_isZyysel) return ONE_LOOSE_GAM;
+  if (nloose<1 && m_saveAllZ && !m_isZyysel) c_oneLooseGam = false;
 
   //==== CUT 7 : Ambiguity
   // - Require two loose photons that also pass e-gamma ambiguity ====
@@ -486,8 +489,9 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   else if (!m_isZZysel && !m_isWZysel && !m_checkemu && nOSSFpair==0) return TWO_SF_LEPTONS_POSTOR;
 
   //==== CUT 9 : 1 photon after OR ====
-  if (m_selPhotons.size()==0 && !m_saveAllZ) return ONE_PHOTON_POSTOR;
-  if (m_selPhotons.size()==0 && m_saveAllZ) c_onePhotonPostor=false;
+  if (m_selPhotons.size()<2 && m_isZyysel) return ONE_PHOTON_POSTOR;
+  if (m_selPhotons.size()==0 && !m_saveAllZ && !m_isZyysel) return ONE_PHOTON_POSTOR;
+  if (m_selPhotons.size()==0 && m_saveAllZ && !m_isZyysel) c_onePhotonPostor=false;
 
   //==== CUT 10 : Trigger matching ====
   static bool requireTriggerMatch = config()->getBool("EventHandler.CheckTriggerMatching", true);
@@ -579,8 +583,14 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
     if ( m_selElectrons.size()>=2||m_selMuons.size()>=2) var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(&m_selElectrons,&m_selMuons));
     double myweight = 1.0;
     static SG::AuxElement::Accessor<float> scaleFactor("scaleFactor");
-    if (m_selMuons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selMuons[0])*scaleFactor(*m_selMuons[1])*scaleFactor(*m_selPhotons[0]);
-    else if (m_selElectrons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selElectrons[0])*scaleFactor(*m_selElectrons[1])*scaleFactor(*m_selPhotons[0]);
+    if(m_isZyysel){
+      if (m_selMuons.size()>=2 && m_selPhotons.size()>=2) myweight *= scaleFactor(*m_selMuons[0])*scaleFactor(*m_selMuons[1])*scaleFactor(*m_selPhotons[0])*scaleFactor(*m_selPhotons[1]);
+      else if (m_selElectrons.size()>=2 && m_selPhotons.size()>=2) myweight *= scaleFactor(*m_selElectrons[0])*scaleFactor(*m_selElectrons[1])*scaleFactor(*m_selPhotons[0])*scaleFactor(*m_selPhotons[1]);
+    }
+    else{
+      if (m_selMuons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selMuons[0])*scaleFactor(*m_selMuons[1])*scaleFactor(*m_selPhotons[0]);
+      else if (m_selElectrons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selElectrons[0])*scaleFactor(*m_selElectrons[1])*scaleFactor(*m_selPhotons[0]);
+    }
     var::weightSF.setValue(myweight*var::weightTrigSF());
     var::weight.setValue(weightInitial()*var::weightSF());
   }
@@ -701,21 +711,41 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
   eventHandler()->storeVar<float>("weightBJet", weightBJet);
 
   //store passAll flag
-  bool passPID = false, passIso = false, passPre = false, passAll = false, passVBSPre = false, passVBS = false;
+  bool passPID = false, passIso = false, passPre = false, passAll = false, passVBSPre = false, passVBS = false, passZyy = false, passZyyPre = false, passPID2 = false, passIso2 = false;
   if (m_selPhotons.size()>0){
     xAOD::Photon *y1 = m_selPhotons[0];
     passPID = photonHandler()->passPIDCut(y1);
     passIso = photonHandler()->passIsoCut(y1, HG::Iso::FixedCutLoose);
   }
+  
   passPre = var::cutFlow()>15; //all except ID and iso
   passAll = passPre && passPID && passIso;
   passVBSPre = passPre && var::N_j()>=2 && var::m_jj_50()>150 * HG::GeV && var::Dy_j_j()>1.0 && var::Zy_centrality()<5.0 && var::m_ll()+var::m_lly()>182 * HG::GeV && var::N_e()+var::N_mu()==2;
   passVBS = passVBSPre && passPID && passIso;
 
+  if(m_selPhotons.size()>1){
+    xAOD::Photon *y2 = m_selPhotons[1];
+    passPID2 = photonHandler()->passPIDCut(y2);
+    passIso2 = photonHandler()->passIsoCut(y2, HG::Iso::FixedCutLoose);
+    if(var::N_mu()==2){
+      xAOD::Muon *m1 = m_selMuons[0];
+      passZyyPre = passPre && muonHandler()->passIsoCut(m1,HG::Iso::PflowTight_FixedRad) && var::DR_y_y()>0.4 && var::m_ll() + std::min(var::m_lly(),var::m_lly2()) >182 * HG::GeV;
+    }
+    else if(var::N_e()==2){
+      xAOD::Electron *e1 = m_selElectrons[0];
+      passZyyPre = passPre && electronHandler()->passPIDCut(e1,"Tight") && var::DR_y_y()>0.4 && var::m_ll() + std::min(var::m_lly(),var::m_lly2()) >182 * HG::GeV;
+    }
+  }
+
+  passZyy = passZyyPre && passPID && passIso && passPID2 && passIso2;
+
+
   eventHandler()->storeVar<char>("isPassedZyPreSel", passPre);
   eventHandler()->storeVar<char>("isPassedZy", passAll);
   eventHandler()->storeVar<char>("isPassedZyVBSPreSel", passVBSPre);
   eventHandler()->storeVar<char>("isPassedZyVBS", passVBS);
+  eventHandler()->storeVar<char>("isPassedZyyPreSel", passZyyPre);
+  eventHandler()->storeVar<char>("isPassedZyy", passZyy);
 
   if(m_saveAllZ){
     eventHandler()->storeVar<char>("isPassedZ",m_isZ);
@@ -731,6 +761,7 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 {
   var::m_yy.addToStore(truth);
   var::pT_y1.addToStore(truth);
+  var::pT_y2.addToStore(truth);
   var::m_lly.addToStore(truth);
   var::m_ll.addToStore(truth);
   var::m_l1y.addToStore(truth);
