@@ -583,8 +583,14 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
     if ( m_selElectrons.size()>=2||m_selMuons.size()>=2) var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(&m_selElectrons,&m_selMuons));
     double myweight = 1.0;
     static SG::AuxElement::Accessor<float> scaleFactor("scaleFactor");
-    if (m_selMuons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selMuons[0])*scaleFactor(*m_selMuons[1])*scaleFactor(*m_selPhotons[0]);
-    else if (m_selElectrons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selElectrons[0])*scaleFactor(*m_selElectrons[1])*scaleFactor(*m_selPhotons[0]);
+    if(m_isZyysel){
+      if (m_selMuons.size()>=2 && m_selPhotons.size()>=2) myweight *= scaleFactor(*m_selMuons[0])*scaleFactor(*m_selMuons[1])*scaleFactor(*m_selPhotons[0])*scaleFactor(*m_selPhotons[1]);
+      else if (m_selElectrons.size()>=2 && m_selPhotons.size()>=2) myweight *= scaleFactor(*m_selElectrons[0])*scaleFactor(*m_selElectrons[1])*scaleFactor(*m_selPhotons[0])*scaleFactor(*m_selPhotons[1]);
+    }
+    else{
+      if (m_selMuons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selMuons[0])*scaleFactor(*m_selMuons[1])*scaleFactor(*m_selPhotons[0]);
+      else if (m_selElectrons.size()>=2 && m_selPhotons.size()>=1) myweight *= scaleFactor(*m_selElectrons[0])*scaleFactor(*m_selElectrons[1])*scaleFactor(*m_selPhotons[0]);
+    }
     var::weightSF.setValue(myweight*var::weightTrigSF());
     var::weight.setValue(weightInitial()*var::weightSF());
   }

@@ -1,6 +1,7 @@
 #include <HGamGamStar/MxAODTool.h>
 #include <HGamGamStar/ZyCutflowAndMxAOD.h>
 #include <HGamGamStar/ZyUnfoldingInput.h>
+#include <HGamGamStar/ZyyUnfoldingInput.h>
 #include <HGamGamStar/HiggsGamGamStarCutflowAndMxAOD.h>
 #include <HGamGamStar/MergedElectronMxAOD.h>
 #include <HGamGamStar/RadiativeZCutflowAndMxAOD.h>
@@ -19,6 +20,7 @@
 #pragma link C++ class MxAODTool+;
 #pragma link C++ class ZyCutflowAndMxAOD+;
 #pragma link C++ class ZyUnfoldingInput+;
+#pragma link C++ class ZyyUnfoldingInput+;
 #pragma link C++ class RadiativeZCutflowAndMxAOD+;
 #pragma link C++ class HiggsGamGamStarCutflowAndMxAOD+;
 #pragma link C++ class MergedElectronMxAOD+;
