@@ -53,19 +53,64 @@ EL::StatusCode ZyyUnfoldingInput::execute()
   int id = HG::isData() ? 0 : eventInfo()->mcChannelNumber();
   
   //hardcoding PDF weights since MetaData missing in MxAOD
-  //int meta_dsid =364865; //take MetaData info from DSID366146 as default (Sherpa 2.2.4 sample)
-  //if (id>=345775 && id<=345782) meta_dsid=345775; //or Madgraph
-  #include "data/meta_364865.h"
-  //#include "data/meta_345775.h"
+  int meta_dsid = 364865; //take MetaData info from DSID364865 as default (Sherpa 2.2.4 sample)
+  if(id>=700195){meta_dsid=700195;} //or Sherpa 2.2.10 NLO
+
+#include "data/meta_364865.h"
+#include "data/meta_700195.h"
+  
   if (HG::isMC()){
+    if(meta_dsid==364865){
+      for (int pdf=261001;pdf<=261100;++pdf) {CreateHists(Form("PDF%i",pdf));}
+      CreateHists("PDF269000"); //NNPDF30_nnlo_as_0117
+      CreateHists("PDF270000"); //NNPDF30_nnlo_as_0119
+      CreateHists("PDF13000"); //CT14nnlo
+      CreateHists("PDF25300"); //MMHT2014nnlo68cl
     
-    for (int pdf=261001;pdf<=261100;++pdf) {CreateHists(Form("PDF%i",pdf));}
-    CreateHists("PDF269000"); //NNPDF30_nnlo_as_0117
-    CreateHists("PDF270000"); //NNPDF30_nnlo_as_0119
-    CreateHists("PDF13000"); //CT14nnlo
-    CreateHists("PDF25300"); //MMHT2014nnlo68cl
-    
-    for (int is=0; is<6; is++) {CreateHists(Form("SCALE%i",is));}
+      for (int is=0; is<6; is++) {CreateHists(Form("SCALE%i",is));}
+    }
+
+    else if(meta_dsid==700195){
+      //300 variations, 303200 nominal
+      for(int pdf=303200;pdf<=303300;++pdf){
+	CreateHists(Form("PDF%i",pdf));
+	CreateHists(Form("ME_ONLY_PDF%i",pdf));
+      }
+
+      //PDF4LHC15_nnlo_30_pdfas
+      for(int pdf=91400;pdf<=91432;++pdf){
+	CreateHists(Form("PDF%i",pdf));
+	CreateHists(Form("ME_ONLY_PDF%i",pdf));
+      }
+
+      CreateHists("PDF304400");
+      CreateHists("ME_ONLY_PDF304400");
+
+      CreateHists("PDF13000"); //CT14nnlo
+      CreateHists("ME_ONLY_PDF13000"); //CT14nnlo
+
+      CreateHists("PDF25300"); //MMHT2014nnlo68cl
+      CreateHists("ME_ONLY_PDF25300"); //MMHT2014nnlo68cl
+
+      CreateHists("PDF269000"); //NNPDF30_nnlo_as_0117
+      CreateHists("ME_ONLY_PDF269000"); //NNPDF30_nnlo_as_0117
+
+      CreateHists("PDF270000"); //NNPDF30_nnlo_as_0119
+      CreateHists("ME_ONLY_PDF270000"); //NNPDF30_nnlo_as_0119
+      
+      for(int is=0;is<6;is++){
+	CreateHists(Form("SCALE%i",is));
+	CreateHists(Form("ME_ONLY_SCALE%i",is));
+      }
+
+      for(int iewk=0;iewk<4;iewk++){
+	CreateHists("EWK_"+ewkVars[iewk]);
+	CreateHists("ME_ONLY_EWK_"+ewkVars[iewk]);
+      }
+      
+    }
+
+
   }
   
 
@@ -142,9 +187,9 @@ EL::StatusCode ZyyUnfoldingInput::doSelAndSaveHists(TString sysname)
   vals[4]=m_yy;
   vals[5]=m_llyy;
 
-  /*int meta_dsid =366146;
+  int meta_dsid =364865;
   int dsid = HG::isData() ? 0 : eventInfo()->mcChannelNumber();
-  if (dsid>=345775 && dsid<=345782) meta_dsid=345775;*/
+  if (dsid>=700195) meta_dsid=700195;
 
   if (HG::isMC() && sysname=="") { //truth
      
@@ -159,11 +204,13 @@ EL::StatusCode ZyyUnfoldingInput::doSelAndSaveHists(TString sysname)
     xAOD::TruthEventContainer::const_iterator itr = truthEvent->begin();
     m_pdfw.clear();
     m_scalew.clear();
-    double pdfw, scalew;
+    m_ewkw.clear();
+    double pdfw, scalew, ewkw;
     int index;
-    //int dsid = HG::isData() ? 0 : eventInfo()->mcChannelNumber();
-    //if (dsid>=345775 && dsid<=345782) meta_dsid=345775;
+    int dsid = HG::isData() ? 0 : eventInfo()->mcChannelNumber();
+    
     int meta_dsid = 364865;
+    if(dsid>=700195)meta_dsid=700195;
 
     if (meta_dsid==364865){
       for (int id=0;id<=104;++id) {
@@ -185,20 +232,49 @@ EL::StatusCode ZyyUnfoldingInput::doSelAndSaveHists(TString sysname)
     }
 
     
-    /*else if (meta_dsid==345775) {
-      for (int id=1;id<=100;++id) {
-        index = m_variations[meta_dsid]["muR=0.10000E+01 muF=0.10000E+01"];
+    else if (meta_dsid==700195) {
+      for (int id=0;id<=100;++id) {
+	int pdf=303200+id;
+        index = m_variations[meta_dsid][Form("MUR1_MUF1_PDF%i",pdf)];
+        pdfw = ((*itr)->weights())[index];
+        m_pdfw.push_back(pdfw);
+
+	index = m_variations[meta_dsid][Form("ME_ONLY_MUR1_MUF1_PDF%i",pdf)];
         pdfw = ((*itr)->weights())[index];
         m_pdfw.push_back(pdfw);
       }
-      index = m_variations[meta_dsid]["muR=0.10000E+01 muF=0.10000E+01"]; scalew = ((*itr)->weights())[index]; m_scalew.push_back(scalew);
-      index = m_variations[meta_dsid]["muR=0.10000E+01 muF=0.20000E+01"]; scalew = ((*itr)->weights())[index]; m_scalew.push_back(scalew);
-      index = m_variations[meta_dsid]["muR=0.10000E+01 muF=0.50000E+00"]; scalew = ((*itr)->weights())[index]; m_scalew.push_back(scalew);
-      index = m_variations[meta_dsid]["muR=0.20000E+01 muF=0.10000E+01"]; scalew = ((*itr)->weights())[index]; m_scalew.push_back(scalew);
-      index = m_variations[meta_dsid]["muR=0.20000E+01 muF=0.20000E+01"]; scalew = ((*itr)->weights())[index]; m_scalew.push_back(scalew);
-      index = m_variations[meta_dsid]["muR=0.50000E+00 muF=0.10000E+01"]; scalew = ((*itr)->weights())[index]; m_scalew.push_back(scalew);
-      index = m_variations[meta_dsid]["muR=0.50000E+00 muF=0.50000E+00"]; scalew = ((*itr)->weights())[index]; m_scalew.push_back(scalew);
-      }*/
+      
+      for (int id=0;id<=37;++id) {
+	int pdf=91400+id;
+	if(id==33)pdf=304400;
+	else if(id==34)pdf=13000;
+	else if(id==35)pdf=25300;
+	else if(id==36)pdf=269000;
+	else if(id==37)pdf=270000;
+
+        index = m_variations[meta_dsid][Form("MUR1_MUF1_PDF%i",pdf)];
+        pdfw = ((*itr)->weights())[index];
+        m_pdfw.push_back(pdfw);
+
+	index = m_variations[meta_dsid][Form("ME_ONLY_MUR1_MUF1_PDF%i",pdf)];
+        pdfw = ((*itr)->weights())[index];
+        m_pdfw.push_back(pdfw);
+      }
+
+      for(int is=0;is<scaleVars.size();is++){
+	index = m_variations[meta_dsid][scaleVars[is].Data()]; scalew = ((*itr)->weights())[index]; m_scalew.push_back(scalew);
+	TString scalename = "ME_ONLY_"+scaleVars[is];
+	index = m_variations[meta_dsid][scalename.Data()]; scalew = ((*itr)->weights())[index]; m_scalew.push_back(scalew);
+      }
+
+      for(int iewk=0;iewk<ewkVars.size();iewk++){
+	TString ewkname = "MUR1_MUF1_PDF303200_"+ewkVars[iewk];
+	index = m_variations[meta_dsid][ewkname.Data()]; ewkw = ((*itr)->weights())[index]; m_ewkw.push_back(ewkw);
+	ewkname = "ME_ONLY_MUR1_MUF1_PDF303200_"+ewkVars[iewk];
+	index = m_variations[meta_dsid][ewkname.Data()]; ewkw = ((*itr)->weights())[index]; m_ewkw.push_back(ewkw);
+      }
+      
+    }
     
 
     xAOD::TruthParticleContainer truth_photons   = truthHandler()->getPhotons();
@@ -263,24 +339,10 @@ EL::StatusCode ZyyUnfoldingInput::doSelAndSaveHists(TString sysname)
 	truem_lly1 = (lep1+lep2+gamma1).M() /HG::GeV;
 	truem_lly2 = (lep1+lep2+gamma2).M() /HG::GeV;
 	
-	
-	
-
 	if(gamma1.DeltaR(gamma2)>0.4 && truem_ll>40 && truem_ll+std::min(truem_lly1,truem_lly2)>182)isFiducial=true;
-	if(isFiducial)std::cout << "is fid" << std::endl;
+	//if(isFiducial)std::cout << "is fid" << std::endl;
       }
     }
-    /*if (lep1.Pt()>0 && gamma.Pt()>0){
-      if (lep1.Pt()==0 || lep1.Eta()==0 || lep1.Phi()==0 || lep1.E()==0 ) std::cout << "zero in lepton four momentum" << std::endl;
-      truept_y = gamma.Pt() / HG::GeV;
-      trueeta_y = std::abs(gamma.Eta());
-      truem_ll = (lep1+lep2).M() /HG::GeV;
-      truem_lly = (lep1+lep2+gamma).M() /HG::GeV;
-      truedphi_lly = std::abs(gamma.DeltaPhi(lep1+lep2));
-      truept_lly = (lep1+lep2+gamma).Pt() / HG::GeV;
-      trueptm_lly = truept_lly/truem_lly;
-      }*/
-    //if (truem_ll>40 && truem_ll+truem_lly>182) isFiducial=true;
 
     truevals[0]=truept_y1;
     truevals[1]=truept_y2;
@@ -307,23 +369,53 @@ EL::StatusCode ZyyUnfoldingInput::doSelAndSaveHists(TString sysname)
       histoStore()->fillTH1F(prefix + Form("_effcorrden_%s", variables[ivar]), truevals[ivar], truew);
       histoStore()->fillTH1F(prefix + Form("_truth_%s", variables[ivar]), truevals[ivar], truew);
       if (sysname=="") {
-        for (int id=1;id<=104;++id) {
-          int pdf = 261000+id;
-          if (id==101) pdf = 269000;
-          else if (id==102) pdf = 270000;
-          else if (id==103) pdf = 13000;
-          else if (id==104) pdf = 25300;
-          /*if (meta_dsid==345775){
-            pdf = 260000+id;
-            if (id>100) break;
-	    }*/
-          double pdftruew = truew*m_pdfw[id]/m_pdfw[0];
-          histoStore()->fillTH1F(prefix + Form("_PDF%i", pdf) + Form("_truth_%s", variables[ivar]), truevals[ivar], pdftruew);
-        }
-        for (int is=0; is<6; is++){
-          double scaletruew = truew*m_scalew[is]/m_pdfw[0];
-          histoStore()->fillTH1F(prefix + Form("_SCALE%i", is) + Form("_truth_%s", variables[ivar]), truevals[ivar], scaletruew);
-        }
+	if(meta_dsid==364865){
+	  for (int id=1;id<=104;++id) {
+	    int pdf = 261000+id;
+	    if (id==101) pdf = 269000;
+	    else if (id==102) pdf = 270000;
+	    else if (id==103) pdf = 13000;
+	    else if (id==104) pdf = 25300;
+          
+	    double pdftruew = truew*m_pdfw[id]/m_pdfw[0];
+	    histoStore()->fillTH1F(prefix + Form("_PDF%i", pdf) + Form("_truth_%s", variables[ivar]), truevals[ivar], pdftruew);
+	  }
+	  for (int is=0; is<6; is++){
+	    double scaletruew = truew*m_scalew[is]/m_pdfw[0];
+	    histoStore()->fillTH1F(prefix + Form("_SCALE%i", is) + Form("_truth_%s", variables[ivar]), truevals[ivar], scaletruew);
+	  }
+	}
+	else if(meta_dsid==700195){
+	  for(int id=0;id<=138;id++){
+	    int pdf = 303200+id;
+	    if(id>100){pdf=91400+id-101;}
+	    if(id==134)pdf=304400;
+	    if(id==135)pdf=13000;
+	    if(id==136)pdf=25300;
+	    if(id==137)pdf=269000;
+	    if(id==138)pdf=270000;
+	  
+	    double pdftruew = truew*m_pdfw[2*id]/m_pdfw[0];
+	    histoStore()->fillTH1F(prefix + Form("_PDF%i", pdf) + Form("_truth_%s", variables[ivar]), truevals[ivar], pdftruew);
+	    pdftruew = truew*m_pdfw[(2*id)+1]/m_pdfw[0];
+	    histoStore()->fillTH1F(prefix + Form("_ME_ONLY_PDF%i", pdf) + Form("_truth_%s", variables[ivar]), truevals[ivar], pdftruew);
+	  }
+
+	  for(int is=0;is<6;is++){
+	    double scaletruew = truew*m_scalew[2*is]/m_pdfw[0];
+	    histoStore()->fillTH1F(prefix + Form("_SCALE%i", is) + Form("_truth_%s", variables[ivar]), truevals[ivar], scaletruew);
+	    scaletruew = truew*m_scalew[(2*is)+1]/m_pdfw[0];
+	    histoStore()->fillTH1F(prefix + Form("_ME_ONLY_SCALE%i", is) + Form("_truth_%s", variables[ivar]), truevals[ivar], scaletruew);
+	  }
+	  
+	  for(int iewk=0;iewk<4;iewk++){
+	    double ewktruew = truew*m_ewkw[2*iewk]/m_pdfw[0];
+	    histoStore()->fillTH1F(prefix + "_EWK_" + ewkVars[iewk] + Form("_truth_%s", variables[ivar]), truevals[ivar], ewktruew);
+	    ewktruew = truew*m_ewkw[(2*iewk)+1]/m_pdfw[0];
+	    histoStore()->fillTH1F(prefix + "_ME_ONLY_EWK_" + ewkVars[iewk] + Form("_truth_%s", variables[ivar]), truevals[ivar], ewktruew);
+	  }
+
+	}
       }
     }
   }
