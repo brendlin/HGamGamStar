@@ -25,6 +25,9 @@ private:
   TH1F *createAndRegisterTH1F(TString name, const std::vector<double>& xbins, TString title = "");
   TH2F *createAndRegisterTH2F(TString name, const std::vector<double>& xbins, const std::vector<double>& ybins, TString title = "");
 
+  const std::vector<TString> ewkVars = {"ASSEW","ASSEWLO1","MULTIASSEW","MULTIASSEWLO1"};
+  const std::vector<TString> scaleVars = {"MUR0.5_MUF1_PDF303200_PSMUR0.5_PSMUF1","MUR1_MUF0.5_PDF303200_PSMUR1_PSMUF0.5","MUR2_MUF1_PDF303200_PSMUR1_PSMUF1","MUR1_MUF2_PDF303200_PSMUR1_PSMUF2","MUR0.5_MUF0.5_PDF303200_PSMUR0.5_PSMUF0.5","MUR2_MUF2_PDF303200_PSMUR2_PSMUF2"};
+
 public:
   // this is a standard constructor
   ZyyUnfoldingInput() { }
@@ -41,7 +44,7 @@ public:
   double truew;
   double vals[7];
   double truevals[7];
-  std::vector<double> m_pdfw, m_scalew;
+  std::vector<double> m_pdfw, m_scalew, m_ewkw;
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(ZyyUnfoldingInput, 1);
