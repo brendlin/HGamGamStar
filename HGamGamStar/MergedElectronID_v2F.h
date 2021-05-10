@@ -12,6 +12,8 @@
 #include "ElectronPhotonSelectorTools/ElectronSelectorHelpers.h"
 #include "xAODTracking/TrackParticle.h"
 #include "xAODTruth/xAODTruthHelpers.h"
+#include "AsgTools/AnaToolHandle.h"
+#include "EgammaAnalysisInterfaces/IElectronPhotonShowerShapeFudgeTool.h"
 #include <string>
 #include <TH2.h>
 
@@ -34,8 +36,8 @@ namespace HG {
     std::string m_deltaEtaHistName;
     TH2* m_sdetaCorr;
 
-    float correctDeta1(const xAOD::Electron &ele, bool isMC) const;
   
+    asg::AnaToolHandle<IElectronPhotonShowerShapeFudgeTool> m_detaCorrectionTool; //!
 
   public:
 
@@ -52,6 +54,9 @@ namespace HG {
 
     bool passPIDCut(const xAOD::Electron &ele, bool isMC) const ;
     float GetScaleFactor(const xAOD::Electron &ele, MergedSystematic sys=MERGEDUNC_NOMINAL) const;
+
+    float correctDeta1(const xAOD::Electron &ele, bool isMC) const;
+    void nilsDeta1(xAOD::Electron &ele, bool isMC) const;
 
   };
 

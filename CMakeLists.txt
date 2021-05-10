@@ -15,6 +15,7 @@ atlas_depends_on_subdirs( PUBLIC
                           InnerDetector/InDetRecTools/InDetTrackSelectionTool
                           InnerDetector/InDetRecTools/TrackVertexAssociationTool
                           PhysicsAnalysis/ElectronPhotonID/ElectronPhotonShowerShapeFudgeTool
+                          PhysicsAnalysis/ElectronPhotonID/EGammaVariableCorrection
                           )
 
 # Find the needed external(s):

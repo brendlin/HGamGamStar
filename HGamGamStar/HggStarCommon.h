@@ -144,6 +144,8 @@ namespace HG {
     static SG::AuxElement::Accessor< float > Reta_nofudge("Reta_nofudge");
     static SG::AuxElement::Accessor< float > Rphi_nofudge("Rphi_nofudge");
     static SG::AuxElement::Accessor< float > weta2_nofudge("weta2_nofudge");
+    static SG::AuxElement::Accessor< float > deltaEta1_nofudge("deltaEta1_nofudge");
+    static SG::AuxElement::Accessor< float > deltaEta1_fudge("deltaEta1_fudge");
 
     static SG::AuxElement::Accessor< float > pt_orig("pt_orig");
     static SG::AuxElement::Accessor< float > eta_orig("eta_orig");

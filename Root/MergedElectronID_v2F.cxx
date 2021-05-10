@@ -2,7 +2,8 @@
 #include "PathResolver/PathResolver.h"
 
 //______________________________________________________________________________
-HG::MergedElectronID_v2F::MergedElectronID_v2F()
+HG::MergedElectronID_v2F::MergedElectronID_v2F() :
+  m_detaCorrectionTool()
 {
 
 }
@@ -35,6 +36,12 @@ EL::StatusCode HG::MergedElectronID_v2F::initialize(Config &config)
   m_sdetaCorr->SetDirectory(0);
   detaFile->Close();
   delete detaFile;
+
+  m_detaCorrectionTool.setTypeAndName("ElectronPhotonVariableCorrectionTool/kurtDetaTool");
+  std::string configFile = "HGamGamStar/DetaMasterCorrectionTool.conf";
+  m_detaCorrectionTool.setProperty("ConfigFile", configFile);
+  if (m_detaCorrectionTool.initialize().isFailure())
+    fatal("Could not initialize Deta correction tool.");
 
   return EL::StatusCode::SUCCESS;
 }
@@ -95,7 +102,7 @@ bool HG::MergedElectronID_v2F::passPIDCut(const xAOD::Electron &ele, bool isMC) 
     return false;
 
   // calculate shower shapes and other discriminating variables
-  float trk_dEta1 =  correctDeta1( ele, isMC);
+  float trk_dEta1 =  0; // correctDeta1( ele, isMC);
 
 //    double f1 = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::f1);
 //     double fSide = ele.showerShapeValue(xAOD::EgammaParameters::ShowerShapeType::fracs1);
@@ -236,13 +243,22 @@ float HG::MergedElectronID_v2F::correctDeta1(const xAOD::Electron &ele, bool isM
 
   double corr =  0;
   if(!isMC){
-    double eta = ele.caloCluster()->etaBE(1);
+    double eta = ele.caloCluster()->etaBE(2);
     double phi = ele.caloCluster()->phiBE(2);
     int    bin = m_sdetaCorr->FindBin( eta, phi );
     corr = m_sdetaCorr->GetBinContent(bin) * 1e-3;
   }
   return ele.trackCaloMatchValue(xAOD::EgammaParameters::TrackCaloMatchType::deltaEta1) - corr;
 
+}
+
+void HG::MergedElectronID_v2F::nilsDeta1(xAOD::Electron &ele, bool isMC) const{
+
+  double corr =  0;
+  if(!isMC){
+    m_detaCorrectionTool->applyCorrection(ele);
+  }
+  return;
 }
 
 float HG::MergedElectronID_v2F::GetScaleFactor(const xAOD::Electron &ele, MergedSystematic sys) const{

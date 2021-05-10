@@ -1694,6 +1694,15 @@ void HiggsGamGamStarCutflowAndMxAOD::AddElectronDecorations(xAOD::ElectronContai
     HG::EleAcc::passDeltaPhiIPCut(*electron) = false;
     HG::EleAcc::deltaPhiTrksIP(*electron) = -999;
 
+    // return the old Mateusz value
+    HG::EleAcc::deltaEta1_fudge(*electron) = m_mergedElectronID_v2F->correctDeta1(*electron,HG::isMC());
+
+    // save the old value
+    HG::EleAcc::deltaEta1_nofudge(*electron) = electron->trackCaloMatchValue(xAOD::EgammaParameters::TrackCaloMatchType::deltaEta1);
+
+    // directly change the value
+    m_mergedElectronID_v2F->nilsDeta1(*electron,HG::isMC());
+
     // HG::EleAcc::dRbetweenTracks_LM_L1(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_LM_L2(*electron) = -999;
     // HG::EleAcc::dRbetweenTracks_P_L1(*electron) = -999;
