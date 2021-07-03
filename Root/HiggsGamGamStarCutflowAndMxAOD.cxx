@@ -296,8 +296,8 @@ EL::StatusCode HiggsGamGamStarCutflowAndMxAOD::createOutput()
       "TheorySig_QCDscale_ggVH_PTV400",
       "TheorySig_QCDscale_ggVH_mig01",
       "TheorySig_QCDscale_ggVH_mig12",
-      "TheorySig_QCDalphaS__1up",
-      "TheorySig_QCDalphaS__1down",
+      "TheorySig_alphaS__1up",
+      "TheorySig_alphaS__1down",
       "TheorySig_PartonShower__1up",
       "TheorySig_PartonShower__1down"
     };
@@ -2015,9 +2015,9 @@ void HiggsGamGamStarCutflowAndMxAOD::AddTheorySystematics() {
     }
 
     //alpha_S uncertainties
-    sys_names.push_back("TheorySig_QCDalphaS__1up");
+    sys_names.push_back("TheorySig_alphaS__1up");
     sys_weights.push_back(hw.alphaS_up);
-    sys_names.push_back("TheorySig_QCDalphaS__1down");
+    sys_names.push_back("TheorySig_alphaS__1down");
     sys_weights.push_back(hw.alphaS_dn);
     
         
