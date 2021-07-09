@@ -68,7 +68,10 @@ private:
   bool m_isWZysel;
   bool m_isZZysel;
   bool m_isZyysel;
-
+  
+  // Save if trigger is fired by electrons or muons
+  int m_trigger_lep_flavour;
+  
   // Tools
   ToolHandle<ZMassConstraint::IConstraintFit> m_massConstraint;
 

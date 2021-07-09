@@ -205,6 +205,9 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
 
   m_isZ = false;
   bool c_oneLooseGam=true, c_ambiguity=true, c_onePhotonPostor=true;
+  
+  // (-1 : no trigger fired/matched), (1 : el trigger), (2 : muon trigger), (3 : both triggers)
+  m_trigger_lep_flavour = -1;
 
   //Check if there are two good fakes. Needed so we dont slim the event at trigger.
   m_goodFakeComb = false;
@@ -226,7 +229,27 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   //==== CUT 2 : Require trigger ====
   static bool requireTrigger = config()->getBool("EventHandler.CheckTriggers");
   if ( requireTrigger && !eventHandler()->passTriggers() ) return TRIGGER;
-
+  
+  // Check already here if el/mu/both trigger(s) fired to avoid m_trigger_lep_flavour 
+  // being initialized at -1, allows for arbitrary (i.e. >= 2) m_skimCut
+  std::map<TString, bool> trig_fired_matched;
+  std::map<TString, bool>::iterator map_itr;
+  bool el_trig_fired = 0, mu_trig_fired = 0;
+  for (unsigned int i_trig = 0; i_trig<eventHandler()->getRequiredTriggers().size(); ++i_trig){
+    TString trig = eventHandler()->getRequiredTriggers()[i_trig];
+    trig_fired_matched[trig] = false;
+    if (eventHandler()->passTrigger(trig.Data())) trig_fired_matched[trig] = true;
+  }
+  for (map_itr = trig_fired_matched.begin(); map_itr != trig_fired_matched.end(); ++map_itr){
+    std::string key = (map_itr->first).Data();
+    if ( key.find("HLT_e") != std::string::npos && !(key.find("HLT_e")) && map_itr->second ) el_trig_fired = true;
+    if ( key.find("HLT_mu") != std::string::npos && !(key.find("HLT_mu")) && map_itr->second ) mu_trig_fired = true;
+  } 
+  if (el_trig_fired && !mu_trig_fired)      m_trigger_lep_flavour = 1;
+  else if (!el_trig_fired && mu_trig_fired) m_trigger_lep_flavour = 2;
+  else if (el_trig_fired && mu_trig_fired)  m_trigger_lep_flavour = 3;
+  else{ /*Occurs only if !requireTrigger or no single lep triggers are used, 
+        m_trigger_lep_flavour stays at -1*/ }
 
   //==== CUT 3 : Detector quality ====
   if ( !(eventHandler()->passLAr (eventInfo()) &&
@@ -498,6 +521,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
   unsigned int m_triggerBitset = 0;
   for (unsigned int i_trig = 0; i_trig<eventHandler()->getRequiredTriggers().size(); ++i_trig) {
     TString trig = eventHandler()->getRequiredTriggers()[i_trig];
+    if (requireTriggerMatch) trig_fired_matched[trig] = false;
     if (eventHandler()->passTrigger(trig.Data())) {
       m_triggerBitset = m_triggerBitset | (0x1 << i_trig);
     }
@@ -509,9 +533,21 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
       // You need to check this here in order to make sure RunNumbers restriction is imposed on trigs.
       if ( !(m_triggerBitset & (0x1 << i_trig)) ) continue;
       TString trig = eventHandler()->getRequiredTriggers()[i_trig];
-      if (passTriggerMatch(trig.Data(), NULL, &m_selElectrons, &m_selMuons, NULL) ) itrigmatch++;
+      if (passTriggerMatch(trig.Data(), NULL, &m_selElectrons, &m_selMuons, NULL) ){ itrigmatch++; trig_fired_matched[trig] = true; }
     }
     if (itrigmatch==0) return TRIG_MATCH;
+    
+    // Update m_trigger_lep_flavour
+    for (map_itr = trig_fired_matched.begin(); map_itr != trig_fired_matched.end(); ++map_itr){
+      std::string key = (map_itr->first).Data();
+      if ( key.find("HLT_e") != std::string::npos && !(key.find("HLT_e")) && map_itr->second ) el_trig_fired = true;
+      if ( key.find("HLT_mu") != std::string::npos && !(key.find("HLT_mu")) && map_itr->second ) mu_trig_fired = true;
+    }
+    if (el_trig_fired && !mu_trig_fired)      m_trigger_lep_flavour = 1;
+    else if (!el_trig_fired && mu_trig_fired) m_trigger_lep_flavour = 2;
+    else if (el_trig_fired && mu_trig_fired)  m_trigger_lep_flavour = 3;
+    else{ /*Occurs only if no single lep triggers are used, 
+            m_trigger_lep_flavour stays at -1*/ }    
   }
 
   //==== CUT 11 : 30 GeV cut on leading lepton ====
@@ -588,7 +624,16 @@ EL::StatusCode  ZyCutflowAndMxAOD::doReco(bool isSys){
 
   // add lepton SF and trigger SF weight to total weight, only for dilepton case!
   if (HG::isMC()) {
-    if ( m_selElectrons.size()>=2||m_selMuons.size()>=2) var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(&m_selElectrons,&m_selMuons));
+    if (m_selElectrons.size() > 0 && m_selMuons.size() > 0 && m_trigger_lep_flavour > 0){
+      if (m_trigger_lep_flavour == 1)      var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(&m_selElectrons, nullptr));
+      else if (m_trigger_lep_flavour == 2) var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(nullptr, &m_selMuons));
+      else{
+        m_selElectrons[0]->pt() > m_selMuons[0]->pt() ? 
+        var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(&m_selElectrons, nullptr)) :
+        var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(nullptr, &m_selMuons));
+      }
+    }
+    else{ var::weightTrigSF.setValue(eventHandler()->triggerScaleFactor(&m_selElectrons,&m_selMuons)); }
     double myweight = 1.0;
     static SG::AuxElement::Accessor<float> scaleFactor("scaleFactor");
     if(m_isZyysel){
