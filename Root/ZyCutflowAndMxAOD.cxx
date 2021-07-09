@@ -538,6 +538,7 @@ ZyCutflowAndMxAOD::CutEnum ZyCutflowAndMxAOD::cutflow()
     if (itrigmatch==0) return TRIG_MATCH;
     
     // Update m_trigger_lep_flavour
+    el_trig_fired = false; mu_trig_fired = false;
     for (map_itr = trig_fired_matched.begin(); map_itr != trig_fired_matched.end(); ++map_itr){
       std::string key = (map_itr->first).Data();
       if ( key.find("HLT_e") != std::string::npos && !(key.find("HLT_e")) && map_itr->second ) el_trig_fired = true;
