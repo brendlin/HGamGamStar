@@ -767,38 +767,40 @@ void ZyCutflowAndMxAOD::writeNominalAndSystematic(bool isSys)
 
 void ZyCutflowAndMxAOD::writeNominalAndSystematicVars(bool truth)
 {
-  var::m_yy.addToStore(truth);
+//Zy variables
   var::pT_y1.addToStore(truth);
-  var::pT_y2.addToStore(truth);
-  var::m_lly.addToStore(truth);
-  var::m_ll.addToStore(truth);
-  var::m_l1y.addToStore(truth);
-  var::m_l2y.addToStore(truth);
-  var::pt_lly.addToStore(truth);
-  var::pt_ll.addToStore(truth);
-  var::pt_llyy.addToStore(truth);
-  var::m_llyy.addToStore(truth);
-  var::deltaPhi_ll_y.addToStore(truth);
   var::eta_y1.addToStore(truth);
+  var::m_ll.addToStore(truth);
+  var::m_lly.addToStore(truth);
+  var::pt_lly.addToStore(truth);
+  var::deltaPhi_ll_y.addToStore(truth);
   var::m_emu.addToStore(truth);
   var::m_emuy.addToStore(truth);
-  var::N_mu.addToStore(truth);
-  var::N_e.addToStore(truth);
-  var::N_j.addToStore(truth);
-  var::N_j_central.addToStore(truth);
-  var::m_jj_50.addToStore(truth);
-  var::pT_l1.addToStore(truth);
-  var::eta_j1.addToStore(truth);
+
+//VBS variables
   var::N_j_gap.addToStore(truth);
   var::Zy_centrality.addToStore(truth);
   var::m_jj.addToStore(truth);
-  var::pT_j1.addToStore(truth);
-  var::pT_j2.addToStore(truth);
-  var::DRmin_y_j.addToStore(truth);
+  var::eta_j1.addToStore(truth);
+  var::pt_ll.addToStore(truth);
   var::Dy_j_j.addToStore(truth);
-  var::Deta_j_j.addToStore(truth);
-  var::Dphi_lly_jj.addToStore(truth);
+  var::DRmin_y_j.addToStore(truth);
   var::DR_Zy_jj.addToStore(truth);
+  var::Dphi_lly_jj.addToStore(truth);
+  var::pT_l1.addToStore(truth);
+  var::pT_j1.addToStore(truth);
+  var::N_j.addToStore(truth);
+
+  var::N_j_central.addToStore(truth);
+  var::m_yy.addToStore(truth);
+  var::pT_y2.addToStore(truth);
+  var::m_l1y.addToStore(truth);
+  var::m_l2y.addToStore(truth);
+  var::pt_llyy.addToStore(truth);
+  var::m_llyy.addToStore(truth);
+  var::N_mu.addToStore(truth);
+  var::N_e.addToStore(truth);
+  var::pT_j2.addToStore(truth);
   var::deltaR_ll.addToStore(truth);
   var::m_lly2.addToStore(truth);
   if (!truth) {

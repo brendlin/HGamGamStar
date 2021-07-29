@@ -854,10 +854,10 @@ namespace HG {
       int ngapjets = 0;
       int njets = jets->size();
       if (njets >= 2) {
-        float j1_eta = (*jets)[0]->eta();
-        float j2_eta = (*jets)[1]->eta(); 
+        float j1_rapidity = (*jets)[0]->rapidity();
+        float j2_rapidity = (*jets)[1]->rapidity(); 
         for (int i = 2; i < njets; i++) {
-          if ( ((*jets)[i]->eta() < j1_eta && (*jets)[i]->eta() > j2_eta) || ((*jets)[i]->eta() > j1_eta && (*jets)[i]->eta() < j2_eta) ) { ngapjets++; }
+          if ( ((*jets)[i]->rapidity() < j1_rapidity && (*jets)[i]->rapidity() > j2_rapidity) || ((*jets)[i]->rapidity() > j1_rapidity && (*jets)[i]->rapidity() < j2_rapidity) ) { ngapjets++; }
         }
       }
 
@@ -877,9 +877,9 @@ namespace HG {
       const xAOD::IParticleContainer *mus = HG::VarHandler::getInstance()->getMuons(truth);
       const xAOD::IParticleContainer *gams = HG::VarHandler::getInstance()->getPhotons(truth);
       if (mus->size() >= 2 && gams->size() >= 1 && jets->size() >= 2)
-        return abs((((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4()).Eta() - ((*jets)[0]->rapidity() + (*jets)[1]->rapidity())/2)/((*jets)[0]->rapidity() - (*jets)[1]->rapidity()));
+        return abs((((*mus)[0]->p4() + (*mus)[1]->p4() + (*gams)[0]->p4()).Rapidity() - ((*jets)[0]->rapidity() + (*jets)[1]->rapidity())/2)/((*jets)[0]->rapidity() - (*jets)[1]->rapidity()));
       if (eles->size() >= 2 && gams->size() >= 1 && jets->size() >= 2)
-        return abs((((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).Eta() - ((*jets)[0]->rapidity() + (*jets)[1]->rapidity())/2)/((*jets)[0]->rapidity() - (*jets)[1]->rapidity()));
+        return abs((((*eles)[0]->p4() + (*eles)[1]->p4() + (*gams)[0]->p4()).Rapidity() - ((*jets)[0]->rapidity() + (*jets)[1]->rapidity())/2)/((*jets)[0]->rapidity() - (*jets)[1]->rapidity()));
       return m_default;
     }
   }; 
